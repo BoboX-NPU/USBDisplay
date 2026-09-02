@@ -37,7 +37,7 @@ struct DeviceSelectionTests {
 
   @Test
   func automaticallySelectsOnlyDevice() {
-    let device = DisplayDevice(id: "one", name: "One iPhone")
+    let device = DisplayDevice(id: "one", name: "One iPad")
     let selectedID = DeviceSelectionPolicy.selectedID(
       devices: [device],
       currentID: nil,
@@ -51,7 +51,7 @@ struct DeviceSelectionTests {
   func preservesCurrentSelectionWithMultipleDevices() {
     let devices = [
       DisplayDevice(id: "one", name: "One iPhone"),
-      DisplayDevice(id: "two", name: "Two iPhone"),
+      DisplayDevice(id: "two", name: "One iPad"),
     ]
 
     #expect(
@@ -66,7 +66,7 @@ struct DeviceSelectionTests {
   func reconnectsLastSelectedDeviceWhenItReturns() {
     let devices = [
       DisplayDevice(id: "one", name: "One iPhone"),
-      DisplayDevice(id: "two", name: "Two iPhone"),
+      DisplayDevice(id: "two", name: "One iPad"),
     ]
 
     #expect(

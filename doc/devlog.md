@@ -94,3 +94,45 @@
 - Camera permission denial, orientation changes, hot unplug/replug, occupied-device recovery, and connected-state control hiding remain to be hardware-validated.
 - Multiple-device behavior still requires two physical iPhones.
 - The 30-minute soak, frame-rate measurement, and end-to-end latency measurement remain to be run.
+
+## 2026-09-03 — Add Low-Latency Multi-Device Interface
+
+### Summary
+
+- Renamed the user-visible application to USB Display while preserving its executable and bundle identifier.
+- Generalized discovery, status text, permission text, and selection behavior for USB-connected iPhone and iPad screen sources.
+- Replaced the direct preview layer with a discard-late video data output and immediate AVSampleBufferDisplayLayer rendering path.
+- Added stream-generation invalidation, display-layer backpressure, flush recovery, and aggregate frame timing telemetry.
+- Rebuilt the main window with a native device sidebar, unified toolbar, black media canvas, and automatic full-screen sidebar restoration.
+- Added native Liquid Glass full-screen controls for macOS 26+ with a regular-material fallback for macOS 14–15.
+- Updated the generated bundle to version 0.2.0 while preserving its existing path and bundle identifier for camera-permission continuity.
+
+### Affected Files
+
+- Sources/iPhoneUSBDisplay/App/iPhoneUSBDisplayApp.swift
+- Sources/iPhoneUSBDisplay/Models/
+- Sources/iPhoneUSBDisplay/Services/
+- Sources/iPhoneUSBDisplay/Support/AppLogger.swift
+- Sources/iPhoneUSBDisplay/Views/
+- Tests/iPhoneUSBDisplayTests/
+- script/build_and_run.sh
+- doc/current.md
+- doc/devlog.md
+
+### Validation
+
+- xcrun swift-format lint --recursive Sources Tests Package.swift: Passed with no warnings.
+- swift test --disable-sandbox -j 1: Passed 20 tests across four suites.
+- swift build --disable-sandbox -c release -j 1: Passed.
+- script/build_and_run.sh --verify: Passed; the version 0.2.0 app bundle was built, signed, launched, and its process was confirmed.
+- plutil -lint dist/iPhoneUSBDisplay.app/Contents/Info.plist: Passed.
+- codesign --verify --deep --strict --verbose=2 dist/iPhoneUSBDisplay.app: Passed.
+- Generated bundle cleanup: Passed; only the stable dist/iPhoneUSBDisplay.app path remains.
+- Running-app visual and live-frame check: Not run because the Mac was locked and the desktop automation service could not unlock it.
+- Two-device hardware switching, 30-minute soak, sustained frame rate, and 240 fps latency comparison: Not run.
+
+### Remaining Risks or Follow-up Work
+
+- Verify live iPhone and iPad frames through the new renderer after unlocking the Mac.
+- Verify the macOS 27 Liquid Glass appearance, sidebar resizing and selection, and full-screen collapse and restoration.
+- Complete the two-device, rotation, hot-plug, occupied-device, performance, and stability hardware matrix.

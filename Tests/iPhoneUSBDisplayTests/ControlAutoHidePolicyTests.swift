@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 
 @testable import iPhoneUSBDisplay
@@ -51,5 +52,17 @@ struct ControlAutoHidePolicyTests {
         isConnected: true,
         isFullScreen: true
       ))
+  }
+
+  @Test @MainActor
+  func fullScreenCollapsesAndRestoresSidebar() {
+    let model = AppModel()
+    model.setColumnVisibility(.all)
+
+    model.setFullScreen(true)
+    #expect(model.columnVisibility == .detailOnly)
+
+    model.setFullScreen(false)
+    #expect(model.columnVisibility == .all)
   }
 }

@@ -5,9 +5,11 @@ import Foundation
 final class CaptureCoordinator: @unchecked Sendable {
   typealias SnapshotHandler = @MainActor @Sendable (CaptureSnapshot) -> Void
 
-  let session = AVCaptureSession()
+  let renderer = SampleBufferRenderer()
 
   private let snapshotHandler: SnapshotHandler
+  private let session = AVCaptureSession()
+  private let videoOutput = AVCaptureVideoDataOutput()
   private let sessionQueue = DispatchQueue(
     label: "com.xuemingbo.iPhoneUSBDisplay.capture-session",
     qos: .userInitiated
@@ -22,6 +24,7 @@ final class CaptureCoordinator: @unchecked Sendable {
   private var captureDevices: [String: AVCaptureDevice] = [:]
   private var displayDevices: [DisplayDevice] = []
   private var currentInput: AVCaptureDeviceInput?
+  private var frameOutputDelegate: FrameOutputDelegate?
   private var currentStatus: ConnectionStatus = .noDevice
   private var selectedDeviceID: String?
   private var lastSelectedDeviceID: String?
@@ -79,7 +82,7 @@ final class CaptureCoordinator: @unchecked Sendable {
       self.selectedDeviceID = id
       self.lastSelectedDeviceID = id
       self.userDefaults.set(id, forKey: Self.lastSelectedDeviceKey)
-      AppLogger.device.info("User selected an iPhone screen capture device")
+      AppLogger.device.info("User selected an Apple mobile screen capture device")
       self.connectSelectedDevice()
     }
   }
@@ -242,7 +245,8 @@ final class CaptureCoordinator: @unchecked Sendable {
       lastSelectedID: lastSelectedDeviceID
     )
 
-    AppLogger.device.info("Found \(self.displayDevices.count) eligible wired iPhone device(s)")
+    AppLogger.device.info(
+      "Found \(self.displayDevices.count) eligible wired Apple mobile device(s)")
 
     guard let desiredSelection else {
       cancelRetry()
@@ -333,17 +337,11 @@ final class CaptureCoordinator: @unchecked Sendable {
     retryWorkItem?.cancel()
     retryWorkItem = nil
     publish(status: .connecting(deviceName: device.localizedName))
+    stopAndClearSession()
 
     do {
-      if session.isRunning {
-        session.stopRunning()
-      }
-
       session.beginConfiguration()
       defer { session.commitConfiguration() }
-
-      session.inputs.forEach(session.removeInput)
-      currentInput = nil
 
       let input = try AVCaptureDeviceInput(device: device)
       guard session.canAddInput(input) else {
@@ -353,9 +351,20 @@ final class CaptureCoordinator: @unchecked Sendable {
       session.addInput(input)
       currentInput = input
 
+      videoOutput.alwaysDiscardsLateVideoFrames = true
+      guard session.canAddOutput(videoOutput) else {
+        throw CaptureCoordinatorError.cannotAddOutput
+      }
+      session.addOutput(videoOutput)
+
       if session.canSetSessionPreset(.high) {
         session.sessionPreset = .high
       }
+
+      let generation = renderer.beginStream()
+      let frameOutputDelegate = FrameOutputDelegate(renderer: renderer, generation: generation)
+      self.frameOutputDelegate = frameOutputDelegate
+      videoOutput.setSampleBufferDelegate(frameOutputDelegate, queue: renderer.renderQueue)
     } catch {
       handleConnectionError(error as NSError, device: device)
       return
@@ -365,10 +374,10 @@ final class CaptureCoordinator: @unchecked Sendable {
 
     if session.isRunning {
       cancelRetry()
-      AppLogger.session.info("Capture session is running")
+      AppLogger.session.info("Low-latency capture session is running")
       publish(status: .connected(deviceName: device.localizedName))
     } else {
-      publish(status: .failed(message: "The iPhone screen stream did not start."))
+      publish(status: .failed(message: "The device screen stream did not start."))
       scheduleRetry(for: device, occupied: false)
     }
   }
@@ -458,19 +467,25 @@ final class CaptureCoordinator: @unchecked Sendable {
   }
 
   private func stopAndClearSession() {
+    videoOutput.setSampleBufferDelegate(nil, queue: nil)
+    frameOutputDelegate = nil
+
     if session.isRunning {
       session.stopRunning()
     }
 
-    guard !session.inputs.isEmpty else {
+    guard !session.inputs.isEmpty || !session.outputs.isEmpty else {
       currentInput = nil
+      renderer.invalidateStream()
       return
     }
 
     session.beginConfiguration()
     session.inputs.forEach(session.removeInput)
+    session.outputs.forEach(session.removeOutput)
     session.commitConfiguration()
     currentInput = nil
+    renderer.invalidateStream()
   }
 
   private func publish(status: ConnectionStatus) {
@@ -498,8 +513,14 @@ final class CaptureCoordinator: @unchecked Sendable {
 
 private enum CaptureCoordinatorError: LocalizedError {
   case cannotAddInput
+  case cannotAddOutput
 
   var errorDescription: String? {
-    "The selected iPhone cannot be added to the capture session."
+    switch self {
+    case .cannotAddInput:
+      "The selected device cannot be added to the capture session."
+    case .cannotAddOutput:
+      "The low-latency video output cannot be added to the capture session."
+    }
   }
 }

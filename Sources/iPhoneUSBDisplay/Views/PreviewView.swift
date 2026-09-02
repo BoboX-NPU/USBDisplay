@@ -3,14 +3,14 @@ import AppKit
 import SwiftUI
 
 struct PreviewView: NSViewRepresentable {
-  let session: AVCaptureSession
+  let renderer: SampleBufferRenderer
   let fullScreenToggleRequest: Int
   let shouldHideCursor: Bool
   let onActivity: @MainActor () -> Void
   let onFullScreenChanged: @MainActor (Bool) -> Void
 
   func makeNSView(context: Context) -> PreviewHostView {
-    let view = PreviewHostView(session: session)
+    let view = PreviewHostView(renderer: renderer)
     update(view)
     return view
   }
@@ -26,7 +26,7 @@ struct PreviewView: NSViewRepresentable {
   private func update(_ view: PreviewHostView) {
     view.onActivity = onActivity
     view.onFullScreenChanged = onFullScreenChanged
-    view.setSession(session)
+    view.setRenderer(renderer)
     view.setCursorHidden(shouldHideCursor)
     view.handleFullScreenToggleRequest(fullScreenToggleRequest)
   }
@@ -34,7 +34,7 @@ struct PreviewView: NSViewRepresentable {
 
 @MainActor
 final class PreviewHostView: NSView {
-  private let previewLayer = AVCaptureVideoPreviewLayer()
+  private var renderer: SampleBufferRenderer
   private var trackingAreaReference: NSTrackingArea?
   private var windowObservers: [NSObjectProtocol] = []
   private var cursorHidden = false
@@ -43,22 +43,22 @@ final class PreviewHostView: NSView {
   var onActivity: (() -> Void)?
   var onFullScreenChanged: ((Bool) -> Void)?
 
-  init(session: AVCaptureSession) {
+  init(renderer: SampleBufferRenderer) {
+    self.renderer = renderer
     super.init(frame: .zero)
     wantsLayer = true
     layer = CALayer()
     layer?.backgroundColor = NSColor.black.cgColor
 
-    previewLayer.videoGravity = .resizeAspect
-    previewLayer.backgroundColor = NSColor.black.cgColor
-    previewLayer.actions = [
+    renderer.displayLayer.videoGravity = .resizeAspect
+    renderer.displayLayer.backgroundColor = NSColor.black.cgColor
+    renderer.displayLayer.actions = [
       "bounds": NSNull(),
       "position": NSNull(),
       "frame": NSNull(),
       "contents": NSNull(),
     ]
-    layer?.addSublayer(previewLayer)
-    setSession(session)
+    layer?.addSublayer(renderer.displayLayer)
   }
 
   @available(*, unavailable)
@@ -74,7 +74,7 @@ final class PreviewHostView: NSView {
     super.layout()
     CATransaction.begin()
     CATransaction.setDisableActions(true)
-    previewLayer.frame = bounds
+    renderer.displayLayer.frame = bounds
     CATransaction.commit()
   }
 
@@ -164,9 +164,12 @@ final class PreviewHostView: NSView {
     }
   }
 
-  func setSession(_ session: AVCaptureSession) {
-    guard previewLayer.session !== session else { return }
-    previewLayer.session = session
+  func setRenderer(_ renderer: SampleBufferRenderer) {
+    guard self.renderer !== renderer else { return }
+    self.renderer.displayLayer.removeFromSuperlayer()
+    self.renderer = renderer
+    layer?.addSublayer(renderer.displayLayer)
+    needsLayout = true
   }
 
   func handleFullScreenToggleRequest(_ request: Int) {
@@ -189,7 +192,7 @@ final class PreviewHostView: NSView {
   func prepareForRemoval() {
     setCursorHidden(false)
     removeWindowObservers()
-    previewLayer.session = nil
+    renderer.displayLayer.removeFromSuperlayer()
   }
 
   private func removeWindowObservers() {

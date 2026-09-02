@@ -7,12 +7,13 @@ struct IPhoneUSBDisplayApp: App {
   @State private var model = AppModel()
 
   var body: some Scene {
-    Window("iPhone USB Display", id: "main") {
+    Window("USB Display", id: "main") {
       ContentView(model: model)
-        .frame(minWidth: 360, minHeight: 480)
+        .frame(minWidth: 700, minHeight: 520)
     }
-    .defaultSize(width: 520, height: 820)
+    .defaultSize(width: 980, height: 720)
     .windowResizability(.contentMinSize)
+    .windowToolbarStyle(.unified)
   }
 }
 

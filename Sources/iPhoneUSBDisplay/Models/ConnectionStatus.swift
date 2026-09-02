@@ -20,9 +20,9 @@ enum ConnectionStatus: Equatable, Sendable {
   var title: String {
     switch self {
     case .noDevice:
-      "No iPhone found"
+      "No device found"
     case .waitingForUnlockOrTrust:
-      "Unlock iPhone and trust this Mac"
+      "Unlock the device and trust this Mac"
     case .connecting:
       "Connecting"
     case .connected:
@@ -30,7 +30,7 @@ enum ConnectionStatus: Equatable, Sendable {
     case .interrupted:
       "Connection interrupted"
     case .occupied:
-      "iPhone is in use"
+      "Device is in use"
     case .cameraPermissionDenied:
       "No camera permission"
     case .failed:
@@ -44,14 +44,14 @@ enum ConnectionStatus: Equatable, Sendable {
       nil
     case .waitingForUnlockOrTrust(let deviceName):
       deviceName.map { "Unlock \($0) and trust this Mac if prompted." }
-        ?? "Unlock the iPhone and trust this Mac if prompted."
+        ?? "Unlock the iPhone or iPad and trust this Mac if prompted."
     case .connecting(let deviceName):
       "Connecting to \(deviceName)…"
     case .connected(let deviceName):
       deviceName
     case .interrupted(let deviceName):
       deviceName.map { "Waiting for \($0) to reconnect…" }
-        ?? "Waiting for the iPhone to reconnect…"
+        ?? "Waiting for the device to reconnect…"
     case .occupied(let deviceName):
       "Close QuickTime, OBS, or another app using \(deviceName)."
     case .cameraPermissionDenied:
