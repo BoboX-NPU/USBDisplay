@@ -62,3 +62,35 @@
 - Measure the 30-minute stability, incoming/display frame rate, and end-to-end latency targets on a capable Mac, iPhone, and USB cable.
 - Confirm the external Apple USB muxed-device filter against the supported physical iPhone and macOS combinations.
 - Production signing, notarization, App Store packaging, and distribution remain outside this local MVP.
+
+## 2026-09-03 — Fix Physical iPhone Discovery
+
+### Summary
+
+- Diagnosed a connected physical iPhone that macOS and other capture applications could discover while iPhoneUSBDisplay showed no device.
+- Confirmed that AVFoundation exposed the Apple external muxed screen source without occupation, but reported its transport type as `Other` instead of USB.
+- Removed the unreliable strict USB transport comparison from the device filter while retaining external, Apple, and muxed-media requirements and keeping wireless screen discovery disabled.
+- Rebuilt and launched the application, then confirmed that it displayed the connected device name, connected status, and live portrait screen.
+
+### Affected Files
+
+- `Sources/iPhoneUSBDisplay/Models/DisplayDevice.swift`
+- `Sources/iPhoneUSBDisplay/Services/CaptureCoordinator.swift`
+- `Tests/iPhoneUSBDisplayTests/DeviceSelectionTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- macOS device inspection: Passed; the physical iPhone was connected and its AVFoundation screen source was external, Apple-manufactured, muxed, not suspended, and not occupied by another application.
+- `xcrun swift-format lint --recursive Sources Tests Package.swift`: Passed with no warnings.
+- `swift test --disable-sandbox -j 1`: Passed 14 tests across three suites.
+- `script/build_and_run.sh --verify`: Passed; the fixed app bundle was rebuilt, ad-hoc signed, launched, and its process was confirmed.
+- Running-app hardware check: Passed; the app showed the connected iPhone name, green connected status, and live portrait screen content.
+- `swift build --disable-sandbox -c release -j 1`: Passed.
+
+### Remaining Risks or Follow-up Work
+
+- Camera permission denial, orientation changes, hot unplug/replug, occupied-device recovery, and connected-state control hiding remain to be hardware-validated.
+- Multiple-device behavior still requires two physical iPhones.
+- The 30-minute soak, frame-rate measurement, and end-to-end latency measurement remain to be run.

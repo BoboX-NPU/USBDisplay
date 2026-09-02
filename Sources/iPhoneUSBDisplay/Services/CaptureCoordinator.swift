@@ -1,7 +1,6 @@
 @preconcurrency import AVFoundation
 @preconcurrency import CoreMediaIO
 import Foundation
-@preconcurrency import IOKit.audio
 
 final class CaptureCoordinator: @unchecked Sendable {
   typealias SnapshotHandler = @MainActor @Sendable (CaptureSnapshot) -> Void
@@ -492,8 +491,7 @@ final class CaptureCoordinator: @unchecked Sendable {
     CaptureDeviceDescriptor(
       isExternal: device.deviceType == .external,
       hasMuxedMedia: device.hasMediaType(.muxed),
-      manufacturer: device.manufacturer,
-      isUSB: device.transportType == Int32(kIOAudioDeviceTransportTypeUSB)
+      manufacturer: device.manufacturer
     )
   }
 }

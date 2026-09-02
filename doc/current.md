@@ -9,7 +9,8 @@ The application uses only public AVFoundation and CoreMediaIO APIs. It does not 
 ## Current Capabilities
 
 - Explicitly enables CoreMediaIO screen-capture-device discovery and disables wireless screen-capture discovery.
-- Discovers external Apple devices that provide muxed media over USB.
+- Discovers external Apple devices that provide muxed screen media while CoreMediaIO wireless screen discovery is disabled.
+- Accepts wired iPhone screen devices that macOS reports with the `Other` transport type instead of requiring the unreliable AVFoundation USB transport value.
 - Automatically selects a sole iPhone and preserves the last user selection when multiple eligible devices are present.
 - Displays the selected device through `AVCaptureVideoPreviewLayer` with aspect-fit scaling and a black background.
 - Keeps capture-session configuration and blocking start/stop operations off the main thread.
@@ -46,10 +47,12 @@ The application uses only public AVFoundation and CoreMediaIO APIs. It does not 
 - App launch: `script/build_and_run.sh --verify` completed successfully and confirmed the process.
 - Visual no-device UI: Verified in the running app, including the black canvas, required connection guidance, device/status controls, and window presentation.
 - Full screen: Verified entry and exit through the custom button and entry through a double-click on the preview surface; the full-screen background is black.
+- Connected physical iPhone discovery: Passed with a trusted USB-connected iPhone whose AVFoundation screen device reports external Apple muxed media and the `Other` transport type.
+- Live preview: Passed in the running app; the device name, connected status, and portrait iPhone screen were visibly displayed through the preview layer.
 
 ## Constraints and Outstanding Validation
 
-- A discoverable USB-connected iPhone was not available during implementation, so live capture, device naming, camera permission prompting, portrait/landscape changes, hot unplug/replug, occupied-device recovery, and connected-state control hiding are not yet hardware-validated.
+- Camera permission denial, portrait-to-landscape changes, hot unplug/replug, occupied-device recovery, and connected-state control hiding are not yet hardware-validated.
 - Two iPhones were not available, so the multiple-device picker is covered by policy tests but not hardware-validated.
 - The 30-minute soak, frame-rate measurement, and 240 fps latency measurement were not run.
 - DRM-protected content may display black; the app intentionally does not attempt to bypass platform content protection.

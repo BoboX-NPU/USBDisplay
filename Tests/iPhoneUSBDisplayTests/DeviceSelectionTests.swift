@@ -4,12 +4,11 @@ import Testing
 
 struct DeviceSelectionTests {
   @Test
-  func filtersForAppleUSBMuxedExternalDevices() {
+  func filtersForAppleMuxedExternalDevices() {
     let eligible = CaptureDeviceDescriptor(
       isExternal: true,
       hasMuxedMedia: true,
-      manufacturer: "Apple Inc.",
-      isUSB: true
+      manufacturer: "Apple Inc."
     )
 
     #expect(CaptureDeviceFilter.isEligible(eligible))
@@ -18,32 +17,21 @@ struct DeviceSelectionTests {
         .init(
           isExternal: false,
           hasMuxedMedia: true,
-          manufacturer: "Apple Inc.",
-          isUSB: true
+          manufacturer: "Apple Inc."
         )))
     #expect(
       !CaptureDeviceFilter.isEligible(
         .init(
           isExternal: true,
           hasMuxedMedia: false,
-          manufacturer: "Apple Inc.",
-          isUSB: true
+          manufacturer: "Apple Inc."
         )))
     #expect(
       !CaptureDeviceFilter.isEligible(
         .init(
           isExternal: true,
           hasMuxedMedia: true,
-          manufacturer: "Third Party",
-          isUSB: true
-        )))
-    #expect(
-      !CaptureDeviceFilter.isEligible(
-        .init(
-          isExternal: true,
-          hasMuxedMedia: true,
-          manufacturer: "Apple Inc.",
-          isUSB: false
+          manufacturer: "Third Party"
         )))
   }
 
