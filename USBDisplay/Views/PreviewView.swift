@@ -104,7 +104,7 @@ final class PreviewHostView: NSView {
       fromMetadataOutputRect: CGRect(x: 0, y: 0, width: 1, height: 1)
     )
     guard
-      let ratio = PreviewLayoutPolicy.validAspectRatio(
+      let ratio = WindowLayoutPolicy.validAspectRatio(
         width: pictureRect.width,
         height: pictureRect.height
       )

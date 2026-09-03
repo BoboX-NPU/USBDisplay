@@ -295,3 +295,58 @@
 - Validate live aspect-ratio changes during physical device rotation and verify that hot-unplugging one device does not affect the other live window.
 - Run a 30-minute two-window soak and external latency and frame-rate measurements if performance claims are required.
 - Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.
+
+## 2026-09-03 — Switch Devices In Place and Lock Window Proportions
+
+### Summary
+
+- Changed device row left-click behavior to switch the current window instead of opening another window.
+- Added an `Open in New Window` context-menu action and preserved one typed window per device; already-open devices are focused rather than duplicated.
+- Separated row tap handling from the context menu so a right-click cannot trigger the left-click device switch path.
+- Added atomic device ownership transfer so a failed switch to an already-owned device preserves the current window assignment.
+- Removed the 16-point white display inset and extended the black detail surface under a transparent full-size title bar while retaining standard window controls and the sidebar toggle.
+- Added sidebar-aware proportional window sizing that preserves height on device changes, constrains manual resizing, follows sidebar visibility and width, and fits the current display's visible area.
+- Kept native full screen outside the normal-window constraint so the complete source remains aspect-fit with black bars instead of being cropped.
+- Replaced the inset preview layout tests with window-sizing and routing coverage.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Models/DeviceWindowRoutingPolicy.swift`
+- `USBDisplay/Models/PreviewLayoutPolicy.swift`
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Services/AppModel.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/DisplayWindowScene.swift`
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplay/Views/SidebarView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/DeviceWindowRoutingTests.swift`
+- `USBDisplayTests/PreviewLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `xcrun swift-format lint --recursive USBDisplay USBDisplayTests`: Passed with no warnings.
+- Xcode Debug build: Passed.
+- Xcode Release build: Passed.
+- Xcode unit tests: Passed 26 tests across four suites.
+- The first sandboxed Xcode test invocation failed because `swift-plugin-server` could not return Observation macro implementations; the same test command passed when rerun outside the filesystem sandbox.
+- `script/build_and_run.sh --verify`: Passed; built and launched the application and confirmed the process.
+- `plutil -lint USBDisplay.xcodeproj/project.pbxproj Config/Info.plist Config/USBDisplay.entitlements`: Passed.
+- Strict ad-hoc signature verification and built entitlement inspection: Passed.
+- Running-app chrome check on macOS 27: Passed; the black detail surface reached the top window edge while standard window controls and the sidebar button remained usable.
+- Running-app sidebar check: Passed; collapsing the sidebar produced a continuous full-height black detail surface.
+- Running-app context-menu check: Passed; the menu appeared and reopening the current device reused its typed window.
+- Live source ratio, two-device left-click switching, opening a second device from the context menu, manual proportional resizing, physical rotation, hot unplug/replug, and full-screen aspect bars: Not run successfully because the current system capture helper remained in Connecting and only one iPad was enumerated.
+
+### Remaining Risks or Follow-up Work
+
+- Reconnect both devices after resetting the macOS capture helper, then validate left-click switching, context-menu multiwindow capture, live manual resizing, physical rotation, and sidebar-width changes.
+- Repeat the two-device concurrent test on other Mac, iPhone, iPad, cable, and macOS combinations because AVFoundation does not guarantee this topology.
+- Run a 30-minute two-window soak and external latency and frame-rate measurements if performance claims are required.
+- Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.

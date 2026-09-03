@@ -5,12 +5,13 @@ import Testing
 
 struct DeviceWindowRoutingTests {
   @Test
-  func firstDeviceUsesUnassignedWindow() {
+  func firstDeviceSwitchesIntoUnassignedWindow() {
     #expect(
       DeviceWindowRoutingPolicy.route(
         currentDeviceID: nil,
-        selectedDeviceID: "iphone"
-      ) == .assignCurrentWindow(deviceID: "iphone")
+        selectedDeviceID: "iphone",
+        selectedDeviceIsClaimedElsewhere: false
+      ) == .switchCurrentWindow(deviceID: "iphone")
     )
   }
 
@@ -19,18 +20,31 @@ struct DeviceWindowRoutingTests {
     #expect(
       DeviceWindowRoutingPolicy.route(
         currentDeviceID: "iphone",
-        selectedDeviceID: "iphone"
+        selectedDeviceID: "iphone",
+        selectedDeviceIsClaimedElsewhere: false
       ) == .keepCurrentWindow
     )
   }
 
   @Test
-  func anotherDeviceOpensItsOwnWindow() {
+  func unclaimedDeviceSwitchesInCurrentWindow() {
     #expect(
       DeviceWindowRoutingPolicy.route(
         currentDeviceID: "iphone",
-        selectedDeviceID: "ipad"
-      ) == .openDeviceWindow(deviceID: "ipad")
+        selectedDeviceID: "ipad",
+        selectedDeviceIsClaimedElsewhere: false
+      ) == .switchCurrentWindow(deviceID: "ipad")
+    )
+  }
+
+  @Test
+  func claimedDeviceFocusesExistingWindow() {
+    #expect(
+      DeviceWindowRoutingPolicy.route(
+        currentDeviceID: "iphone",
+        selectedDeviceID: "ipad",
+        selectedDeviceIsClaimedElsewhere: true
+      ) == .focusExistingWindow(deviceID: "ipad")
     )
   }
 
@@ -42,9 +56,44 @@ struct DeviceWindowRoutingTests {
 
     #expect(registry.claim(deviceID: "iphone", windowID: firstWindow))
     #expect(!registry.claim(deviceID: "iphone", windowID: secondWindow))
-    #expect(registry.isClaimed("iphone"))
+    #expect(registry.isClaimed("iphone", byAnotherWindowThan: secondWindow))
+    #expect(!registry.isClaimed("iphone", byAnotherWindowThan: firstWindow))
 
     registry.release(deviceID: "iphone", windowID: firstWindow)
     #expect(registry.claim(deviceID: "iphone", windowID: secondWindow))
+  }
+
+  @Test @MainActor
+  func transferClaimsNewDeviceAndReleasesOldDevice() {
+    let registry = DeviceWindowRegistry()
+    let window = UUID()
+    let otherWindow = UUID()
+
+    #expect(registry.claim(deviceID: "iphone", windowID: window))
+    #expect(
+      registry.transfer(
+        from: "iphone",
+        to: "ipad",
+        windowID: window
+      ))
+    #expect(!registry.isClaimed("iphone", byAnotherWindowThan: otherWindow))
+    #expect(registry.isClaimed("ipad", byAnotherWindowThan: otherWindow))
+  }
+
+  @Test @MainActor
+  func failedTransferPreservesCurrentDeviceOwnership() {
+    let registry = DeviceWindowRegistry()
+    let firstWindow = UUID()
+    let secondWindow = UUID()
+
+    #expect(registry.claim(deviceID: "iphone", windowID: firstWindow))
+    #expect(registry.claim(deviceID: "ipad", windowID: secondWindow))
+    #expect(
+      !registry.transfer(
+        from: "iphone",
+        to: "ipad",
+        windowID: firstWindow
+      ))
+    #expect(registry.isClaimed("iphone", byAnotherWindowThan: secondWindow))
   }
 }

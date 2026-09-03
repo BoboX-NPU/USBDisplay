@@ -14,7 +14,6 @@ struct IPhoneUSBDisplayApp: App {
         catalog: catalog,
         windowRegistry: windowRegistry
       )
-      .frame(minWidth: 700, minHeight: 520)
     }
     .defaultSize(width: 980, height: 720)
     .windowResizability(.contentMinSize)

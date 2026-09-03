@@ -6,33 +6,21 @@ struct DisplayCanvasView: View {
   let hasAvailableDevices: Bool
 
   var body: some View {
-    GeometryReader { geometry in
-      let previewSize = PreviewLayoutPolicy.fittedSize(
-        containerWidth: geometry.size.width,
-        containerHeight: geometry.size.height,
-        aspectRatio: model.previewAspectRatio
+    ZStack {
+      Color.black
+
+      PreviewView(
+        session: model.session,
+        onAspectRatioChanged: model.updatePreviewAspectRatio
       )
 
-      ZStack {
-        Color(nsColor: .windowBackgroundColor)
-
-        ZStack {
-          Color.black
-
-          PreviewView(
-            session: model.session,
-            onAspectRatioChanged: model.updatePreviewAspectRatio
-          )
-
-          if !model.status.isConnected {
-            emptyState
-              .transition(.opacity)
-          }
-        }
-        .frame(width: previewSize.width, height: previewSize.height)
-        .clipped()
+      if !model.status.isConnected {
+        emptyState
+          .transition(.opacity)
       }
     }
+    .clipped()
+    .ignoresSafeArea(.container, edges: .top)
   }
 
   private var emptyState: some View {

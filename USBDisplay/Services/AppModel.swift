@@ -10,6 +10,7 @@ final class AppModel {
   private(set) var status: ConnectionStatus = .noDevice
   private(set) var columnVisibility = NavigationSplitViewVisibility.all
   private(set) var previewAspectRatio: Double?
+  private(set) var sidebarWidth = 220.0
 
   @ObservationIgnored private var coordinator: CaptureCoordinator!
 
@@ -44,8 +45,13 @@ final class AppModel {
     columnVisibility = visibility
   }
 
+  func updateSidebarWidth(_ width: Double) {
+    guard width.isFinite, width > 0, abs(sidebarWidth - width) >= 0.5 else { return }
+    sidebarWidth = width
+  }
+
   func updatePreviewAspectRatio(width: Double, height: Double) {
-    guard let ratio = PreviewLayoutPolicy.validAspectRatio(width: width, height: height) else {
+    guard let ratio = WindowLayoutPolicy.validAspectRatio(width: width, height: height) else {
       return
     }
 

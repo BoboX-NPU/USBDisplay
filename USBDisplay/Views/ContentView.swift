@@ -1,17 +1,19 @@
-import AppKit
 import SwiftUI
 
 struct ContentView: View {
   @Bindable var model: AppModel
   let devices: [DisplayDevice]
   let onSelectDevice: (String) -> Void
+  let onOpenDeviceInNewWindow: (String) -> Void
 
   var body: some View {
     NavigationSplitView(columnVisibility: columnVisibility) {
       SidebarView(
         devices: devices,
         selectedDeviceID: model.selectedDeviceID,
-        onSelectDevice: onSelectDevice
+        onSelectDevice: onSelectDevice,
+        onOpenDeviceInNewWindow: onOpenDeviceInNewWindow,
+        onWidthChanged: model.updateSidebarWidth
       )
     } detail: {
       DisplayCanvasView(
@@ -20,7 +22,14 @@ struct ContentView: View {
       )
     }
     .navigationSplitViewStyle(.balanced)
-    .background(WindowTitleConfiguration(title: logicalWindowTitle))
+    .background(
+      WindowLayoutCoordinator(
+        title: logicalWindowTitle,
+        aspectRatio: model.previewAspectRatio,
+        sidebarWidth: model.sidebarWidth,
+        sidebarIsVisible: model.columnVisibility != .detailOnly
+      )
+    )
   }
 
   private var logicalWindowTitle: String {
@@ -34,38 +43,5 @@ struct ContentView: View {
         model.setColumnVisibility(visibility)
       }
     )
-  }
-}
-
-private struct WindowTitleConfiguration: NSViewRepresentable {
-  let title: String
-
-  func makeNSView(context: Context) -> WindowTitleConfigurationView {
-    let view = WindowTitleConfigurationView()
-    view.title = title
-    return view
-  }
-
-  func updateNSView(_ nsView: WindowTitleConfigurationView, context: Context) {
-    nsView.title = title
-    nsView.applyConfiguration()
-  }
-}
-
-@MainActor
-private final class WindowTitleConfigurationView: NSView {
-  var title = "USB Display"
-
-  override func viewDidMoveToWindow() {
-    super.viewDidMoveToWindow()
-    applyConfiguration()
-    DispatchQueue.main.async { [weak self] in
-      self?.applyConfiguration()
-    }
-  }
-
-  func applyConfiguration() {
-    window?.title = title
-    window?.titleVisibility = .hidden
   }
 }

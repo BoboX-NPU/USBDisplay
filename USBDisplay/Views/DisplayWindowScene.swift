@@ -24,7 +24,8 @@ struct DisplayWindowScene: View {
     ContentView(
       model: model,
       devices: catalog.devices,
-      onSelectDevice: selectDevice
+      onSelectDevice: selectDevice,
+      onOpenDeviceInNewWindow: openDeviceInNewWindow
     )
     .onAppear {
       catalog.start()
@@ -47,10 +48,20 @@ struct DisplayWindowScene: View {
   private func selectDevice(_ selectedDeviceID: String) {
     switch DeviceWindowRoutingPolicy.route(
       currentDeviceID: deviceID,
-      selectedDeviceID: selectedDeviceID
+      selectedDeviceID: selectedDeviceID,
+      selectedDeviceIsClaimedElsewhere: windowRegistry.isClaimed(
+        selectedDeviceID,
+        byAnotherWindowThan: windowID
+      )
     ) {
-    case .assignCurrentWindow(let deviceID):
-      guard windowRegistry.claim(deviceID: deviceID, windowID: windowID) else {
+    case .switchCurrentWindow(let deviceID):
+      guard
+        windowRegistry.transfer(
+          from: self.deviceID,
+          to: deviceID,
+          windowID: windowID
+        )
+      else {
         openWindow(id: "display", value: deviceID)
         return
       }
@@ -60,8 +71,12 @@ struct DisplayWindowScene: View {
     case .keepCurrentWindow:
       break
 
-    case .openDeviceWindow(let deviceID):
+    case .focusExistingWindow(let deviceID):
       openWindow(id: "display", value: deviceID)
     }
+  }
+
+  private func openDeviceInNewWindow(_ deviceID: String) {
+    openWindow(id: "display", value: deviceID)
   }
 }

@@ -1,22 +1,26 @@
 import Foundation
 
 enum DeviceWindowRoute: Equatable, Sendable {
-  case assignCurrentWindow(deviceID: String)
   case keepCurrentWindow
-  case openDeviceWindow(deviceID: String)
+  case switchCurrentWindow(deviceID: String)
+  case focusExistingWindow(deviceID: String)
 }
 
 enum DeviceWindowRoutingPolicy {
-  static func route(currentDeviceID: String?, selectedDeviceID: String) -> DeviceWindowRoute {
-    guard let currentDeviceID else {
-      return .assignCurrentWindow(deviceID: selectedDeviceID)
-    }
-
+  static func route(
+    currentDeviceID: String?,
+    selectedDeviceID: String,
+    selectedDeviceIsClaimedElsewhere: Bool
+  ) -> DeviceWindowRoute {
     if currentDeviceID == selectedDeviceID {
       return .keepCurrentWindow
     }
 
-    return .openDeviceWindow(deviceID: selectedDeviceID)
+    if selectedDeviceIsClaimedElsewhere {
+      return .focusExistingWindow(deviceID: selectedDeviceID)
+    }
+
+    return .switchCurrentWindow(deviceID: selectedDeviceID)
   }
 }
 
@@ -38,7 +42,24 @@ final class DeviceWindowRegistry {
     ownersByDeviceID.removeValue(forKey: deviceID)
   }
 
-  func isClaimed(_ deviceID: String) -> Bool {
-    ownersByDeviceID[deviceID] != nil
+  func isClaimed(_ deviceID: String, byAnotherWindowThan windowID: UUID) -> Bool {
+    guard let owner = ownersByDeviceID[deviceID] else { return false }
+    return owner != windowID
+  }
+
+  func transfer(
+    from currentDeviceID: String?,
+    to selectedDeviceID: String,
+    windowID: UUID
+  ) -> Bool {
+    if let owner = ownersByDeviceID[selectedDeviceID], owner != windowID {
+      return false
+    }
+
+    ownersByDeviceID[selectedDeviceID] = windowID
+    if let currentDeviceID, currentDeviceID != selectedDeviceID {
+      release(deviceID: currentDeviceID, windowID: windowID)
+    }
+    return true
   }
 }
