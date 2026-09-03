@@ -22,8 +22,10 @@ The application uses only public AVFoundation and CoreMediaIO APIs. It does not 
 - Preserves the current height when the device ratio changes and adjusts width, shrinking proportionally when the result would exceed the current display's visible area.
 - Constrains manual window resizing to the source ratio while accounting for the current sidebar width; sidebar collapse, expansion, and width changes resize the outer window instead of squeezing the preview.
 - Uses a native `NavigationSplitView` with a collapsible system sidebar containing only device names and selection state.
-- Uses a separate native title bar with its system background and separator, keeps the logical window title visually hidden, and places the sidebar and display surface below it.
-- Keeps the native close, minimize, and zoom buttons visible while the sidebar is expanded. When the sidebar is collapsed, the buttons appear while the pointer is inside the title bar and hide 0.5 seconds after it leaves; the system sidebar button remains visible.
+- Uses a separate native title bar with its system background and separator while the sidebar is visible, keeps the logical window title visually hidden, and places the sidebar and display surface below it.
+- Collapses the complete title bar when the sidebar is hidden, including its material, separator, traffic-light buttons, toolbar, and sidebar button, so the compact window contains only the device display surface.
+- Reveals the complete native title bar when the pointer enters the compact window's full-width 8-point top region. The revealed region includes the title bar and an 8-point bridge below it; leaving that region collapses the title bar after 0.5 seconds, while re-entering cancels the pending collapse.
+- Measures the native title-bar height at runtime and animates the outer frame over 0.15 seconds. The temporary title bar adds space above the display surface instead of covering or resizing it, and the compact frame is restored after collapse.
 - Uses aspect-fit black bars only as the explicit native full-screen exception, where the display ratio cannot be changed to match the device.
 - Reports no-device, unlock-or-trust, connecting, connected, interrupted, occupied, device-unavailable, camera-permission, and general failure states within the display surface.
 - Retries suspended, occupied, interrupted, and transiently failed devices with bounded delays local to that window.
@@ -37,8 +39,8 @@ The application uses only public AVFoundation and CoreMediaIO APIs. It does not 
 - `AppModel` owns one window's selected device ID, sidebar presentation and measured width, live aspect ratio, and capture coordinator.
 - `CaptureCoordinator` owns one window's independent capture session, permission handling, connection state, reconnect handling, stabilized connection reporting, and bounded retries.
 - `PreviewHostView` is the narrow AppKit bridge that hosts `AVCaptureVideoPreviewLayer` and measures its effective content rectangle.
-- `WindowLayoutPolicy` provides testable aspect validation, sidebar-aware sizing, screen-bound fitting, manual-resize correction, and the full-screen exception.
-- `WindowLayoutCoordinator` is the narrow AppKit window bridge that applies native title-bar chrome, tracks title-bar hover per window, manages the three standard window buttons, observes window and screen changes, and corrects the `NSWindow` frame without replacing SwiftUI's window ownership.
+- `WindowLayoutPolicy` provides testable aspect validation, sidebar-aware sizing, screen-bound fitting, manual-resize correction, the three-state window-chrome policy, title-bar frame compensation, and the full-screen exception.
+- `WindowLayoutCoordinator` is the narrow AppKit window bridge that applies compact or native title-bar chrome, tracks the local top-edge reveal region per window, measures title-bar decoration, preserves the display size through chrome transitions, observes window and screen changes, and corrects the `NSWindow` frame without replacing SwiftUI's window ownership.
 - Pure device filtering, device-window routing, ownership transfer, proportional window layout, error classification, and retry behavior are covered by Swift Testing tests.
 
 ## Public API Boundaries
@@ -61,13 +63,14 @@ A previously tested `AVCaptureVideoDataOutput` and `AVSampleBufferDisplayLayer` 
 - Swift format lint: Passed with no warnings.
 - Xcode Debug build: Passed.
 - Xcode Release build: Passed.
-- Xcode unit tests: 32 tests passed across four suites.
+- Xcode unit tests: 36 tests passed across four suites.
 - Debug build and process verification: Passed through `script/build_and_run.sh --verify`.
 - Project file, Info.plist, and entitlements property-list lint: Passed.
 - Built application signature: Passed strict ad-hoc `codesign` verification; the camera-device entitlement is present.
-- Running-app title-bar check on macOS 27: Passed. The native title bar and separator are visible, the logical title remains visually hidden, and the display surface begins below the title bar.
-- Running-app sidebar and hover check: Passed. The three standard window buttons remain visible with the sidebar expanded, disappear when it is collapsed, reappear when the pointer enters the title bar, and hide again after the pointer leaves. The system sidebar button remains visible throughout.
-- Native full-screen round trip: Passed. The system hid its title-bar controls in full screen and restored the correct expanded-sidebar state after exit.
+- Running-app compact-chrome check on macOS 27: Passed. Collapsing the sidebar removed the full title-bar material, separator, traffic lights, toolbar, and sidebar button; no residual safe-area strip remained above the black display surface.
+- Running-app hover check: Passed. Entering the full-width top region restored the complete native title bar and leaving it restored compact chrome after the delay. The same window measured 981 x 676 points when compact, 981 x 728 points while revealed, and 981 x 676 points after collapse, confirming a measured 52-point decoration increase without changing display width or height.
+- Running-app multiwindow chrome check: Passed. Two typed windows were present and retained independent sidebar and title-bar appearance state.
+- Native full-screen round trip: Passed. The system managed its full-screen chrome and restored the correct expanded-sidebar state after exit.
 - Running-app context-menu check: Passed. `Open in New Window` is available and selecting it for the current device focuses the existing typed window instead of creating a duplicate.
 - The connected iPhone produced a live preview during the initial title-bar check. After later rebuilds, the system capture helper remained in Connecting, so live aspect-ratio resizing, physical rotation, and updated two-device behavior were not revalidated in the final build.
 
@@ -77,7 +80,8 @@ A previously tested `AVCaptureVideoDataOutput` and `AVSampleBufferDisplayLayer` 
 - Normal-window sizing is driven by the effective live preview rectangle. Until a valid stream ratio is available, the window keeps its current size and shows the black connection surface.
 - Dynamic physical rotation, free-edge resize behavior with a live stream, sidebar-width changes with a live stream, hot unplug/replug, camera permission denial, occupied-device recovery, and a 30-minute two-window soak remain to be run.
 - Native full screen cannot simultaneously match an arbitrary device ratio and the fixed display ratio; the application preserves the complete image and uses black bars in that mode.
-- Title-bar hover is monitored only inside each application window and does not require a global event monitor or Accessibility permission.
+- Compact title-bar reveal is monitored only through local events and tracking areas inside each application window and does not require a global event monitor or Accessibility permission.
+- The temporary sidebar button was present and enabled in the revealed native toolbar during the running-app inspection, but activating it from that temporary state was not conclusively revalidated after the final rebuild.
 - End-to-end latency and sustained frame rate were not measured. The direct-preview path does not expose the required timing data.
 - The local build is ad-hoc signed because no valid development signing identity is installed. Xcode disables hardened runtime for the Debug ad-hoc build, and rebuilds may require camera permission again.
 - DRM-protected content may display black; the app intentionally does not bypass platform protection.

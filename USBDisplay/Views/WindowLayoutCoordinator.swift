@@ -42,21 +42,24 @@ private struct WindowLayoutConfiguration: Equatable {
 final class WindowLayoutHostView: NSView {
   private var configuration: WindowLayoutConfiguration
   private weak var observedWindow: NSWindow?
-  private weak var titlebarTrackingView: NSView?
-  private var titlebarTrackingArea: NSTrackingArea?
-  private var titlebarRectInWindow = CGRect.zero
+  private weak var chromeTrackingView: NSView?
+  private var chromeTrackingArea: NSTrackingArea?
+  private var revealRegionInWindow = CGRect.zero
   private var observers: [NSObjectProtocol] = []
   private var lastFrame: CGRect?
   private var lastContentSize: CGSize?
   private var isApplyingFrame = false
-  private var hideWindowButtonsWorkItem: DispatchWorkItem?
-  private var controlsVisibilityState: WindowControlsVisibilityState
+  private var hideChromeWorkItem: DispatchWorkItem?
+  private var chromeVisibilityState: WindowChromeVisibilityState
   private var mouseEventMonitor: Any?
   private var windowPreviouslyAcceptedMouseMovedEvents = false
+  private var measuredTitlebarHeight = 0.0
+  private var compactFrameBeforeHover: CGRect?
+  private var chromeTransitionGeneration = 0
 
   fileprivate init(configuration: WindowLayoutConfiguration) {
     self.configuration = configuration
-    controlsVisibilityState = WindowControlsVisibilityState(
+    chromeVisibilityState = WindowChromeVisibilityState(
       sidebarIsVisible: configuration.sidebarIsVisible
     )
     super.init(frame: .zero)
@@ -76,10 +79,15 @@ final class WindowLayoutHostView: NSView {
 
     observedWindow = window
     installObservers(for: window)
-    applyChrome(to: window)
-    installTitlebarTrackingArea(for: window)
     installMouseEventMonitor(for: window)
-    synchronizeWindowControls(for: window)
+    measuredTitlebarHeight = currentWindowDecorationHeight(of: window)
+    applyChromeMode(
+      chromeVisibilityState.mode,
+      to: window,
+      preservingContentSize: true,
+      animated: false
+    )
+    refreshChromeTrackingArea()
     rememberCurrentGeometry(of: window)
     scheduleProportionalLayout(animated: false)
   }
@@ -90,17 +98,22 @@ final class WindowLayoutHostView: NSView {
       || abs(configuration.sidebarWidth - newConfiguration.sidebarWidth) >= 0.5
       || configuration.sidebarIsVisible != newConfiguration.sidebarIsVisible
 
+    let sidebarVisibilityChanged =
+      configuration.sidebarIsVisible != newConfiguration.sidebarIsVisible
     configuration = newConfiguration
     guard let window = observedWindow else { return }
-    applyChrome(to: window)
+    window.title = newConfiguration.title
+    window.titleVisibility = .hidden
 
-    if controlsVisibilityState.sidebarIsVisible != newConfiguration.sidebarIsVisible {
-      cancelPendingWindowButtonHide()
-      controlsVisibilityState.updateSidebarVisibility(
-        newConfiguration.sidebarIsVisible,
-        pointerIsInsideTitlebar: pointerIsInsideTitlebar(of: window)
+    if sidebarVisibilityChanged {
+      cancelPendingChromeHide()
+      chromeVisibilityState.updateSidebarVisibility(newConfiguration.sidebarIsVisible)
+      applyChromeMode(
+        chromeVisibilityState.mode,
+        to: window,
+        preservingContentSize: true,
+        animated: true
       )
-      applyWindowControlsVisibility(to: window)
     }
 
     if layoutChanged {
@@ -122,6 +135,15 @@ final class WindowLayoutHostView: NSView {
       ) { [weak self] _ in
         Task { @MainActor in
           self?.handleWindowResize()
+        }
+      },
+      center.addObserver(
+        forName: NSWindow.didMoveNotification,
+        object: window,
+        queue: .main
+      ) { [weak self] _ in
+        Task { @MainActor in
+          self?.handleWindowMove()
         }
       },
       center.addObserver(
@@ -149,7 +171,7 @@ final class WindowLayoutHostView: NSView {
         queue: .main
       ) { [weak self] _ in
         Task { @MainActor in
-          self?.refreshTitlebarTrackingArea()
+          self?.refreshChromeTrackingArea()
           self?.scheduleProportionalLayout(animated: false)
         }
       },
@@ -157,53 +179,38 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func detachFromWindow() {
-    cancelPendingWindowButtonHide()
+    cancelPendingChromeHide()
+    chromeTransitionGeneration += 1
     if let observedWindow {
-      setStandardWindowButtons(hidden: false, in: observedWindow)
+      restoreNativeChrome(in: observedWindow)
       observedWindow.acceptsMouseMovedEvents = windowPreviouslyAcceptedMouseMovedEvents
     }
     removeMouseEventMonitor()
-    removeTitlebarTrackingArea()
+    removeChromeTrackingArea()
     observers.forEach(NotificationCenter.default.removeObserver)
     observers.removeAll()
     observedWindow = nil
     lastFrame = nil
     lastContentSize = nil
-  }
-
-  private func applyChrome(to window: NSWindow) {
-    window.title = configuration.title
-    window.titleVisibility = .hidden
-    window.styleMask.remove(.fullSizeContentView)
-    window.titlebarAppearsTransparent = false
-    window.titlebarSeparatorStyle = .automatic
-    window.toolbar?.showsBaselineSeparator = true
+    compactFrameBeforeHover = nil
   }
 
   override func mouseEntered(with event: NSEvent) {
-    guard event.trackingArea === titlebarTrackingArea, let window = observedWindow else {
+    guard event.trackingArea === chromeTrackingArea, let window = observedWindow else {
       super.mouseEntered(with: event)
       return
     }
 
-    cancelPendingWindowButtonHide()
-    controlsVisibilityState.pointerEnteredTitlebar()
-    applyWindowControlsVisibility(to: window)
+    revealChromeIfNeeded(in: window)
   }
 
   override func mouseExited(with event: NSEvent) {
-    guard event.trackingArea === titlebarTrackingArea, let window = observedWindow else {
+    guard event.trackingArea === chromeTrackingArea, let window = observedWindow else {
       super.mouseExited(with: event)
       return
     }
 
-    guard controlsVisibilityState.pointerExitedTitlebar() else {
-      applyWindowControlsVisibility(to: window)
-      return
-    }
-
-    applyWindowControlsVisibility(to: window)
-    scheduleWindowButtonHide(for: window)
+    scheduleChromeHideIfNeeded(in: window)
   }
 
   private func scheduleProportionalLayout(animated: Bool) {
@@ -213,6 +220,15 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func applyProportionalLayoutPreservingHeight(animated: Bool) {
+    if isApplyingFrame {
+      DispatchQueue.main.asyncAfter(
+        deadline: .now() + WindowChromeVisibilityState.animationDuration
+      ) { [weak self] in
+        self?.applyProportionalLayoutPreservingHeight(animated: animated)
+      }
+      return
+    }
+
     guard
       let window = observedWindow,
       let aspectRatio = configuration.aspectRatio,
@@ -243,7 +259,7 @@ final class WindowLayoutHostView: NSView {
 
   private func handleWindowResize() {
     guard let window = observedWindow, !isApplyingFrame else { return }
-    refreshTitlebarTrackingArea()
+    refreshChromeTrackingArea()
     guard
       let aspectRatio = configuration.aspectRatio,
       WindowLayoutPolicy.shouldConstrainWindow(
@@ -253,6 +269,7 @@ final class WindowLayoutHostView: NSView {
       let proposedSize = currentContentSize(of: window)
     else {
       rememberCurrentGeometry(of: window)
+      updateCompactFrameForCurrentHoverGeometry(of: window)
       return
     }
 
@@ -280,6 +297,7 @@ final class WindowLayoutHostView: NSView {
       abs(desiredSize.height - proposedSize.height) < 1
     {
       rememberCurrentGeometry(of: window)
+      updateCompactFrameForCurrentHoverGeometry(of: window)
       return
     }
 
@@ -289,6 +307,13 @@ final class WindowLayoutHostView: NSView {
       anchoringAgainst: lastFrame,
       animated: false
     )
+    updateCompactFrameForCurrentHoverGeometry(of: window)
+  }
+
+  private func handleWindowMove() {
+    guard let window = observedWindow, !isApplyingFrame else { return }
+    updateCompactFrameForCurrentHoverGeometry(of: window)
+    rememberCurrentGeometry(of: window)
   }
 
   private func apply(
@@ -332,89 +357,211 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func handleDidEnterFullScreen() {
-    cancelPendingWindowButtonHide()
-    removeTitlebarTrackingArea()
+    cancelPendingChromeHide()
+    chromeTransitionGeneration += 1
+    removeChromeTrackingArea()
   }
 
   private func handleDidExitFullScreen() {
     guard let window = observedWindow else { return }
-    installTitlebarTrackingArea(for: window)
-    synchronizeWindowControls(for: window)
-  }
-
-  private func synchronizeWindowControls(for window: NSWindow) {
-    cancelPendingWindowButtonHide()
-    controlsVisibilityState.updateSidebarVisibility(
-      configuration.sidebarIsVisible,
-      pointerIsInsideTitlebar: pointerIsInsideTitlebar(of: window)
+    chromeVisibilityState.updateSidebarVisibility(configuration.sidebarIsVisible)
+    applyChromeMode(
+      chromeVisibilityState.mode,
+      to: window,
+      preservingContentSize: true,
+      animated: false
     )
-    applyWindowControlsVisibility(to: window)
+    refreshChromeTrackingArea()
   }
 
   private func updatePointerLocation(_ location: CGPoint, in window: NSWindow) {
-    let isInsideTitlebar = titlebarRectInWindow.contains(location)
-
-    if isInsideTitlebar, !controlsVisibilityState.pointerIsInsideTitlebar {
-      cancelPendingWindowButtonHide()
-      controlsVisibilityState.pointerEnteredTitlebar()
-      applyWindowControlsVisibility(to: window)
+    guard !configuration.sidebarIsVisible, !window.styleMask.contains(.fullScreen) else {
       return
     }
 
-    if !isInsideTitlebar, controlsVisibilityState.pointerIsInsideTitlebar {
-      guard controlsVisibilityState.pointerExitedTitlebar() else {
-        applyWindowControlsVisibility(to: window)
-        return
-      }
-
-      applyWindowControlsVisibility(to: window)
-      scheduleWindowButtonHide(for: window)
+    if revealRegionInWindow.contains(location) {
+      revealChromeIfNeeded(in: window)
+    } else if chromeVisibilityState.mode == .hoverRevealed {
+      scheduleChromeHideIfNeeded(in: window)
     }
   }
 
-  private func applyWindowControlsVisibility(to window: NSWindow) {
-    guard !window.styleMask.contains(.fullScreen) else { return }
-    setStandardWindowButtons(
-      hidden: !controlsVisibilityState.showsStandardButtons,
-      in: window
+  private func revealChromeIfNeeded(in window: NSWindow) {
+    guard
+      !configuration.sidebarIsVisible,
+      !window.styleMask.contains(.fullScreen)
+    else {
+      return
+    }
+
+    cancelPendingChromeHide()
+    guard chromeVisibilityState.mode == .compact else { return }
+    chromeVisibilityState.pointerEnteredTopRegion()
+    applyChromeMode(
+      chromeVisibilityState.mode,
+      to: window,
+      preservingContentSize: true,
+      animated: true
     )
   }
 
-  private func setStandardWindowButtons(hidden: Bool, in window: NSWindow) {
-    let buttons: [NSWindow.ButtonType] = [
-      .closeButton,
-      .miniaturizeButton,
-      .zoomButton,
-    ]
-    for buttonType in buttons {
-      window.standardWindowButton(buttonType)?.isHidden = hidden
-    }
-  }
-
-  private func scheduleWindowButtonHide(for window: NSWindow) {
-    cancelPendingWindowButtonHide()
+  private func scheduleChromeHideIfNeeded(in window: NSWindow) {
+    guard chromeVisibilityState.pointerExitedRevealRegion() else { return }
+    cancelPendingChromeHide()
 
     let workItem = DispatchWorkItem { [weak self, weak window] in
       guard let self, let window else { return }
       MainActor.assumeIsolated {
-        self.hideWindowButtonsWorkItem = nil
-        self.controlsVisibilityState.hideDelayElapsed()
-        if self.pointerIsInsideTitlebar(of: window) {
-          self.controlsVisibilityState.pointerEnteredTitlebar()
+        self.hideChromeWorkItem = nil
+        guard
+          !self.configuration.sidebarIsVisible,
+          !self.revealRegionInWindow.contains(window.mouseLocationOutsideOfEventStream)
+        else {
+          self.chromeVisibilityState.pointerEnteredTopRegion()
+          return
         }
-        self.applyWindowControlsVisibility(to: window)
+
+        self.chromeVisibilityState.hideDelayElapsed()
+        self.applyChromeMode(
+          self.chromeVisibilityState.mode,
+          to: window,
+          preservingContentSize: true,
+          animated: true
+        )
       }
     }
-    hideWindowButtonsWorkItem = workItem
+    hideChromeWorkItem = workItem
     DispatchQueue.main.asyncAfter(
-      deadline: .now() + WindowControlsVisibilityState.hideDelay,
+      deadline: .now() + WindowChromeVisibilityState.hideDelay,
       execute: workItem
     )
   }
 
-  private func cancelPendingWindowButtonHide() {
-    hideWindowButtonsWorkItem?.cancel()
-    hideWindowButtonsWorkItem = nil
+  private func cancelPendingChromeHide() {
+    hideChromeWorkItem?.cancel()
+    hideChromeWorkItem = nil
+  }
+
+  private func applyChromeMode(
+    _ mode: WindowChromeMode,
+    to window: NSWindow,
+    preservingContentSize: Bool,
+    animated: Bool
+  ) {
+    guard !window.styleMask.contains(.fullScreen) else { return }
+    let originalFrame = window.frame
+    let wasCompact = window.styleMask.contains(.fullSizeContentView)
+
+    if !wasCompact {
+      measuredTitlebarHeight = max(
+        currentWindowDecorationHeight(of: window),
+        measuredTitlebarHeight
+      )
+    }
+
+    if mode == .hoverRevealed {
+      compactFrameBeforeHover = originalFrame
+    } else if mode == .sidebarVisible {
+      compactFrameBeforeHover = nil
+    }
+
+    window.title = configuration.title
+    window.titleVisibility = .hidden
+    switch mode {
+    case .sidebarVisible, .hoverRevealed:
+      window.styleMask.remove(.fullSizeContentView)
+      window.titlebarAppearsTransparent = false
+      window.titlebarSeparatorStyle = .automatic
+      window.toolbar?.isVisible = true
+      window.toolbar?.showsBaselineSeparator = true
+      setTitlebarButtons(hidden: false, in: window)
+
+    case .compact:
+      window.styleMask.insert(.fullSizeContentView)
+      window.titlebarAppearsTransparent = true
+      window.titlebarSeparatorStyle = .none
+      window.toolbar?.showsBaselineSeparator = false
+      window.toolbar?.isVisible = false
+      setTitlebarButtons(hidden: true, in: window)
+    }
+
+    window.contentView?.layoutSubtreeIfNeeded()
+    window.contentView?.superview?.layoutSubtreeIfNeeded()
+
+    guard preservingContentSize else {
+      refreshChromeTrackingArea()
+      return
+    }
+
+    var targetFrame = originalFrame
+    if mode == .compact, !wasCompact {
+      targetFrame.size.height = max(originalFrame.height - measuredTitlebarHeight, 1)
+    } else if mode != .compact, wasCompact {
+      targetFrame.size.height += measuredTitlebarHeight
+    }
+
+    if mode == .hoverRevealed {
+      targetFrame =
+        WindowLayoutPolicy.frameByRevealingTitlebar(
+          compactFrame: originalFrame,
+          titlebarHeight: measuredTitlebarHeight,
+          visibleFrame: window.screen?.visibleFrame
+        ) ?? targetFrame
+    } else if mode == .compact, let compactFrameBeforeHover {
+      targetFrame.origin = compactFrameBeforeHover.origin
+      self.compactFrameBeforeHover = nil
+    }
+
+    applyChromeFrame(targetFrame, to: window, animated: animated)
+  }
+
+  private func applyChromeFrame(_ frame: CGRect, to window: NSWindow, animated: Bool) {
+    chromeTransitionGeneration += 1
+    let generation = chromeTransitionGeneration
+    isApplyingFrame = true
+
+    guard animated else {
+      window.setFrame(frame, display: true)
+      isApplyingFrame = false
+      rememberCurrentGeometry(of: window)
+      refreshChromeTrackingArea()
+      return
+    }
+
+    NSAnimationContext.runAnimationGroup { context in
+      context.duration = WindowChromeVisibilityState.animationDuration
+      context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+      window.animator().setFrame(frame, display: true)
+    } completionHandler: { [weak self, weak window] in
+      guard let self, let window else { return }
+      MainActor.assumeIsolated {
+        guard generation == self.chromeTransitionGeneration else { return }
+        self.isApplyingFrame = false
+        self.rememberCurrentGeometry(of: window)
+        self.refreshChromeTrackingArea()
+      }
+    }
+  }
+
+  private func restoreNativeChrome(in window: NSWindow) {
+    window.styleMask.remove(.fullSizeContentView)
+    window.titlebarAppearsTransparent = false
+    window.titlebarSeparatorStyle = .automatic
+    window.toolbar?.isVisible = true
+    window.toolbar?.showsBaselineSeparator = true
+    setTitlebarButtons(hidden: false, in: window)
+  }
+
+  private func setTitlebarButtons(hidden: Bool, in window: NSWindow) {
+    let buttons: [NSWindow.ButtonType] = [
+      .closeButton,
+      .miniaturizeButton,
+      .zoomButton,
+      .toolbarButton,
+    ]
+    for buttonType in buttons {
+      window.standardWindowButton(buttonType)?.isHidden = hidden
+    }
   }
 
   private func installMouseEventMonitor(for window: NSWindow) {
@@ -440,49 +587,85 @@ final class WindowLayoutHostView: NSView {
     mouseEventMonitor = nil
   }
 
-  private func refreshTitlebarTrackingArea() {
+  private func refreshChromeTrackingArea() {
     guard let window = observedWindow, !window.styleMask.contains(.fullScreen) else {
-      removeTitlebarTrackingArea()
+      removeChromeTrackingArea()
       return
     }
-    installTitlebarTrackingArea(for: window)
+    installChromeTrackingArea(for: window)
   }
 
-  private func installTitlebarTrackingArea(for window: NSWindow) {
-    removeTitlebarTrackingArea()
+  private func installChromeTrackingArea(for window: NSWindow) {
+    removeChromeTrackingArea()
+    guard !configuration.sidebarIsVisible else { return }
     guard let frameView = window.contentView?.superview else { return }
 
     let frameBoundsInWindow = frameView.convert(frameView.bounds, to: nil)
-    titlebarRectInWindow = CGRect(
-      x: frameBoundsInWindow.minX,
-      y: window.contentLayoutRect.maxY,
-      width: frameBoundsInWindow.width,
-      height: max(frameBoundsInWindow.maxY - window.contentLayoutRect.maxY, 0)
-    )
-    guard titlebarRectInWindow.height > 0 else { return }
+    switch chromeVisibilityState.mode {
+    case .compact:
+      revealRegionInWindow = CGRect(
+        x: frameBoundsInWindow.minX,
+        y: frameBoundsInWindow.maxY - WindowChromeVisibilityState.compactHotZoneHeight,
+        width: frameBoundsInWindow.width,
+        height: WindowChromeVisibilityState.compactHotZoneHeight
+      )
+
+    case .hoverRevealed:
+      let regionBottom = max(
+        frameBoundsInWindow.minY,
+        window.contentLayoutRect.maxY - WindowChromeVisibilityState.compactHotZoneHeight
+      )
+      revealRegionInWindow = CGRect(
+        x: frameBoundsInWindow.minX,
+        y: regionBottom,
+        width: frameBoundsInWindow.width,
+        height: frameBoundsInWindow.maxY - regionBottom
+      )
+
+    case .sidebarVisible:
+      return
+    }
+    guard revealRegionInWindow.height > 0 else { return }
 
     let trackingArea = NSTrackingArea(
-      rect: frameView.convert(titlebarRectInWindow, from: nil),
+      rect: frameView.convert(revealRegionInWindow, from: nil),
       options: [.mouseEnteredAndExited, .activeAlways, .enabledDuringMouseDrag],
       owner: self,
       userInfo: nil
     )
     frameView.addTrackingArea(trackingArea)
-    titlebarTrackingView = frameView
-    titlebarTrackingArea = trackingArea
+    chromeTrackingView = frameView
+    chromeTrackingArea = trackingArea
   }
 
-  private func removeTitlebarTrackingArea() {
-    if let titlebarTrackingArea {
-      titlebarTrackingView?.removeTrackingArea(titlebarTrackingArea)
+  private func removeChromeTrackingArea() {
+    if let chromeTrackingArea {
+      chromeTrackingView?.removeTrackingArea(chromeTrackingArea)
     }
-    titlebarTrackingArea = nil
-    titlebarTrackingView = nil
-    titlebarRectInWindow = .zero
+    chromeTrackingArea = nil
+    chromeTrackingView = nil
+    revealRegionInWindow = .zero
   }
 
-  private func pointerIsInsideTitlebar(of window: NSWindow) -> Bool {
-    titlebarRectInWindow.contains(window.mouseLocationOutsideOfEventStream)
+  private func currentWindowDecorationHeight(of window: NSWindow) -> Double {
+    let contentDecoration =
+      currentContentSize(of: window).map {
+        max(window.frame.height - $0.height, 0)
+      } ?? 0
+    guard let frameView = window.contentView?.superview else { return contentDecoration }
+    let frameBoundsInWindow = frameView.convert(frameView.bounds, to: nil)
+    let layoutDecoration = max(
+      frameBoundsInWindow.height - window.contentLayoutRect.height,
+      0
+    )
+    return max(contentDecoration, layoutDecoration)
+  }
+
+  private func updateCompactFrameForCurrentHoverGeometry(of window: NSWindow) {
+    guard chromeVisibilityState.mode == .hoverRevealed else { return }
+    var compactFrame = window.frame
+    compactFrame.size.height = max(compactFrame.height - measuredTitlebarHeight, 1)
+    compactFrameBeforeHover = compactFrame
   }
 
   private func updateMinimumSize(of window: NSWindow, aspectRatio: Double) {
@@ -510,9 +693,11 @@ final class WindowLayoutHostView: NSView {
 
     let horizontalDecoration = max(window.frame.width - contentSize.width, 0)
     let verticalDecoration = max(window.frame.height - contentSize.height, 0)
+    let reservedTitlebarHeight =
+      chromeVisibilityState.mode == .compact ? measuredTitlebarHeight : 0
     return WindowContentSize(
       width: max(screenFrame.width - horizontalDecoration, 1),
-      height: max(screenFrame.height - verticalDecoration, 1)
+      height: max(screenFrame.height - verticalDecoration - reservedTitlebarHeight, 1)
     )
   }
 

@@ -391,3 +391,50 @@
 - Reconnect both devices after resetting the macOS capture helper, then validate live proportional resizing, physical rotation, and independent hover behavior in two simultaneous windows.
 - Confirm the 0.5-second hide timing with normal physical pointer movement on additional macOS versions because synthetic UI actions do not provide frame-accurate timing measurements.
 - Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.
+
+## 2026-09-03 — Collapse and Reveal the Native Title Bar
+
+### Summary
+
+- Replaced button-only hiding with a three-state window-chrome policy for persistent sidebar chrome, compact screen-only chrome, and temporary hover-revealed chrome.
+- Removed the native title-bar material, separator, toolbar, traffic-light buttons, and sidebar button when the sidebar is collapsed.
+- Added a full-width 8-point top reveal region and an expanded title-bar tracking region with an 8-point transition bridge.
+- Added a 0.5-second delayed collapse with cancellation on pointer re-entry and a 0.15-second native frame animation.
+- Measured the actual title-bar decoration height and adjusted the outer window frame so revealing controls does not cover, resize, stretch, or crop the display surface.
+- Preserved the compact frame through hover, window movement, resizing, screen-edge fitting, and full-screen transitions.
+- Extended the SwiftUI display surface into the compact full-size content region and removed a residual top safe-area strip.
+- Added unit coverage for all chrome states, delayed hiding, rapid re-entry, frame compensation, fixed-bottom behavior, screen-top fitting, and invalid decoration heights.
+
+### Affected Files
+
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `xcrun swift-format lint --recursive USBDisplay USBDisplayTests`: Passed with no warnings.
+- Xcode Debug build: Passed.
+- Xcode Release build: Passed.
+- Xcode unit tests: Passed 36 tests across four suites.
+- The first sandboxed Xcode verification failed because Swift macro compilation could not apply its nested sandbox; the same build-and-launch verification passed outside the filesystem sandbox.
+- `script/build_and_run.sh --verify`: Passed; built and launched the final Debug application and confirmed the process.
+- `plutil -lint USBDisplay.xcodeproj/project.pbxproj Config/Info.plist Config/USBDisplay.entitlements`: Passed.
+- Strict ad-hoc signature verification and built entitlement inspection: Passed; the camera-device entitlement remains present.
+- Running-app compact check on macOS 27: Passed; the collapsed-sidebar window contained only the black display surface with no title-bar material, separator, toolbar button, traffic-light button, or residual top safe-area strip.
+- Running-app hover and geometry check: Passed; the same window changed from 981 x 676 points in compact mode to 981 x 728 points with the title bar revealed and returned to 981 x 676 points after the delay. The 52-point height increase left the display size and window width unchanged.
+- Running-app native-control check: Passed; the revealed toolbar exposed the system sidebar button and standard window controls.
+- Running-app multiwindow check: Passed for independent chrome state in two typed windows.
+- Native full-screen round trip: Passed from the expanded-sidebar state.
+- Live physical rotation, live proportional resizing, hot unplug/replug, occupied-device recovery, and sustained two-device capture: Not run successfully because the system capture helper did not provide a stable final live stream.
+
+### Remaining Risks or Follow-up Work
+
+- Activate the temporarily revealed sidebar button during another physical-pointer run and confirm that it converts the window directly to persistent sidebar chrome after the final rebuild.
+- Reconnect both devices after resetting the macOS capture helper, then validate physical rotation, live proportional resizing, independent two-device capture, and hot unplug behavior.
+- Confirm title-bar animation and delayed-hide timing on macOS 14 and 15 because the runtime check used macOS 27.
+- Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.

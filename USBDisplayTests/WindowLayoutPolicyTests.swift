@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import iPhoneUSBDisplay
@@ -162,70 +163,126 @@ struct WindowLayoutPolicyTests {
   }
 
   @Test
-  func expandedSidebarAlwaysShowsStandardWindowButtons() {
-    var state = WindowControlsVisibilityState(sidebarIsVisible: true)
+  func expandedSidebarUsesPersistentNativeChrome() {
+    var state = WindowChromeVisibilityState(sidebarIsVisible: true)
 
-    #expect(state.showsStandardButtons)
-    let shouldScheduleHide = state.pointerExitedTitlebar()
+    #expect(state.mode == .sidebarVisible)
+    #expect(state.showsTitlebar)
+    let shouldScheduleHide = state.pointerExitedRevealRegion()
     #expect(!shouldScheduleHide)
-    #expect(state.showsStandardButtons)
+    #expect(state.mode == .sidebarVisible)
   }
 
   @Test
-  func collapsedSidebarHidesButtonsWhenPointerIsOutsideTitlebar() {
-    let state = WindowControlsVisibilityState(sidebarIsVisible: false)
+  func collapsedSidebarStartsWithCompactChrome() {
+    let state = WindowChromeVisibilityState(sidebarIsVisible: false)
 
-    #expect(!state.showsStandardButtons)
+    #expect(state.mode == .compact)
+    #expect(!state.showsTitlebar)
   }
 
   @Test
-  func enteringTitlebarShowsButtonsImmediately() {
-    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
+  func enteringTopRegionRevealsNativeChromeImmediately() {
+    var state = WindowChromeVisibilityState(sidebarIsVisible: false)
 
-    state.pointerEnteredTitlebar()
+    state.pointerEnteredTopRegion()
 
-    #expect(state.showsStandardButtons)
+    #expect(state.mode == .hoverRevealed)
+    #expect(state.showsTitlebar)
     #expect(!state.hideIsPending)
   }
 
   @Test
-  func exitingTitlebarKeepsButtonsVisibleUntilDelayElapses() {
-    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
-    state.pointerEnteredTitlebar()
+  func exitingRevealRegionKeepsChromeUntilDelayElapses() {
+    var state = WindowChromeVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTopRegion()
 
-    let shouldScheduleHide = state.pointerExitedTitlebar()
+    let shouldScheduleHide = state.pointerExitedRevealRegion()
     #expect(shouldScheduleHide)
     #expect(state.hideIsPending)
-    #expect(state.showsStandardButtons)
+    #expect(state.mode == .hoverRevealed)
 
     state.hideDelayElapsed()
 
     #expect(!state.hideIsPending)
-    #expect(!state.showsStandardButtons)
+    #expect(state.mode == .compact)
+    #expect(!state.showsTitlebar)
   }
 
   @Test
-  func reenteringTitlebarCancelsPendingHide() {
-    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
-    state.pointerEnteredTitlebar()
-    _ = state.pointerExitedTitlebar()
+  func reenteringRevealRegionCancelsPendingHide() {
+    var state = WindowChromeVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTopRegion()
+    _ = state.pointerExitedRevealRegion()
 
-    state.pointerEnteredTitlebar()
-    state.hideDelayElapsed()
+    state.pointerEnteredTopRegion()
 
     #expect(!state.hideIsPending)
-    #expect(state.showsStandardButtons)
+    #expect(state.mode == .hoverRevealed)
   }
 
   @Test
-  func expandingSidebarCancelsPendingHideAndShowsButtons() {
-    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
-    state.pointerEnteredTitlebar()
-    _ = state.pointerExitedTitlebar()
+  func expandingSidebarCancelsPendingHideAndKeepsChromeVisible() {
+    var state = WindowChromeVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTopRegion()
+    _ = state.pointerExitedRevealRegion()
 
-    state.updateSidebarVisibility(true, pointerIsInsideTitlebar: false)
+    state.updateSidebarVisibility(true)
 
     #expect(!state.hideIsPending)
-    #expect(state.showsStandardButtons)
+    #expect(state.mode == .sidebarVisible)
+    #expect(state.showsTitlebar)
+  }
+
+  @Test
+  func rapidlyLeavingAndReenteringKeepsHoverChromeRevealed() {
+    var state = WindowChromeVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTopRegion()
+    _ = state.pointerExitedRevealRegion()
+    state.pointerEnteredTopRegion()
+    _ = state.pointerExitedRevealRegion()
+    state.pointerEnteredTopRegion()
+
+    #expect(!state.hideIsPending)
+    #expect(state.mode == .hoverRevealed)
+  }
+
+  @Test
+  func revealingTitlebarKeepsBottomEdgeAndContentWidth() {
+    let compactFrame = CGRect(x: 100, y: 120, width: 360, height: 640)
+
+    let frame = WindowLayoutPolicy.frameByRevealingTitlebar(
+      compactFrame: compactFrame,
+      titlebarHeight: 52,
+      visibleFrame: CGRect(x: 0, y: 0, width: 1440, height: 900)
+    )
+
+    #expect(frame == CGRect(x: 100, y: 120, width: 360, height: 692))
+  }
+
+  @Test
+  func revealingTitlebarMovesWindowDownWhenTopEdgeWouldOverflow() {
+    let compactFrame = CGRect(x: 100, y: 260, width: 360, height: 640)
+
+    let frame = WindowLayoutPolicy.frameByRevealingTitlebar(
+      compactFrame: compactFrame,
+      titlebarHeight: 52,
+      visibleFrame: CGRect(x: 0, y: 0, width: 1440, height: 900)
+    )
+
+    #expect(frame == CGRect(x: 100, y: 208, width: 360, height: 692))
+  }
+
+  @Test
+  func revealingTitlebarRejectsInvalidDecorationHeight() {
+    let compactFrame = CGRect(x: 100, y: 120, width: 360, height: 640)
+
+    #expect(
+      WindowLayoutPolicy.frameByRevealingTitlebar(
+        compactFrame: compactFrame,
+        titlebarHeight: 0,
+        visibleFrame: nil
+      ) == nil
+    )
   }
 }

@@ -5,39 +5,45 @@ struct WindowContentSize: Equatable, Sendable {
   let height: Double
 }
 
-struct WindowControlsVisibilityState: Equatable, Sendable {
+enum WindowChromeMode: Equatable, Sendable {
+  case sidebarVisible
+  case compact
+  case hoverRevealed
+}
+
+struct WindowChromeVisibilityState: Equatable, Sendable {
   static let hideDelay = 0.5
+  static let animationDuration = 0.15
+  static let compactHotZoneHeight = 8.0
 
   private(set) var sidebarIsVisible: Bool
-  private(set) var pointerIsInsideTitlebar = false
+  private(set) var mode: WindowChromeMode
   private(set) var hideIsPending = false
 
-  var showsStandardButtons: Bool {
-    sidebarIsVisible || pointerIsInsideTitlebar || hideIsPending
+  var showsTitlebar: Bool {
+    mode != .compact
   }
 
   init(sidebarIsVisible: Bool) {
     self.sidebarIsVisible = sidebarIsVisible
+    mode = sidebarIsVisible ? .sidebarVisible : .compact
   }
 
-  mutating func updateSidebarVisibility(
-    _ isVisible: Bool,
-    pointerIsInsideTitlebar: Bool
-  ) {
+  mutating func updateSidebarVisibility(_ isVisible: Bool) {
     sidebarIsVisible = isVisible
-    self.pointerIsInsideTitlebar = pointerIsInsideTitlebar
     hideIsPending = false
+    mode = isVisible ? .sidebarVisible : .compact
   }
 
-  mutating func pointerEnteredTitlebar() {
-    pointerIsInsideTitlebar = true
+  mutating func pointerEnteredTopRegion() {
+    guard !sidebarIsVisible else { return }
     hideIsPending = false
+    mode = .hoverRevealed
   }
 
   @discardableResult
-  mutating func pointerExitedTitlebar() -> Bool {
-    pointerIsInsideTitlebar = false
-    guard !sidebarIsVisible else {
+  mutating func pointerExitedRevealRegion() -> Bool {
+    guard !sidebarIsVisible, mode == .hoverRevealed else {
       hideIsPending = false
       return false
     }
@@ -48,6 +54,9 @@ struct WindowControlsVisibilityState: Equatable, Sendable {
 
   mutating func hideDelayElapsed() {
     hideIsPending = false
+    if !sidebarIsVisible {
+      mode = .compact
+    }
   }
 }
 
@@ -158,5 +167,34 @@ enum WindowLayoutPolicy {
   static func shouldConstrainWindow(isFullScreen: Bool, aspectRatio: Double?) -> Bool {
     guard !isFullScreen, let aspectRatio else { return false }
     return validAspectRatio(width: aspectRatio, height: 1) != nil
+  }
+
+  static func frameByRevealingTitlebar(
+    compactFrame: CGRect,
+    titlebarHeight: Double,
+    visibleFrame: CGRect?
+  ) -> CGRect? {
+    guard
+      titlebarHeight.isFinite,
+      titlebarHeight > 0,
+      compactFrame.width.isFinite,
+      compactFrame.height.isFinite,
+      compactFrame.width > 0,
+      compactFrame.height > 0
+    else {
+      return nil
+    }
+
+    var revealedFrame = compactFrame
+    revealedFrame.size.height += titlebarHeight
+
+    guard let visibleFrame else { return revealedFrame }
+    if revealedFrame.maxY > visibleFrame.maxY {
+      revealedFrame.origin.y -= revealedFrame.maxY - visibleFrame.maxY
+    }
+    if revealedFrame.minY < visibleFrame.minY {
+      revealedFrame.origin.y = visibleFrame.minY
+    }
+    return revealedFrame
   }
 }

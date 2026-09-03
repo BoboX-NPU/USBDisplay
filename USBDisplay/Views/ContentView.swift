@@ -22,6 +22,10 @@ struct ContentView: View {
       )
     }
     .navigationSplitViewStyle(.balanced)
+    .ignoresSafeArea(
+      .container,
+      edges: model.columnVisibility == .detailOnly ? .top : []
+    )
     .background(
       WindowLayoutCoordinator(
         title: logicalWindowTitle,
