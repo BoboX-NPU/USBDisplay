@@ -13,25 +13,24 @@ The application uses only public AVFoundation and CoreMediaIO APIs. It does not 
 - Accepts wired Apple mobile screen devices that macOS reports with the Other transport type instead of requiring the unreliable AVFoundation USB transport value.
 - Automatically selects a sole device, preserves the last selection when multiple devices are available, and exposes all available devices in a native sidebar.
 - Switches one active capture session between sidebar selections and invalidates frames from the previous device generation.
-- Uses AVCaptureVideoDataOutput with late-frame discarding and an AVSampleBufferDisplayLayer marked for immediate display.
-- Preserves the source aspect ratio with black letterboxing and performs no encoding or SwiftUI image conversion.
-- Reports no-device, unlock-or-trust, connecting, connected, interrupted, occupied, camera-permission, and general failure states.
+- Uses AVCaptureVideoPreviewLayer for the public system-managed direct-preview path supported by wired iPhone and iPad screen sources.
+- Preserves the source aspect ratio with black letterboxing and performs no encoding, recording, frame copying, or SwiftUI image conversion.
+- Reports no-device, unlock-or-trust, connecting, connected, interrupted, occupied, device-unavailable, camera-permission, and general failure states.
 - Retries suspended, occupied, interrupted, and transiently failed devices with bounded delays.
 - Uses a native NavigationSplitView, system sidebar list, unified toolbar, and a black media detail canvas.
 - Uses native Liquid Glass for custom full-screen controls on macOS 26+ and regular material fallback on macOS 14–15.
 - Supports window resizing, native full screen, double-click full-screen toggling, automatic sidebar collapse and restoration, and full-screen-only pointer hiding.
-- Emits structured device, session, interface, and aggregate frame-timing logs without device identifiers or captured content.
+- Emits structured device, session, interface, and diagnostic error logs without device identifiers or captured content.
 
 ## Architecture
 
-- AppModel owns main-actor UI state, selection presentation, split-view visibility, full-screen restoration, and inactivity behavior.
-- CaptureCoordinator owns discovery, permissions, one AVCaptureSession, device switching, reconnect handling, and one discard-late AVCaptureVideoDataOutput.
-- SampleBufferRenderer owns the high-priority render queue, stream generation, immediate-display sample attachment, display-layer backpressure, flushing, and aggregate timing telemetry.
-- PreviewHostView is the narrow AppKit bridge that hosts AVSampleBufferDisplayLayer, tracks pointer activity, balances cursor visibility, and observes native full-screen transitions.
+- AppModel owns main-actor UI state, selection presentation, split-view visibility, full-screen restoration, inactivity behavior, and access to the capture session.
+- CaptureCoordinator owns discovery, permissions, one AVCaptureSession, device switching, reconnect handling, stabilized connection reporting, and bounded retries.
+- PreviewHostView is the narrow AppKit bridge that hosts AVCaptureVideoPreviewLayer, tracks pointer activity, balances cursor visibility, and observes native full-screen transitions.
 - SidebarView and DisplayCanvasView provide the native device list and media surface without duplicating capture state.
-- Pure selection, device filtering, error classification, retry, frame-delivery, telemetry, sidebar-restoration, and auto-hide policies are covered by Swift Testing tests.
+- Pure selection, device filtering, error classification, retry, sidebar-restoration, and auto-hide policies are covered by Swift Testing tests.
 
-AVCaptureSession.Preset.inputPriority is unavailable on macOS. The capture session therefore retains the highest supported high preset while latency control is implemented through late-frame dropping and immediate sample display.
+AVCaptureSession.Preset.inputPriority is unavailable on macOS. The capture session therefore retains the highest supported high preset. A tested AVCaptureVideoDataOutput and AVSampleBufferDisplayLayer path was removed because the physical iPad screen source caused CoreMediaIO to reject stream startup with the !dev status even when using device-native output settings. The direct preview layer remains the compatible public zero-copy presentation path for this source.
 
 ## Build and Run
 
@@ -43,7 +42,7 @@ AVCaptureSession.Preset.inputPriority is unavailable on macOS. The capture sessi
 ## Validation Status
 
 - Swift format lint: Passed with no warnings.
-- Swift Testing: 20 tests passed across four suites.
+- Swift Testing: 16 tests passed across three suites.
 - Debug build and process verification: Passed through script/build_and_run.sh --verify.
 - Release build: Passed.
 - Generated Info.plist: Passed plutil lint and contains the unchanged bundle identifier, macOS 14 minimum, version 0.2.0, display name, and generalized camera usage description.
@@ -54,12 +53,12 @@ AVCaptureSession.Preset.inputPriority is unavailable on macOS. The capture sessi
 
 ## Constraints and Outstanding Validation
 
-- The latest running-app visual check could not be completed because the Mac was locked. Live frames through the new sample-buffer renderer, the macOS 27 Liquid Glass appearance, sidebar interaction, and full-screen restoration still require an unlocked desktop check.
-- The latest ad-hoc-signed build is waiting for camera permission. Ad-hoc signature hashes change after rebuilds, so local development builds may require camera permission again even when the bundle identifier and path remain stable.
+- The connected iPad was discovered and named correctly, but its current iOSScreenCaptureAssistant instance rejected stream startup as an invalid device state with AVFoundation error -11800 and underlying CoreMediaIO status !dev. Unlocking the iPad, closing other capture applications, and reconnecting the USB cable remain required before live preview can be revalidated.
+- Ad-hoc signature hashes change after rebuilds, so local development builds may require camera permission again even when the bundle identifier and path remain stable.
 - Two simultaneously discoverable physical devices were not available, so multiple-device switching is covered by policy and generation tests but not yet by a two-device hardware check.
 - Camera permission denial, portrait-to-landscape changes, hot unplug/replug, occupied-device recovery, and connected-state control hiding require hardware validation.
 - The macOS 14–15 material fallback compiled but was not runtime-checked on those operating systems.
 - The 30-minute soak, 240 fps end-to-end latency comparison, and sustained frame-rate measurement were not run.
-- Aggregate capture-to-enqueue telemetry measures the Mac-side portion of the path and is not a substitute for end-to-end latency measurement.
+- The public direct-preview path does not expose per-frame capture-to-display timing; end-to-end latency requires external measurement.
 - DRM-protected content may display black; the app intentionally does not bypass platform protection.
 - App Store packaging, production signing, notarization, and distribution remain outside this local MVP.

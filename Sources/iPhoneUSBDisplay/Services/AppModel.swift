@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Observation
 import SwiftUI
@@ -21,8 +22,8 @@ final class AppModel {
   @ObservationIgnored private var columnVisibilityBeforeFullScreen =
     NavigationSplitViewVisibility.all
 
-  var renderer: SampleBufferRenderer {
-    coordinator.renderer
+  var session: AVCaptureSession {
+    coordinator.session
   }
 
   var selectedDevice: DisplayDevice? {

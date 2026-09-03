@@ -9,7 +9,7 @@ struct DisplayCanvasView: View {
         .ignoresSafeArea()
 
       PreviewView(
-        renderer: model.renderer,
+        session: model.session,
         fullScreenToggleRequest: model.fullScreenToggleRequest,
         shouldHideCursor: model.shouldHideCursor,
         onActivity: model.registerActivity,
@@ -112,7 +112,7 @@ struct DisplayCanvasView: View {
     switch model.status {
     case .cameraPermissionDenied:
       "video.slash"
-    case .occupied:
+    case .occupied, .deviceUnavailable:
       "exclamationmark.triangle"
     case .interrupted, .failed:
       "cable.connector.slash"
@@ -145,7 +145,7 @@ struct ConnectionStatusView: View {
       .green
     case .connecting:
       .yellow
-    case .occupied, .failed, .cameraPermissionDenied:
+    case .occupied, .deviceUnavailable, .failed, .cameraPermissionDenied:
       .red
     default:
       .secondary

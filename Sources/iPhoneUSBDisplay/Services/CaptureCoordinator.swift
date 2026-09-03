@@ -5,11 +5,9 @@ import Foundation
 final class CaptureCoordinator: @unchecked Sendable {
   typealias SnapshotHandler = @MainActor @Sendable (CaptureSnapshot) -> Void
 
-  let renderer = SampleBufferRenderer()
+  let session = AVCaptureSession()
 
   private let snapshotHandler: SnapshotHandler
-  private let session = AVCaptureSession()
-  private let videoOutput = AVCaptureVideoDataOutput()
   private let sessionQueue = DispatchQueue(
     label: "com.xuemingbo.iPhoneUSBDisplay.capture-session",
     qos: .userInitiated
@@ -19,12 +17,10 @@ final class CaptureCoordinator: @unchecked Sendable {
 
   private var discoverySession: AVCaptureDevice.DiscoverySession?
   private var discoveryObservation: NSKeyValueObservation?
-  private var sessionRunningObservation: NSKeyValueObservation?
   private var notificationObservers: [NSObjectProtocol] = []
   private var captureDevices: [String: AVCaptureDevice] = [:]
   private var displayDevices: [DisplayDevice] = []
   private var currentInput: AVCaptureDeviceInput?
-  private var frameOutputDelegate: FrameOutputDelegate?
   private var currentStatus: ConnectionStatus = .noDevice
   private var selectedDeviceID: String?
   private var lastSelectedDeviceID: String?
@@ -33,6 +29,7 @@ final class CaptureCoordinator: @unchecked Sendable {
   private var retryGeneration = 0
   private var permissionRequestInFlight = false
   private var started = false
+  private var captureStartGeneration = 0
 
   private static let lastSelectedDeviceKey = "LastSelectedDisplayDeviceID"
 
@@ -65,8 +62,6 @@ final class CaptureCoordinator: @unchecked Sendable {
       self.cancelRetry()
       self.discoveryObservation?.invalidate()
       self.discoveryObservation = nil
-      self.sessionRunningObservation?.invalidate()
-      self.sessionRunningObservation = nil
       self.discoverySession = nil
       self.notificationObservers.forEach(self.notificationCenter.removeObserver)
       self.notificationObservers.removeAll()
@@ -143,23 +138,6 @@ final class CaptureCoordinator: @unchecked Sendable {
   }
 
   private func installObservers() {
-    sessionRunningObservation = session.observe(\.isRunning, options: [.new]) {
-      [weak self] session, _ in
-      guard session.isRunning else { return }
-      self?.sessionQueue.async { [weak self] in
-        guard
-          let self,
-          let selectedDeviceID = self.selectedDeviceID,
-          let device = self.captureDevices[selectedDeviceID]
-        else {
-          return
-        }
-
-        self.retryAttempt = 0
-        self.publish(status: .connected(deviceName: device.localizedName))
-      }
-    }
-
     notificationObservers.append(
       notificationCenter.addObserver(
         forName: AVCaptureDevice.wasConnectedNotification,
@@ -351,20 +329,9 @@ final class CaptureCoordinator: @unchecked Sendable {
       session.addInput(input)
       currentInput = input
 
-      videoOutput.alwaysDiscardsLateVideoFrames = true
-      guard session.canAddOutput(videoOutput) else {
-        throw CaptureCoordinatorError.cannotAddOutput
-      }
-      session.addOutput(videoOutput)
-
       if session.canSetSessionPreset(.high) {
         session.sessionPreset = .high
       }
-
-      let generation = renderer.beginStream()
-      let frameOutputDelegate = FrameOutputDelegate(renderer: renderer, generation: generation)
-      self.frameOutputDelegate = frameOutputDelegate
-      videoOutput.setSampleBufferDelegate(frameOutputDelegate, queue: renderer.renderQueue)
     } catch {
       handleConnectionError(error as NSError, device: device)
       return
@@ -373,9 +340,8 @@ final class CaptureCoordinator: @unchecked Sendable {
     session.startRunning()
 
     if session.isRunning {
-      cancelRetry()
-      AppLogger.session.info("Low-latency capture session is running")
-      publish(status: .connected(deviceName: device.localizedName))
+      AppLogger.session.info("Direct preview capture session started")
+      confirmSessionAfterStabilization(for: device)
     } else {
       publish(status: .failed(message: "The device screen stream did not start."))
       scheduleRetry(for: device, occupied: false)
@@ -383,13 +349,22 @@ final class CaptureCoordinator: @unchecked Sendable {
   }
 
   private func handleConnectionError(_ error: NSError, device: AVCaptureDevice) {
+    let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
+    let underlyingDomain = underlying?.domain ?? "none"
+    let underlyingCode = underlying?.code ?? 0
     AppLogger.session.error(
-      "Capture connection failed: \(error.localizedDescription, privacy: .public)")
+      "Capture connection failed domain=\(error.domain, privacy: .public) code=\(error.code) underlyingDomain=\(underlyingDomain, privacy: .public) underlyingCode=\(underlyingCode) description=\(error.localizedDescription, privacy: .public)"
+    )
+    captureStartGeneration += 1
 
     switch CaptureErrorClassifier.classify(error) {
     case .occupied:
       publish(status: .occupied(deviceName: device.localizedName))
       scheduleRetry(for: device, occupied: true)
+    case .deviceUnavailable:
+      stopAndClearSession()
+      publish(status: .deviceUnavailable(deviceName: device.localizedName))
+      scheduleRetry(for: device, occupied: false)
     case .permissionDenied:
       publish(status: .cameraPermissionDenied)
     case .disconnected:
@@ -414,6 +389,27 @@ final class CaptureCoordinator: @unchecked Sendable {
     }
 
     handleConnectionError(error, device: device)
+  }
+
+  private func confirmSessionAfterStabilization(for device: AVCaptureDevice) {
+    let generation = captureStartGeneration
+    let deviceID = device.uniqueID
+
+    sessionQueue.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+      guard
+        let self,
+        generation == self.captureStartGeneration,
+        self.session.isRunning,
+        self.selectedDeviceID == deviceID,
+        self.currentInput?.device.uniqueID == deviceID
+      else {
+        return
+      }
+
+      self.cancelRetry()
+      AppLogger.session.info("Direct preview capture session is stable")
+      self.publish(status: .connected(deviceName: device.localizedName))
+    }
   }
 
   private func handleInterruption() {
@@ -467,8 +463,7 @@ final class CaptureCoordinator: @unchecked Sendable {
   }
 
   private func stopAndClearSession() {
-    videoOutput.setSampleBufferDelegate(nil, queue: nil)
-    frameOutputDelegate = nil
+    captureStartGeneration += 1
 
     if session.isRunning {
       session.stopRunning()
@@ -476,7 +471,6 @@ final class CaptureCoordinator: @unchecked Sendable {
 
     guard !session.inputs.isEmpty || !session.outputs.isEmpty else {
       currentInput = nil
-      renderer.invalidateStream()
       return
     }
 
@@ -485,7 +479,6 @@ final class CaptureCoordinator: @unchecked Sendable {
     session.outputs.forEach(session.removeOutput)
     session.commitConfiguration()
     currentInput = nil
-    renderer.invalidateStream()
   }
 
   private func publish(status: ConnectionStatus) {
@@ -513,14 +506,11 @@ final class CaptureCoordinator: @unchecked Sendable {
 
 private enum CaptureCoordinatorError: LocalizedError {
   case cannotAddInput
-  case cannotAddOutput
 
   var errorDescription: String? {
     switch self {
     case .cannotAddInput:
       "The selected device cannot be added to the capture session."
-    case .cannotAddOutput:
-      "The low-latency video output cannot be added to the capture session."
     }
   }
 }

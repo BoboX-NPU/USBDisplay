@@ -3,6 +3,7 @@ import Foundation
 
 enum CaptureFailureKind: Equatable, Sendable {
   case occupied
+  case deviceUnavailable
   case permissionDenied
   case disconnected
   case mediaServicesReset
@@ -10,7 +11,18 @@ enum CaptureFailureKind: Equatable, Sendable {
 }
 
 enum CaptureErrorClassifier {
+  private static let invalidDeviceStreamStatus = 560_227_702  // '!dev'
+
   static func classify(_ error: NSError) -> CaptureFailureKind {
+    if error.domain == AVFoundationErrorDomain,
+      error.code == AVError.Code.unknown.rawValue,
+      underlyingErrors(in: error).contains(where: {
+        $0.domain == NSOSStatusErrorDomain && $0.code == invalidDeviceStreamStatus
+      })
+    {
+      return .deviceUnavailable
+    }
+
     guard error.domain == AVFoundationErrorDomain else {
       return .retryable
     }
@@ -35,6 +47,18 @@ enum CaptureErrorClassifier {
     default:
       return .retryable
     }
+  }
+
+  private static func underlyingErrors(in error: NSError) -> [NSError] {
+    var results: [NSError] = []
+    var candidate = error.userInfo[NSUnderlyingErrorKey] as? NSError
+
+    while let current = candidate {
+      results.append(current)
+      candidate = current.userInfo[NSUnderlyingErrorKey] as? NSError
+    }
+
+    return results
   }
 }
 

@@ -41,6 +41,18 @@ struct CaptureFailureTests {
   }
 
   @Test
+  func mapsInvalidMobileDeviceStreamAsUnavailable() {
+    let underlying = NSError(domain: NSOSStatusErrorDomain, code: 560_227_702)
+    let error = NSError(
+      domain: AVFoundationErrorDomain,
+      code: AVError.Code.unknown.rawValue,
+      userInfo: [NSUnderlyingErrorKey: underlying]
+    )
+
+    #expect(CaptureErrorClassifier.classify(error) == .deviceUnavailable)
+  }
+
+  @Test
   func retryAttemptIsCancelledByGenerationOrSelectionChange() {
     let attempt = RetryAttempt(generation: 4, deviceID: "selected")
 
@@ -55,4 +67,5 @@ struct CaptureFailureTests {
     #expect(RetryPolicy.delay(for: 99, occupied: false) == 5)
     #expect(RetryPolicy.delay(for: 99, occupied: true) == 2)
   }
+
 }

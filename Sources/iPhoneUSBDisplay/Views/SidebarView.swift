@@ -76,7 +76,7 @@ private struct DeviceSidebarRow: View {
       .green
     case .connecting:
       .yellow
-    case .occupied, .failed, .cameraPermissionDenied:
+    case .occupied, .deviceUnavailable, .failed, .cameraPermissionDenied:
       .red
     default:
       .secondary

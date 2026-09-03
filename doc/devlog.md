@@ -136,3 +136,46 @@
 - Verify live iPhone and iPad frames through the new renderer after unlocking the Mac.
 - Verify the macOS 27 Liquid Glass appearance, sidebar resizing and selection, and full-screen collapse and restoration.
 - Complete the two-device, rotation, hot-plug, occupied-device, performance, and stability hardware matrix.
+
+## 2026-09-03 — Restore Compatible Mobile Device Preview
+
+### Summary
+
+- Diagnosed the connected iPad failure as AVFoundation error -11800 with underlying CoreMediaIO status !dev and an iOSScreenCaptureAssistant invalid-stream state.
+- Confirmed that requesting device-native AVCaptureVideoDataOutput samples did not resolve the physical mobile screen-source failure.
+- Removed the incompatible sample-buffer output and renderer path and restored the previously hardware-validated AVCaptureVideoPreviewLayer direct-preview path.
+- Added a short session-stability gate so an immediate runtime error cannot reset retry backoff by briefly reporting the session as connected.
+- Added a device-unavailable state with actionable unlock, competing-application, and USB reconnection guidance.
+- Expanded structured error logs to include AVFoundation and underlying OSStatus domains and codes without logging device identifiers.
+
+### Affected Files
+
+- .gitignore
+- Sources/iPhoneUSBDisplay/Models/CaptureFailure.swift
+- Sources/iPhoneUSBDisplay/Models/ConnectionStatus.swift
+- Sources/iPhoneUSBDisplay/Models/FrameRenderingPolicy.swift
+- Sources/iPhoneUSBDisplay/Services/AppModel.swift
+- Sources/iPhoneUSBDisplay/Services/CaptureCoordinator.swift
+- Sources/iPhoneUSBDisplay/Services/SampleBufferRenderer.swift
+- Sources/iPhoneUSBDisplay/Views/DisplayCanvasView.swift
+- Sources/iPhoneUSBDisplay/Views/PreviewView.swift
+- Sources/iPhoneUSBDisplay/Views/SidebarView.swift
+- Tests/iPhoneUSBDisplayTests/CaptureFailureTests.swift
+- Tests/iPhoneUSBDisplayTests/FrameRenderingPolicyTests.swift
+- doc/current.md
+- doc/devlog.md
+
+### Validation
+
+- CoreMediaIO and AVFoundation diagnostics: Passed; captured AVFoundation error -11800, underlying OSStatus 560227702, and the iOSScreenCaptureAssistant invalid-state report.
+- xcrun swift-format lint --recursive Sources Tests Package.swift: Passed with no warnings.
+- swift test --disable-sandbox -j 1 using project-local module caches: Passed 16 tests across three suites.
+- Release build: Passed.
+- script/build_and_run.sh --verify: Passed; the rebuilt app bundle launched and its process was confirmed.
+- Connected-iPad discovery and device name: Passed.
+- Connected-iPad live preview after restoring the direct-preview path: Not run successfully because the current system capture assistant continued rejecting the device stream; the iPad and competing capture applications require a physical reset before revalidation.
+
+### Remaining Risks or Follow-up Work
+
+- Unlock the iPad, close QuickTime and Screen Studio, reconnect the USB cable, and revalidate live preview.
+- Re-run portrait and landscape rotation, hot-plug, device switching, 30-minute stability, frame-rate, and external latency checks after the device stream recovers.

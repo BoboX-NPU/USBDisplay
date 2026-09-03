@@ -7,6 +7,7 @@ enum ConnectionStatus: Equatable, Sendable {
   case connected(deviceName: String)
   case interrupted(deviceName: String?)
   case occupied(deviceName: String)
+  case deviceUnavailable(deviceName: String)
   case cameraPermissionDenied
   case failed(message: String)
 
@@ -31,6 +32,8 @@ enum ConnectionStatus: Equatable, Sendable {
       "Connection interrupted"
     case .occupied:
       "Device is in use"
+    case .deviceUnavailable:
+      "Device unavailable"
     case .cameraPermissionDenied:
       "No camera permission"
     case .failed:
@@ -54,6 +57,8 @@ enum ConnectionStatus: Equatable, Sendable {
         ?? "Waiting for the device to reconnect…"
     case .occupied(let deviceName):
       "Close QuickTime, OBS, or another app using \(deviceName)."
+    case .deviceUnavailable(let deviceName):
+      "Unlock \(deviceName), close other capture apps, then reconnect the USB cable."
     case .cameraPermissionDenied:
       "Enable camera access in System Settings > Privacy & Security > Camera."
     case .failed(let message):
