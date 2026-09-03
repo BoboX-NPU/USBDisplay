@@ -1,0 +1,164 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA0000000000000000000501 /* iPhoneUSBDisplayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000101 /* iPhoneUSBDisplayApp.swift */; };
+		AA0000000000000000000502 /* CaptureFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* CaptureFailure.swift */; };
+		AA0000000000000000000503 /* ConnectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000103 /* ConnectionStatus.swift */; };
+		AA0000000000000000000504 /* ControlAutoHidePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* ControlAutoHidePolicy.swift */; };
+		AA0000000000000000000505 /* DisplayDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000105 /* DisplayDevice.swift */; };
+		AA0000000000000000000506 /* CaptureQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* CaptureQuality.swift */; };
+		AA0000000000000000000507 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000107 /* AppModel.swift */; };
+		AA0000000000000000000508 /* CaptureCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* CaptureCoordinator.swift */; };
+		AA0000000000000000000509 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000109 /* AppLogger.swift */; };
+		AA0000000000000000000510 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000110 /* ContentView.swift */; };
+		AA0000000000000000000511 /* DisplayCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000111 /* DisplayCanvasView.swift */; };
+		AA0000000000000000000512 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000112 /* PreviewView.swift */; };
+		AA0000000000000000000513 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000113 /* SidebarView.swift */; };
+		AA0000000000000000000514 /* CaptureQualityMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000114 /* CaptureQualityMenu.swift */; };
+		AA0000000000000000000601 /* CaptureFailureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000201 /* CaptureFailureTests.swift */; };
+		AA0000000000000000000602 /* ControlAutoHidePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000202 /* ControlAutoHidePolicyTests.swift */; };
+		AA0000000000000000000603 /* DeviceSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000203 /* DeviceSelectionTests.swift */; };
+		AA0000000000000000000604 /* CaptureQualityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000204 /* CaptureQualityTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA0000000000000000000E02 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000000000000000000701;
+			remoteInfo = "USB Display";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		AA0000000000000000000101 /* iPhoneUSBDisplayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPhoneUSBDisplayApp.swift; sourceTree = "<group>"; };
+		AA0000000000000000000102 /* CaptureFailure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFailure.swift; sourceTree = "<group>"; };
+		AA0000000000000000000103 /* ConnectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatus.swift; sourceTree = "<group>"; };
+		AA0000000000000000000104 /* ControlAutoHidePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlAutoHidePolicy.swift; sourceTree = "<group>"; };
+		AA0000000000000000000105 /* DisplayDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDevice.swift; sourceTree = "<group>"; };
+		AA0000000000000000000106 /* CaptureQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureQuality.swift; sourceTree = "<group>"; };
+		AA0000000000000000000107 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000108 /* CaptureCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureCoordinator.swift; sourceTree = "<group>"; };
+		AA0000000000000000000109 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
+		AA0000000000000000000110 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000111 /* DisplayCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayCanvasView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000112 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000113 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000114 /* CaptureQualityMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureQualityMenu.swift; sourceTree = "<group>"; };
+		AA0000000000000000000201 /* CaptureFailureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFailureTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000202 /* ControlAutoHidePolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlAutoHidePolicyTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000203 /* DeviceSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSelectionTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000204 /* CaptureQualityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureQualityTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000301 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0000000000000000000302 /* USBDisplay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = USBDisplay.entitlements; sourceTree = "<group>"; };
+		AA0000000000000000000401 /* USB Display.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "USB Display.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000000000000000000402 /* iPhoneUSBDisplayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iPhoneUSBDisplayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA0000000000000000000802 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000812 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA0000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000004 /* Sources */,
+				AA000000000000000000000A /* Tests */,
+				AA000000000000000000000B /* Config */,
+				AA0000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000003 /* Products */ = {isa = PBXGroup; children = (AA0000000000000000000401 /* USB Display.app */, AA0000000000000000000402 /* iPhoneUSBDisplayTests.xctest */); name = Products; sourceTree = "<group>"; };
+		AA0000000000000000000004 /* Sources */ = {isa = PBXGroup; children = (AA0000000000000000000005 /* App */, AA0000000000000000000006 /* Models */, AA0000000000000000000007 /* Services */, AA0000000000000000000008 /* Support */, AA0000000000000000000009 /* Views */); name = USBDisplay; path = USBDisplay; sourceTree = SOURCE_ROOT; };
+		AA0000000000000000000005 /* App */ = {isa = PBXGroup; children = (AA0000000000000000000101 /* iPhoneUSBDisplayApp.swift */); path = App; sourceTree = "<group>"; };
+		AA0000000000000000000006 /* Models */ = {isa = PBXGroup; children = (AA0000000000000000000102 /* CaptureFailure.swift */, AA0000000000000000000103 /* ConnectionStatus.swift */, AA0000000000000000000104 /* ControlAutoHidePolicy.swift */, AA0000000000000000000105 /* DisplayDevice.swift */, AA0000000000000000000106 /* CaptureQuality.swift */); path = Models; sourceTree = "<group>"; };
+		AA0000000000000000000007 /* Services */ = {isa = PBXGroup; children = (AA0000000000000000000107 /* AppModel.swift */, AA0000000000000000000108 /* CaptureCoordinator.swift */); path = Services; sourceTree = "<group>"; };
+		AA0000000000000000000008 /* Support */ = {isa = PBXGroup; children = (AA0000000000000000000109 /* AppLogger.swift */); path = Support; sourceTree = "<group>"; };
+		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000114 /* CaptureQualityMenu.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */); path = Views; sourceTree = "<group>"; };
+		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000202 /* ControlAutoHidePolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* CaptureQualityTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
+		AA000000000000000000000B /* Config */ = {isa = PBXGroup; children = (AA0000000000000000000301 /* Info.plist */, AA0000000000000000000302 /* USBDisplay.entitlements */); path = Config; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA0000000000000000000701 /* USB Display */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000C02 /* Build configuration list for PBXNativeTarget "USB Display" */;
+			buildPhases = (AA0000000000000000000801 /* Sources */, AA0000000000000000000802 /* Frameworks */, AA0000000000000000000803 /* Resources */);
+			buildRules = ();
+			dependencies = ();
+			name = "USB Display";
+			productName = "USB Display";
+			productReference = AA0000000000000000000401 /* USB Display.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA0000000000000000000702 /* iPhoneUSBDisplayTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000C03 /* Build configuration list for PBXNativeTarget "iPhoneUSBDisplayTests" */;
+			buildPhases = (AA0000000000000000000811 /* Sources */, AA0000000000000000000812 /* Frameworks */, AA0000000000000000000813 /* Resources */);
+			buildRules = ();
+			dependencies = (AA0000000000000000000E01 /* PBXTargetDependency */);
+			name = iPhoneUSBDisplayTests;
+			productName = iPhoneUSBDisplayTests;
+			productReference = AA0000000000000000000402 /* iPhoneUSBDisplayTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2660; LastUpgradeCheck = 2660; TargetAttributes = {AA0000000000000000000701 = {CreatedOnToolsVersion = 26.6; }; AA0000000000000000000702 = {CreatedOnToolsVersion = 26.6; TestTargetID = AA0000000000000000000701; }; }; };
+			buildConfigurationList = AA0000000000000000000C01 /* Build configuration list for PBXProject "USBDisplay" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = AA0000000000000000000002;
+			productRefGroup = AA0000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (AA0000000000000000000701 /* USB Display */, AA0000000000000000000702 /* iPhoneUSBDisplayTests */);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA0000000000000000000803 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000813 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA0000000000000000000801 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000501, AA0000000000000000000502, AA0000000000000000000503, AA0000000000000000000504, AA0000000000000000000505, AA0000000000000000000506, AA0000000000000000000507, AA0000000000000000000508, AA0000000000000000000509, AA0000000000000000000510, AA0000000000000000000511, AA0000000000000000000512, AA0000000000000000000513, AA0000000000000000000514); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000811 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000601, AA0000000000000000000602, AA0000000000000000000603, AA0000000000000000000604); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0000000000000000000E01 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = AA0000000000000000000701 /* USB Display */; targetProxy = AA0000000000000000000E02 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AA0000000000000000000D01 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_OPTIMIZATION_LEVEL = 0; MACOSX_DEPLOYMENT_TARGET = 14.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 6.0; }; name = Debug; };
+		AA0000000000000000000D02 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = YES; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_NS_ASSERTIONS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 6.0; }; name = Release; };
+		AA0000000000000000000D03 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = Config/USBDisplay.entitlements; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 3; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 0.3.0; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplay; PRODUCT_MODULE_NAME = iPhoneUSBDisplay; PRODUCT_NAME = "USB Display"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Debug; };
+		AA0000000000000000000D04 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = Config/USBDisplay.entitlements; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 3; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 0.3.0; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplay; PRODUCT_MODULE_NAME = iPhoneUSBDisplay; PRODUCT_NAME = "USB Display"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Release; };
+		AA0000000000000000000D05 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks"; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplayTests; PRODUCT_MODULE_NAME = iPhoneUSBDisplayTests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/USB Display.app/Contents/MacOS/USB Display"; }; name = Debug; };
+		AA0000000000000000000D06 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks"; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplayTests; PRODUCT_MODULE_NAME = iPhoneUSBDisplayTests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/USB Display.app/Contents/MacOS/USB Display"; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA0000000000000000000C01 /* Build configuration list for PBXProject "USBDisplay" */ = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000D01 /* Debug */, AA0000000000000000000D02 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AA0000000000000000000C02 /* Build configuration list for PBXNativeTarget "USB Display" */ = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000D03 /* Debug */, AA0000000000000000000D04 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AA0000000000000000000C03 /* Build configuration list for PBXNativeTarget "iPhoneUSBDisplayTests" */ = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000D05 /* Debug */, AA0000000000000000000D06 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = AA0000000000000000000001 /* Project object */;
+}

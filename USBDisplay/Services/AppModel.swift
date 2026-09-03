@@ -13,14 +13,18 @@ final class AppModel {
   private(set) var isFullScreen = false
   private(set) var fullScreenToggleRequest = 0
   private(set) var columnVisibility = NavigationSplitViewVisibility.all
+  private(set) var captureQuality: CaptureQuality
 
   @ObservationIgnored private var coordinator: CaptureCoordinator!
   @ObservationIgnored private let clock: AppClock
   @ObservationIgnored private let autoHidePolicy: ControlAutoHidePolicy
+  @ObservationIgnored private let userDefaults: UserDefaults
   @ObservationIgnored private var lastActivity: Date
   @ObservationIgnored private var autoHideTask: Task<Void, Never>?
   @ObservationIgnored private var columnVisibilityBeforeFullScreen =
     NavigationSplitViewVisibility.all
+
+  private static let captureQualityKey = "CaptureQuality"
 
   var session: AVCaptureSession {
     coordinator.session
@@ -40,12 +44,20 @@ final class AppModel {
 
   init(
     clock: AppClock = .live,
-    autoHidePolicy: ControlAutoHidePolicy = ControlAutoHidePolicy()
+    autoHidePolicy: ControlAutoHidePolicy = ControlAutoHidePolicy(),
+    userDefaults: UserDefaults = .standard
   ) {
     self.clock = clock
     self.autoHidePolicy = autoHidePolicy
+    self.userDefaults = userDefaults
+    captureQuality =
+      userDefaults.string(forKey: Self.captureQualityKey)
+      .flatMap(CaptureQuality.init(rawValue:)) ?? .automatic
     lastActivity = clock.now()
-    coordinator = CaptureCoordinator { [weak self] snapshot in
+    coordinator = CaptureCoordinator(
+      userDefaults: userDefaults,
+      initialQuality: captureQuality
+    ) { [weak self] snapshot in
       self?.apply(snapshot)
     }
   }
@@ -63,6 +75,14 @@ final class AppModel {
   func selectDevice(id: String) {
     registerActivity()
     coordinator.selectDevice(id: id)
+  }
+
+  func setCaptureQuality(_ quality: CaptureQuality) {
+    guard quality != captureQuality else { return }
+    captureQuality = quality
+    userDefaults.set(quality.rawValue, forKey: Self.captureQualityKey)
+    registerActivity()
+    coordinator.setCaptureQuality(quality)
   }
 
   func registerActivity() {

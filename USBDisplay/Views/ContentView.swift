@@ -21,6 +21,10 @@ struct ContentView: View {
       }
 
       ToolbarItem(placement: .primaryAction) {
+        CaptureQualityMenu(model: model)
+      }
+
+      ToolbarItem(placement: .primaryAction) {
         Button(action: model.requestFullScreenToggle) {
           Label("Enter Full Screen", systemImage: "arrow.up.left.and.arrow.down.right")
         }

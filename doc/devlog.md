@@ -179,3 +179,57 @@
 
 - Unlock the iPad, close QuickTime and Screen Studio, reconnect the USB cable, and revalidate live preview.
 - Re-run portrait and landscape rotation, hot-plug, device switching, 30-minute stability, frame-rate, and external latency checks after the device stream recovers.
+
+## 2026-09-03 — Migrate to Xcode and Add Capture Quality Selection
+
+### Summary
+
+- Replaced the SwiftPM executable package with a standard Xcode macOS application project containing an app target, unit-test target, and shared scheme.
+- Added project-owned Info.plist metadata and a camera-device entitlement while preserving the `com.xuemingbo.iPhoneUSBDisplay` bundle identifier.
+- Updated the local build/run workflow to build and launch the Xcode application product from project-local DerivedData instead of manually constructing an app bundle.
+- Removed the obsolete Package.swift file, generated .swiftpm workspace, and manually staged dist application.
+- Added persistent Auto, 1080p, and 4K (Experimental) quality choices to the native toolbar and full-screen control surface.
+- Added supported-preset fallback logic and structured logging for requested quality, applied preset, public format dimensions, and public maximum frame rate.
+- Added unit tests for quality preference and fallback behavior.
+
+### Affected Files
+
+- `.codex/environments/environment.toml`
+- `.gitignore`
+- `Config/Info.plist`
+- `Config/USBDisplay.entitlements`
+- `Package.swift`
+- `USBDisplay/`
+- `USBDisplayTests/`
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay.xcodeproj/xcshareddata/xcschemes/USB Display.xcscheme`
+- `script/build_and_run.sh`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `plutil -lint Config/Info.plist Config/USBDisplay.entitlements`: Passed.
+- `xcodebuild -list -project USBDisplay.xcodeproj`: Passed; reported the `USB Display` app target, `iPhoneUSBDisplayTests` test target, and `USB Display` scheme.
+- `xcrun swift-format lint --recursive USBDisplay USBDisplayTests`: Passed with no warnings after formatting.
+- Xcode Debug build with project-local DerivedData: Passed.
+- Xcode Release build with project-local DerivedData: Passed.
+- Xcode unit tests: Passed 19 tests across four suites.
+- `script/build_and_run.sh --verify`: Passed; built and launched the standard Xcode `USB Display.app` product and confirmed the process.
+- Built Info.plist inspection: Passed; confirmed version `0.3.0`, build `3`, macOS `14.0`, the unchanged bundle identifier, high-resolution capability, and the USB mobile-screen permission explanation.
+- `codesign --verify --deep --strict --verbose=2`: Passed for the Debug application.
+- Built entitlement inspection: Passed; confirmed `com.apple.security.device.camera` and the local Debug `get-task-allow` entitlement.
+- Running-app check on macOS 27: Passed; the Xcode-built application displayed a live iPad screen, switched to a live iPhone screen, and switched back to the iPad while remaining connected.
+- Auto quality check: Passed; the live iPad session applied `AVCaptureSessionPresetHigh`, started, and remained connected.
+- 1080p quality check: Passed; the live iPad session applied `AVCaptureSessionPreset1920x1080`, started, and remained connected.
+- 4K quality check: Passed; the live iPad session applied `AVCaptureSessionPreset3840x2160`, started, and remained connected.
+- Visual quality comparison: No obvious sharpness difference was observed between the three presets at the tested window size.
+- Public source-format inspection: Both connected mobile devices continued to report `0 x 0` dimensions and no frame-rate range, and the Apple capture helper exposed no usable stream-dimension telemetry.
+- End-to-end latency measurement: Not run because it requires an external high-speed visual reference; session stabilization timing was not treated as capture latency.
+
+### Remaining Risks or Follow-up Work
+
+- Use a static resolution chart and external pixel-level capture before claiming that the accepted 1080p or 4K preset increases the native USB source resolution.
+- Measure end-to-end latency with a 240 fps external camera and compare the three quality settings under the same device and cable conditions.
+- Run the 30-minute stability test, sustained frame-rate measurement, rotation, hot-plug, occupied-device recovery, and macOS 14–15 fallback checks.
+- Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.

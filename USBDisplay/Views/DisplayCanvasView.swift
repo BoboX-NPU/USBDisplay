@@ -86,6 +86,8 @@ struct DisplayCanvasView: View {
 
             ConnectionStatusView(status: model.status)
 
+            CaptureQualityMenu(model: model)
+
             Button(action: model.requestFullScreenToggle) {
               Image(systemName: "arrow.down.right.and.arrow.up.left")
             }

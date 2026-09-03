@@ -30,16 +30,19 @@ final class CaptureCoordinator: @unchecked Sendable {
   private var permissionRequestInFlight = false
   private var started = false
   private var captureStartGeneration = 0
+  private var captureQuality: CaptureQuality
 
   private static let lastSelectedDeviceKey = "LastSelectedDisplayDeviceID"
 
   init(
     notificationCenter: NotificationCenter = .default,
     userDefaults: UserDefaults = .standard,
+    initialQuality: CaptureQuality = .automatic,
     snapshotHandler: @escaping SnapshotHandler
   ) {
     self.notificationCenter = notificationCenter
     self.userDefaults = userDefaults
+    captureQuality = initialQuality
     self.snapshotHandler = snapshotHandler
     lastSelectedDeviceID = userDefaults.string(forKey: Self.lastSelectedDeviceKey)
   }
@@ -78,6 +81,18 @@ final class CaptureCoordinator: @unchecked Sendable {
       self.lastSelectedDeviceID = id
       self.userDefaults.set(id, forKey: Self.lastSelectedDeviceKey)
       AppLogger.device.info("User selected an Apple mobile screen capture device")
+      self.connectSelectedDevice()
+    }
+  }
+
+  func setCaptureQuality(_ quality: CaptureQuality) {
+    sessionQueue.async { [weak self] in
+      guard let self, quality != self.captureQuality else { return }
+      self.cancelRetry()
+      self.captureQuality = quality
+      AppLogger.performance.info(
+        "Capture quality changed to \(quality.rawValue, privacy: .public)"
+      )
       self.connectSelectedDevice()
     }
   }
@@ -329,9 +344,12 @@ final class CaptureCoordinator: @unchecked Sendable {
       session.addInput(input)
       currentInput = input
 
-      if session.canSetSessionPreset(.high) {
-        session.sessionPreset = .high
-      }
+      let preset = CaptureQualityPolicy.firstSupportedPreset(
+        for: captureQuality,
+        supports: session.canSetSessionPreset
+      )
+      session.sessionPreset = preset
+      logCaptureConfiguration(device: device, appliedPreset: preset)
     } catch {
       handleConnectionError(error as NSError, device: device)
       return
@@ -346,6 +364,21 @@ final class CaptureCoordinator: @unchecked Sendable {
       publish(status: .failed(message: "The device screen stream did not start."))
       scheduleRetry(for: device, occupied: false)
     }
+  }
+
+  private func logCaptureConfiguration(
+    device: AVCaptureDevice,
+    appliedPreset: AVCaptureSession.Preset
+  ) {
+    let dimensions = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
+    let maximumFrameRate =
+      device.activeFormat.videoSupportedFrameRateRanges
+      .map(\.maxFrameRate)
+      .max() ?? 0
+
+    AppLogger.performance.info(
+      "Capture configuration requested=\(self.captureQuality.rawValue, privacy: .public) appliedPreset=\(appliedPreset.rawValue, privacy: .public) publicFormatWidth=\(dimensions.width) publicFormatHeight=\(dimensions.height) publicMaximumFPS=\(maximumFrameRate, format: .fixed(precision: 2))"
+    )
   }
 
   private func handleConnectionError(_ error: NSError, device: AVCaptureDevice) {
