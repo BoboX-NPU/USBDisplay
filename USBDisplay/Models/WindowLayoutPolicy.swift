@@ -5,6 +5,52 @@ struct WindowContentSize: Equatable, Sendable {
   let height: Double
 }
 
+struct WindowControlsVisibilityState: Equatable, Sendable {
+  static let hideDelay = 0.5
+
+  private(set) var sidebarIsVisible: Bool
+  private(set) var pointerIsInsideTitlebar = false
+  private(set) var hideIsPending = false
+
+  var showsStandardButtons: Bool {
+    sidebarIsVisible || pointerIsInsideTitlebar || hideIsPending
+  }
+
+  init(sidebarIsVisible: Bool) {
+    self.sidebarIsVisible = sidebarIsVisible
+  }
+
+  mutating func updateSidebarVisibility(
+    _ isVisible: Bool,
+    pointerIsInsideTitlebar: Bool
+  ) {
+    sidebarIsVisible = isVisible
+    self.pointerIsInsideTitlebar = pointerIsInsideTitlebar
+    hideIsPending = false
+  }
+
+  mutating func pointerEnteredTitlebar() {
+    pointerIsInsideTitlebar = true
+    hideIsPending = false
+  }
+
+  @discardableResult
+  mutating func pointerExitedTitlebar() -> Bool {
+    pointerIsInsideTitlebar = false
+    guard !sidebarIsVisible else {
+      hideIsPending = false
+      return false
+    }
+
+    hideIsPending = true
+    return true
+  }
+
+  mutating func hideDelayElapsed() {
+    hideIsPending = false
+  }
+}
+
 enum WindowLayoutPolicy {
   static let minimumPreviewHeight = 320.0
   static let splitDividerWidth = 1.0

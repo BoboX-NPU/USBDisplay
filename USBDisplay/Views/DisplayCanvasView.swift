@@ -20,7 +20,6 @@ struct DisplayCanvasView: View {
       }
     }
     .clipped()
-    .ignoresSafeArea(.container, edges: .top)
   }
 
   private var emptyState: some View {

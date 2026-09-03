@@ -42,13 +42,23 @@ private struct WindowLayoutConfiguration: Equatable {
 final class WindowLayoutHostView: NSView {
   private var configuration: WindowLayoutConfiguration
   private weak var observedWindow: NSWindow?
+  private weak var titlebarTrackingView: NSView?
+  private var titlebarTrackingArea: NSTrackingArea?
+  private var titlebarRectInWindow = CGRect.zero
   private var observers: [NSObjectProtocol] = []
   private var lastFrame: CGRect?
   private var lastContentSize: CGSize?
   private var isApplyingFrame = false
+  private var hideWindowButtonsWorkItem: DispatchWorkItem?
+  private var controlsVisibilityState: WindowControlsVisibilityState
+  private var mouseEventMonitor: Any?
+  private var windowPreviouslyAcceptedMouseMovedEvents = false
 
   fileprivate init(configuration: WindowLayoutConfiguration) {
     self.configuration = configuration
+    controlsVisibilityState = WindowControlsVisibilityState(
+      sidebarIsVisible: configuration.sidebarIsVisible
+    )
     super.init(frame: .zero)
   }
 
@@ -67,6 +77,9 @@ final class WindowLayoutHostView: NSView {
     observedWindow = window
     installObservers(for: window)
     applyChrome(to: window)
+    installTitlebarTrackingArea(for: window)
+    installMouseEventMonitor(for: window)
+    synchronizeWindowControls(for: window)
     rememberCurrentGeometry(of: window)
     scheduleProportionalLayout(animated: false)
   }
@@ -80,6 +93,15 @@ final class WindowLayoutHostView: NSView {
     configuration = newConfiguration
     guard let window = observedWindow else { return }
     applyChrome(to: window)
+
+    if controlsVisibilityState.sidebarIsVisible != newConfiguration.sidebarIsVisible {
+      cancelPendingWindowButtonHide()
+      controlsVisibilityState.updateSidebarVisibility(
+        newConfiguration.sidebarIsVisible,
+        pointerIsInsideTitlebar: pointerIsInsideTitlebar(of: window)
+      )
+      applyWindowControlsVisibility(to: window)
+    }
 
     if layoutChanged {
       scheduleProportionalLayout(animated: false)
@@ -103,11 +125,21 @@ final class WindowLayoutHostView: NSView {
         }
       },
       center.addObserver(
+        forName: NSWindow.didEnterFullScreenNotification,
+        object: window,
+        queue: .main
+      ) { [weak self] _ in
+        Task { @MainActor in
+          self?.handleDidEnterFullScreen()
+        }
+      },
+      center.addObserver(
         forName: NSWindow.didExitFullScreenNotification,
         object: window,
         queue: .main
       ) { [weak self] _ in
         Task { @MainActor in
+          self?.handleDidExitFullScreen()
           self?.scheduleProportionalLayout(animated: false)
         }
       },
@@ -117,6 +149,7 @@ final class WindowLayoutHostView: NSView {
         queue: .main
       ) { [weak self] _ in
         Task { @MainActor in
+          self?.refreshTitlebarTrackingArea()
           self?.scheduleProportionalLayout(animated: false)
         }
       },
@@ -124,6 +157,13 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func detachFromWindow() {
+    cancelPendingWindowButtonHide()
+    if let observedWindow {
+      setStandardWindowButtons(hidden: false, in: observedWindow)
+      observedWindow.acceptsMouseMovedEvents = windowPreviouslyAcceptedMouseMovedEvents
+    }
+    removeMouseEventMonitor()
+    removeTitlebarTrackingArea()
     observers.forEach(NotificationCenter.default.removeObserver)
     observers.removeAll()
     observedWindow = nil
@@ -134,10 +174,36 @@ final class WindowLayoutHostView: NSView {
   private func applyChrome(to window: NSWindow) {
     window.title = configuration.title
     window.titleVisibility = .hidden
-    window.styleMask.insert(.fullSizeContentView)
-    window.titlebarAppearsTransparent = true
-    window.titlebarSeparatorStyle = .none
-    window.toolbar?.showsBaselineSeparator = false
+    window.styleMask.remove(.fullSizeContentView)
+    window.titlebarAppearsTransparent = false
+    window.titlebarSeparatorStyle = .automatic
+    window.toolbar?.showsBaselineSeparator = true
+  }
+
+  override func mouseEntered(with event: NSEvent) {
+    guard event.trackingArea === titlebarTrackingArea, let window = observedWindow else {
+      super.mouseEntered(with: event)
+      return
+    }
+
+    cancelPendingWindowButtonHide()
+    controlsVisibilityState.pointerEnteredTitlebar()
+    applyWindowControlsVisibility(to: window)
+  }
+
+  override func mouseExited(with event: NSEvent) {
+    guard event.trackingArea === titlebarTrackingArea, let window = observedWindow else {
+      super.mouseExited(with: event)
+      return
+    }
+
+    guard controlsVisibilityState.pointerExitedTitlebar() else {
+      applyWindowControlsVisibility(to: window)
+      return
+    }
+
+    applyWindowControlsVisibility(to: window)
+    scheduleWindowButtonHide(for: window)
   }
 
   private func scheduleProportionalLayout(animated: Bool) {
@@ -177,6 +243,7 @@ final class WindowLayoutHostView: NSView {
 
   private func handleWindowResize() {
     guard let window = observedWindow, !isApplyingFrame else { return }
+    refreshTitlebarTrackingArea()
     guard
       let aspectRatio = configuration.aspectRatio,
       WindowLayoutPolicy.shouldConstrainWindow(
@@ -262,6 +329,160 @@ final class WindowLayoutHostView: NSView {
     window.setFrame(frame, display: true, animate: animated)
     isApplyingFrame = false
     rememberCurrentGeometry(of: window)
+  }
+
+  private func handleDidEnterFullScreen() {
+    cancelPendingWindowButtonHide()
+    removeTitlebarTrackingArea()
+  }
+
+  private func handleDidExitFullScreen() {
+    guard let window = observedWindow else { return }
+    installTitlebarTrackingArea(for: window)
+    synchronizeWindowControls(for: window)
+  }
+
+  private func synchronizeWindowControls(for window: NSWindow) {
+    cancelPendingWindowButtonHide()
+    controlsVisibilityState.updateSidebarVisibility(
+      configuration.sidebarIsVisible,
+      pointerIsInsideTitlebar: pointerIsInsideTitlebar(of: window)
+    )
+    applyWindowControlsVisibility(to: window)
+  }
+
+  private func updatePointerLocation(_ location: CGPoint, in window: NSWindow) {
+    let isInsideTitlebar = titlebarRectInWindow.contains(location)
+
+    if isInsideTitlebar, !controlsVisibilityState.pointerIsInsideTitlebar {
+      cancelPendingWindowButtonHide()
+      controlsVisibilityState.pointerEnteredTitlebar()
+      applyWindowControlsVisibility(to: window)
+      return
+    }
+
+    if !isInsideTitlebar, controlsVisibilityState.pointerIsInsideTitlebar {
+      guard controlsVisibilityState.pointerExitedTitlebar() else {
+        applyWindowControlsVisibility(to: window)
+        return
+      }
+
+      applyWindowControlsVisibility(to: window)
+      scheduleWindowButtonHide(for: window)
+    }
+  }
+
+  private func applyWindowControlsVisibility(to window: NSWindow) {
+    guard !window.styleMask.contains(.fullScreen) else { return }
+    setStandardWindowButtons(
+      hidden: !controlsVisibilityState.showsStandardButtons,
+      in: window
+    )
+  }
+
+  private func setStandardWindowButtons(hidden: Bool, in window: NSWindow) {
+    let buttons: [NSWindow.ButtonType] = [
+      .closeButton,
+      .miniaturizeButton,
+      .zoomButton,
+    ]
+    for buttonType in buttons {
+      window.standardWindowButton(buttonType)?.isHidden = hidden
+    }
+  }
+
+  private func scheduleWindowButtonHide(for window: NSWindow) {
+    cancelPendingWindowButtonHide()
+
+    let workItem = DispatchWorkItem { [weak self, weak window] in
+      guard let self, let window else { return }
+      MainActor.assumeIsolated {
+        self.hideWindowButtonsWorkItem = nil
+        self.controlsVisibilityState.hideDelayElapsed()
+        if self.pointerIsInsideTitlebar(of: window) {
+          self.controlsVisibilityState.pointerEnteredTitlebar()
+        }
+        self.applyWindowControlsVisibility(to: window)
+      }
+    }
+    hideWindowButtonsWorkItem = workItem
+    DispatchQueue.main.asyncAfter(
+      deadline: .now() + WindowControlsVisibilityState.hideDelay,
+      execute: workItem
+    )
+  }
+
+  private func cancelPendingWindowButtonHide() {
+    hideWindowButtonsWorkItem?.cancel()
+    hideWindowButtonsWorkItem = nil
+  }
+
+  private func installMouseEventMonitor(for window: NSWindow) {
+    removeMouseEventMonitor()
+    windowPreviouslyAcceptedMouseMovedEvents = window.acceptsMouseMovedEvents
+    window.acceptsMouseMovedEvents = true
+
+    mouseEventMonitor = NSEvent.addLocalMonitorForEvents(
+      matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged]
+    ) { [weak self, weak window] event in
+      guard let self, let window, event.window === window else { return event }
+      MainActor.assumeIsolated {
+        self.updatePointerLocation(event.locationInWindow, in: window)
+      }
+      return event
+    }
+  }
+
+  private func removeMouseEventMonitor() {
+    if let mouseEventMonitor {
+      NSEvent.removeMonitor(mouseEventMonitor)
+    }
+    mouseEventMonitor = nil
+  }
+
+  private func refreshTitlebarTrackingArea() {
+    guard let window = observedWindow, !window.styleMask.contains(.fullScreen) else {
+      removeTitlebarTrackingArea()
+      return
+    }
+    installTitlebarTrackingArea(for: window)
+  }
+
+  private func installTitlebarTrackingArea(for window: NSWindow) {
+    removeTitlebarTrackingArea()
+    guard let frameView = window.contentView?.superview else { return }
+
+    let frameBoundsInWindow = frameView.convert(frameView.bounds, to: nil)
+    titlebarRectInWindow = CGRect(
+      x: frameBoundsInWindow.minX,
+      y: window.contentLayoutRect.maxY,
+      width: frameBoundsInWindow.width,
+      height: max(frameBoundsInWindow.maxY - window.contentLayoutRect.maxY, 0)
+    )
+    guard titlebarRectInWindow.height > 0 else { return }
+
+    let trackingArea = NSTrackingArea(
+      rect: frameView.convert(titlebarRectInWindow, from: nil),
+      options: [.mouseEnteredAndExited, .activeAlways, .enabledDuringMouseDrag],
+      owner: self,
+      userInfo: nil
+    )
+    frameView.addTrackingArea(trackingArea)
+    titlebarTrackingView = frameView
+    titlebarTrackingArea = trackingArea
+  }
+
+  private func removeTitlebarTrackingArea() {
+    if let titlebarTrackingArea {
+      titlebarTrackingView?.removeTrackingArea(titlebarTrackingArea)
+    }
+    titlebarTrackingArea = nil
+    titlebarTrackingView = nil
+    titlebarRectInWindow = .zero
+  }
+
+  private func pointerIsInsideTitlebar(of window: NSWindow) -> Bool {
+    titlebarRectInWindow.contains(window.mouseLocationOutsideOfEventStream)
   }
 
   private func updateMinimumSize(of window: NSWindow, aspectRatio: Double) {

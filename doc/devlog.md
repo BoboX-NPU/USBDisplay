@@ -350,3 +350,44 @@
 - Repeat the two-device concurrent test on other Mac, iPhone, iPad, cable, and macOS combinations because AVFoundation does not guarantee this topology.
 - Run a 30-minute two-window soak and external latency and frame-rate measurements if performance claims are required.
 - Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.
+
+## 2026-09-03 — Restore the Native Title Bar and Auto-Hide Window Buttons
+
+### Summary
+
+- Restored the separate native macOS title bar, system background, and separator so the sidebar and display surface begin below the title bar.
+- Kept the logical device title visually hidden and preserved the native sidebar toolbar button.
+- Added per-window title-bar tracking and local mouse-move handling for the native close, minimize, and zoom buttons.
+- Kept all three standard buttons visible while the sidebar is expanded; when it is collapsed, the buttons appear on title-bar hover and hide 0.5 seconds after the pointer leaves.
+- Preserved native full-screen behavior and restored the correct button state after exiting full screen.
+- Added a testable window-control visibility state covering sidebar visibility, pointer entry and exit, delayed hiding, cancellation, and sidebar restoration.
+
+### Affected Files
+
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `xcrun swift-format lint --recursive USBDisplay USBDisplayTests`: Passed with no warnings.
+- Xcode Debug build: Passed.
+- Xcode Release build: Passed.
+- Xcode unit tests: Passed 32 tests across four suites.
+- The first test build failed because two Swift Testing assertions invoked mutating state methods inside `#expect`; the return values were stored before assertion and the complete test suite then passed twice.
+- `script/build_and_run.sh --verify`: Passed; built and launched the application and confirmed the process.
+- Running-app title-bar check on macOS 27: Passed; the native title bar and separator were restored and the display surface began below them.
+- Running-app window-control check: Passed; collapsing the sidebar hid only the three standard window buttons, title-bar hover restored them, leaving the title bar hid them again, and expanding the sidebar restored them permanently.
+- Running-app full-screen round trip: Passed; native full screen hid the title-bar controls and exiting restored the expanded-sidebar state.
+- The connected iPhone displayed live content during the initial title-bar check. After later rebuilds, the system capture helper remained in Connecting, so live proportional resizing and rotation were not revalidated in the final build.
+- `plutil -lint USBDisplay.xcodeproj/project.pbxproj Config/Info.plist Config/USBDisplay.entitlements`: Passed.
+- Strict ad-hoc signature verification and built entitlement inspection: Passed.
+
+### Remaining Risks or Follow-up Work
+
+- Reconnect both devices after resetting the macOS capture helper, then validate live proportional resizing, physical rotation, and independent hover behavior in two simultaneous windows.
+- Confirm the 0.5-second hide timing with normal physical pointer movement on additional macOS versions because synthetic UI actions do not provide frame-accurate timing measurements.
+- Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.

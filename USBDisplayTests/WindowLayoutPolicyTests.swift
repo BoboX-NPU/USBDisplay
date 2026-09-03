@@ -160,4 +160,72 @@ struct WindowLayoutPolicyTests {
     #expect(!WindowLayoutPolicy.shouldConstrainWindow(isFullScreen: false, aspectRatio: nil))
     #expect(WindowLayoutPolicy.shouldConstrainWindow(isFullScreen: false, aspectRatio: 4.0 / 3.0))
   }
+
+  @Test
+  func expandedSidebarAlwaysShowsStandardWindowButtons() {
+    var state = WindowControlsVisibilityState(sidebarIsVisible: true)
+
+    #expect(state.showsStandardButtons)
+    let shouldScheduleHide = state.pointerExitedTitlebar()
+    #expect(!shouldScheduleHide)
+    #expect(state.showsStandardButtons)
+  }
+
+  @Test
+  func collapsedSidebarHidesButtonsWhenPointerIsOutsideTitlebar() {
+    let state = WindowControlsVisibilityState(sidebarIsVisible: false)
+
+    #expect(!state.showsStandardButtons)
+  }
+
+  @Test
+  func enteringTitlebarShowsButtonsImmediately() {
+    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
+
+    state.pointerEnteredTitlebar()
+
+    #expect(state.showsStandardButtons)
+    #expect(!state.hideIsPending)
+  }
+
+  @Test
+  func exitingTitlebarKeepsButtonsVisibleUntilDelayElapses() {
+    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTitlebar()
+
+    let shouldScheduleHide = state.pointerExitedTitlebar()
+    #expect(shouldScheduleHide)
+    #expect(state.hideIsPending)
+    #expect(state.showsStandardButtons)
+
+    state.hideDelayElapsed()
+
+    #expect(!state.hideIsPending)
+    #expect(!state.showsStandardButtons)
+  }
+
+  @Test
+  func reenteringTitlebarCancelsPendingHide() {
+    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTitlebar()
+    _ = state.pointerExitedTitlebar()
+
+    state.pointerEnteredTitlebar()
+    state.hideDelayElapsed()
+
+    #expect(!state.hideIsPending)
+    #expect(state.showsStandardButtons)
+  }
+
+  @Test
+  func expandingSidebarCancelsPendingHideAndShowsButtons() {
+    var state = WindowControlsVisibilityState(sidebarIsVisible: false)
+    state.pointerEnteredTitlebar()
+    _ = state.pointerExitedTitlebar()
+
+    state.updateSidebarVisibility(true, pointerIsInsideTitlebar: false)
+
+    #expect(!state.hideIsPending)
+    #expect(state.showsStandardButtons)
+  }
 }
