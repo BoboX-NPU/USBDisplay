@@ -4,12 +4,17 @@ import SwiftUI
 @main
 struct IPhoneUSBDisplayApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-  @State private var model = AppModel()
+  @State private var catalog = DeviceCatalog()
+  @State private var windowRegistry = DeviceWindowRegistry()
 
   var body: some Scene {
-    Window("USB Display", id: "main") {
-      ContentView(model: model)
-        .frame(minWidth: 700, minHeight: 520)
+    WindowGroup("USB Display", id: "display", for: String.self) { $deviceID in
+      DisplayWindowScene(
+        deviceID: $deviceID,
+        catalog: catalog,
+        windowRegistry: windowRegistry
+      )
+      .frame(minWidth: 700, minHeight: 520)
     }
     .defaultSize(width: 980, height: 720)
     .windowResizability(.contentMinSize)

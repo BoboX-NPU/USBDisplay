@@ -4,10 +4,7 @@ import SwiftUI
 
 struct PreviewView: NSViewRepresentable {
   let session: AVCaptureSession
-  let fullScreenToggleRequest: Int
-  let shouldHideCursor: Bool
-  let onActivity: @MainActor () -> Void
-  let onFullScreenChanged: @MainActor (Bool) -> Void
+  let onAspectRatioChanged: @MainActor (Double, Double) -> Void
 
   func makeNSView(context: Context) -> PreviewHostView {
     let view = PreviewHostView(session: session)
@@ -24,24 +21,19 @@ struct PreviewView: NSViewRepresentable {
   }
 
   private func update(_ view: PreviewHostView) {
-    view.onActivity = onActivity
-    view.onFullScreenChanged = onFullScreenChanged
+    view.onAspectRatioChanged = onAspectRatioChanged
     view.setSession(session)
-    view.setCursorHidden(shouldHideCursor)
-    view.handleFullScreenToggleRequest(fullScreenToggleRequest)
+    view.reportAspectRatioIfAvailable()
   }
 }
 
 @MainActor
 final class PreviewHostView: NSView {
   private let previewLayer = AVCaptureVideoPreviewLayer()
-  private var trackingAreaReference: NSTrackingArea?
-  private var windowObservers: [NSObjectProtocol] = []
-  private var cursorHidden = false
-  private var handledFullScreenToggleRequest = 0
+  private var aspectRatioTimer: Timer?
+  private var lastReportedAspectRatio: Double?
 
-  var onActivity: (() -> Void)?
-  var onFullScreenChanged: ((Bool) -> Void)?
+  var onAspectRatioChanged: ((Double, Double) -> Void)?
 
   init(session: AVCaptureSession) {
     super.init(frame: .zero)
@@ -71,87 +63,27 @@ final class PreviewHostView: NSView {
     CATransaction.setDisableActions(true)
     previewLayer.frame = bounds
     CATransaction.commit()
-  }
-
-  override func updateTrackingAreas() {
-    super.updateTrackingAreas()
-
-    if let trackingAreaReference {
-      removeTrackingArea(trackingAreaReference)
-    }
-
-    let trackingArea = NSTrackingArea(
-      rect: .zero,
-      options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited, .mouseMoved],
-      owner: self,
-      userInfo: nil
-    )
-    addTrackingArea(trackingArea)
-    trackingAreaReference = trackingArea
+    reportAspectRatioIfAvailable()
   }
 
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
-    removeWindowObservers()
 
-    guard let window else {
-      setCursorHidden(false)
-      return
+    aspectRatioTimer?.invalidate()
+    aspectRatioTimer = nil
+
+    guard window != nil else { return }
+
+    let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+      MainActor.assumeIsolated {
+        self?.reportAspectRatioIfAvailable()
+      }
     }
-
-    window.acceptsMouseMovedEvents = true
-    let center = NotificationCenter.default
-    windowObservers = [
-      center.addObserver(
-        forName: NSWindow.didEnterFullScreenNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          self?.onFullScreenChanged?(true)
-        }
-      },
-      center.addObserver(
-        forName: NSWindow.didExitFullScreenNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          self?.setCursorHidden(false)
-          self?.onFullScreenChanged?(false)
-        }
-      },
-      center.addObserver(
-        forName: NSWindow.didResignKeyNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          self?.setCursorHidden(false)
-        }
-      },
-      center.addObserver(
-        forName: NSWindow.didBecomeKeyNotification,
-        object: window,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          self?.onActivity?()
-        }
-      },
-    ]
-  }
-
-  override func mouseMoved(with event: NSEvent) {
-    onActivity?()
-  }
-
-  override func mouseEntered(with event: NSEvent) {
-    onActivity?()
+    RunLoop.main.add(timer, forMode: .common)
+    aspectRatioTimer = timer
   }
 
   override func mouseDown(with event: NSEvent) {
-    onActivity?()
     if event.clickCount == 2 {
       window?.toggleFullScreen(nil)
     } else {
@@ -162,28 +94,35 @@ final class PreviewHostView: NSView {
   func setSession(_ session: AVCaptureSession) {
     guard previewLayer.session !== session else { return }
     previewLayer.session = session
+    lastReportedAspectRatio = nil
   }
 
-  func handleFullScreenToggleRequest(_ request: Int) {
-    guard request != handledFullScreenToggleRequest else { return }
-    handledFullScreenToggleRequest = request
-    window?.toggleFullScreen(nil)
-  }
+  func reportAspectRatioIfAvailable() {
+    guard previewLayer.session?.isRunning == true, !bounds.isEmpty else { return }
 
-  func setCursorHidden(_ hidden: Bool) {
-    guard hidden != cursorHidden else { return }
-
-    if hidden {
-      NSCursor.hide()
-    } else {
-      NSCursor.unhide()
+    let pictureRect = previewLayer.layerRectConverted(
+      fromMetadataOutputRect: CGRect(x: 0, y: 0, width: 1, height: 1)
+    )
+    guard
+      let ratio = PreviewLayoutPolicy.validAspectRatio(
+        width: pictureRect.width,
+        height: pictureRect.height
+      )
+    else {
+      return
     }
-    cursorHidden = hidden
+
+    if let lastReportedAspectRatio, abs(lastReportedAspectRatio - ratio) < 0.001 {
+      return
+    }
+
+    lastReportedAspectRatio = ratio
+    onAspectRatioChanged?(pictureRect.width, pictureRect.height)
   }
 
   func prepareForRemoval() {
-    setCursorHidden(false)
-    removeWindowObservers()
+    aspectRatioTimer?.invalidate()
+    aspectRatioTimer = nil
     previewLayer.session = nil
   }
 
@@ -197,15 +136,4 @@ final class PreviewHostView: NSView {
     ]
   }
 
-  private func removeWindowObservers() {
-    windowObservers.forEach(NotificationCenter.default.removeObserver)
-    windowObservers.removeAll()
-  }
-
-  deinit {
-    if cursorHidden {
-      NSCursor.unhide()
-    }
-    windowObservers.forEach(NotificationCenter.default.removeObserver)
-  }
 }

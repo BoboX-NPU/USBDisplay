@@ -20,23 +20,3 @@ enum CaptureDeviceFilter {
       && descriptor.manufacturer == "Apple Inc."
   }
 }
-
-enum DeviceSelectionPolicy {
-  static func selectedID(
-    devices: [DisplayDevice],
-    currentID: String?,
-    lastSelectedID: String?
-  ) -> String? {
-    let availableIDs = Set(devices.map(\.id))
-
-    if let currentID, availableIDs.contains(currentID) {
-      return currentID
-    }
-
-    if let lastSelectedID, availableIDs.contains(lastSelectedID) {
-      return lastSelectedID
-    }
-
-    return devices.count == 1 ? devices[0].id : nil
-  }
-}

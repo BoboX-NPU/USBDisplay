@@ -233,3 +233,65 @@
 - Measure end-to-end latency with a 240 fps external camera and compare the three quality settings under the same device and cable conditions.
 - Run the 30-minute stability test, sustained frame-rate measurement, rotation, hot-plug, occupied-device recovery, and macOS 14–15 fallback checks.
 - Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.
+
+## 2026-09-03 — Add Per-Device Windows and Simplify the Display UI
+
+### Summary
+
+- Replaced the single global capture model with an application-level device catalog and one independent capture model and `AVCaptureSession` per device window.
+- Added a typed, device-ID-based `WindowGroup`, device-window routing, and ownership tracking so each device opens or focuses at most one window.
+- Removed Auto, 1080p, and 4K choices, saved quality preferences, preset selection, and the associated menu and tests because accepted presets do not establish the source stream resolution.
+- Removed custom connection, quality, pointer-hiding, and full-screen control overlays while retaining native window controls and the system sidebar toggle.
+- Reduced the sidebar to device names and selection state and kept it below the title bar and separate from the display area.
+- Added a proportional display viewport with system-background whitespace, a 16-point inset, clipping, and live aspect-ratio updates from the direct preview layer.
+- Kept device names as hidden logical window titles for accessibility and Window menu identification.
+- Added unit coverage for first-window assignment, per-device window reuse, ownership, invalid aspect ratios, and portrait and landscape fitting.
+- Documented that the current public preview path does not provide reliable resolution selection or latency control.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Models/CaptureQuality.swift`
+- `USBDisplay/Models/ConnectionStatus.swift`
+- `USBDisplay/Models/ControlAutoHidePolicy.swift`
+- `USBDisplay/Models/DeviceWindowRoutingPolicy.swift`
+- `USBDisplay/Models/DisplayDevice.swift`
+- `USBDisplay/Models/PreviewLayoutPolicy.swift`
+- `USBDisplay/Services/AppModel.swift`
+- `USBDisplay/Services/CaptureCoordinator.swift`
+- `USBDisplay/Services/DeviceCatalog.swift`
+- `USBDisplay/Views/CaptureQualityMenu.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/DisplayWindowScene.swift`
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplay/Views/SidebarView.swift`
+- `USBDisplayTests/CaptureQualityTests.swift`
+- `USBDisplayTests/ControlAutoHidePolicyTests.swift`
+- `USBDisplayTests/DeviceSelectionTests.swift`
+- `USBDisplayTests/DeviceWindowRoutingTests.swift`
+- `USBDisplayTests/PreviewLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `xcrun swift-format lint --recursive USBDisplay USBDisplayTests`: Passed with no warnings.
+- Xcode Debug build: Passed.
+- Xcode Release build: Passed.
+- Xcode unit tests: Passed 15 tests across four suites.
+- `script/build_and_run.sh --verify`: Passed; built and launched the application and confirmed the process.
+- `plutil -lint USBDisplay.xcodeproj/project.pbxproj Config/Info.plist Config/USBDisplay.entitlements`: Passed.
+- Running-app two-device check on macOS 27: Passed; the connected iPad and iPhone displayed live content in separate windows, and sidebar selection focused the existing device window without duplication.
+- Independent window lifecycle check: Passed; closing one device window stopped only that coordinator and left the other window running.
+- Running-app layout check: Passed for hidden visual titles, one system sidebar toggle, sidebar containment, 16-point system-background whitespace, and proportional landscape and portrait previews.
+- Native full-screen check: Passed with no connection label, quality menu, custom button, or custom top overlay.
+- Dynamic physical rotation, hot unplug/replug, occupied-device recovery, camera permission denial, 30-minute concurrent soak, sustained frame rate, and external latency measurement: Not run.
+
+### Remaining Risks or Follow-up Work
+
+- Repeat the two-device concurrent test on other Mac, iPhone, iPad, cable, and macOS combinations because AVFoundation does not guarantee this topology.
+- Validate live aspect-ratio changes during physical device rotation and verify that hot-unplugging one device does not affect the other live window.
+- Run a 30-minute two-window soak and external latency and frame-rate measurements if performance claims are required.
+- Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.

@@ -1,5 +1,4 @@
 @preconcurrency import AVFoundation
-@preconcurrency import CoreMediaIO
 import Foundation
 
 final class CaptureCoordinator: @unchecked Sendable {
@@ -13,142 +12,58 @@ final class CaptureCoordinator: @unchecked Sendable {
     qos: .userInitiated
   )
   private let notificationCenter: NotificationCenter
-  private let userDefaults: UserDefaults
 
-  private var discoverySession: AVCaptureDevice.DiscoverySession?
-  private var discoveryObservation: NSKeyValueObservation?
   private var notificationObservers: [NSObjectProtocol] = []
-  private var captureDevices: [String: AVCaptureDevice] = [:]
-  private var displayDevices: [DisplayDevice] = []
   private var currentInput: AVCaptureDeviceInput?
   private var currentStatus: ConnectionStatus = .noDevice
   private var selectedDeviceID: String?
-  private var lastSelectedDeviceID: String?
+  private var lastKnownDeviceName: String?
   private var retryWorkItem: DispatchWorkItem?
   private var retryAttempt = 0
   private var retryGeneration = 0
   private var permissionRequestInFlight = false
   private var started = false
   private var captureStartGeneration = 0
-  private var captureQuality: CaptureQuality
-
-  private static let lastSelectedDeviceKey = "LastSelectedDisplayDeviceID"
 
   init(
+    deviceID: String? = nil,
     notificationCenter: NotificationCenter = .default,
-    userDefaults: UserDefaults = .standard,
-    initialQuality: CaptureQuality = .automatic,
     snapshotHandler: @escaping SnapshotHandler
   ) {
+    selectedDeviceID = deviceID
     self.notificationCenter = notificationCenter
-    self.userDefaults = userDefaults
-    captureQuality = initialQuality
     self.snapshotHandler = snapshotHandler
-    lastSelectedDeviceID = userDefaults.string(forKey: Self.lastSelectedDeviceKey)
   }
 
   func start() {
     sessionQueue.async { [weak self] in
       guard let self, !self.started else { return }
       self.started = true
-      self.configureCoreMediaIO()
       self.installObservers()
-      self.createDiscoverySession()
-      AppLogger.session.info("Capture coordinator started")
+      self.connectSelectedDevice()
+      AppLogger.session.info("Window capture coordinator started")
     }
   }
 
   func stop() {
-    sessionQueue.async { [weak self] in
-      guard let self, self.started else { return }
+    sessionQueue.async { [self] in
+      guard started else { return }
       self.started = false
       self.cancelRetry()
-      self.discoveryObservation?.invalidate()
-      self.discoveryObservation = nil
-      self.discoverySession = nil
       self.notificationObservers.forEach(self.notificationCenter.removeObserver)
       self.notificationObservers.removeAll()
       self.stopAndClearSession()
-      AppLogger.session.info("Capture coordinator stopped")
+      AppLogger.session.info("Window capture coordinator stopped")
     }
   }
 
-  func selectDevice(id: String) {
+  func setDeviceID(_ deviceID: String?) {
     sessionQueue.async { [weak self] in
-      guard let self, self.captureDevices[id] != nil else { return }
+      guard let self, deviceID != self.selectedDeviceID else { return }
       self.cancelRetry()
-      self.selectedDeviceID = id
-      self.lastSelectedDeviceID = id
-      self.userDefaults.set(id, forKey: Self.lastSelectedDeviceKey)
-      AppLogger.device.info("User selected an Apple mobile screen capture device")
+      self.selectedDeviceID = deviceID
+      self.lastKnownDeviceName = nil
       self.connectSelectedDevice()
-    }
-  }
-
-  func setCaptureQuality(_ quality: CaptureQuality) {
-    sessionQueue.async { [weak self] in
-      guard let self, quality != self.captureQuality else { return }
-      self.cancelRetry()
-      self.captureQuality = quality
-      AppLogger.performance.info(
-        "Capture quality changed to \(quality.rawValue, privacy: .public)"
-      )
-      self.connectSelectedDevice()
-    }
-  }
-
-  private func configureCoreMediaIO() {
-    setCoreMediaIOProperty(
-      kCMIOHardwarePropertyAllowScreenCaptureDevices,
-      value: 1,
-      description: "wired screen capture"
-    )
-    setCoreMediaIOProperty(
-      kCMIOHardwarePropertyAllowWirelessScreenCaptureDevices,
-      value: 0,
-      description: "wireless screen capture"
-    )
-  }
-
-  private func setCoreMediaIOProperty(
-    _ selector: Int,
-    value: UInt32,
-    description: String
-  ) {
-    var propertyAddress = CMIOObjectPropertyAddress(
-      mSelector: CMIOObjectPropertySelector(selector),
-      mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
-      mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain)
-    )
-    var mutableValue = value
-    let status = CMIOObjectSetPropertyData(
-      CMIOObjectID(kCMIOObjectSystemObject),
-      &propertyAddress,
-      0,
-      nil,
-      UInt32(MemoryLayout<UInt32>.size),
-      &mutableValue
-    )
-
-    if status == noErr {
-      AppLogger.device.info("Configured \(description, privacy: .public) discovery")
-    } else {
-      AppLogger.device.error(
-        "Failed to configure \(description, privacy: .public) discovery: \(status)"
-      )
-    }
-  }
-
-  private func createDiscoverySession() {
-    let discoverySession = AVCaptureDevice.DiscoverySession(
-      deviceTypes: [.external],
-      mediaType: .muxed,
-      position: .unspecified
-    )
-    self.discoverySession = discoverySession
-    discoveryObservation = discoverySession.observe(\.devices, options: [.initial, .new]) {
-      [weak self] _, _ in
-      self?.enqueueDeviceRefresh()
     }
   }
 
@@ -158,8 +73,9 @@ final class CaptureCoordinator: @unchecked Sendable {
         forName: AVCaptureDevice.wasConnectedNotification,
         object: nil,
         queue: nil
-      ) { [weak self] _ in
-        self?.enqueueDeviceRefresh()
+      ) { [weak self] notification in
+        guard let device = notification.object as? AVCaptureDevice else { return }
+        self?.handleDeviceAvailabilityChange(deviceID: device.uniqueID)
       }
     )
     notificationObservers.append(
@@ -167,8 +83,9 @@ final class CaptureCoordinator: @unchecked Sendable {
         forName: AVCaptureDevice.wasDisconnectedNotification,
         object: nil,
         queue: nil
-      ) { [weak self] _ in
-        self?.enqueueDeviceRefresh()
+      ) { [weak self] notification in
+        guard let device = notification.object as? AVCaptureDevice else { return }
+        self?.handleDeviceAvailabilityChange(deviceID: device.uniqueID)
       }
     )
     notificationObservers.append(
@@ -210,68 +127,34 @@ final class CaptureCoordinator: @unchecked Sendable {
     )
   }
 
-  private func enqueueDeviceRefresh() {
+  private func handleDeviceAvailabilityChange(deviceID: String) {
     sessionQueue.async { [weak self] in
-      self?.refreshDevices()
-    }
-  }
-
-  private func refreshDevices() {
-    guard started, let discoverySession else { return }
-
-    let eligibleDevices = discoverySession.devices
-      .filter { CaptureDeviceFilter.isEligible(Self.descriptor(for: $0)) }
-      .sorted {
-        $0.localizedName.localizedCaseInsensitiveCompare($1.localizedName) == .orderedAscending
-      }
-
-    let previousSelectedID = selectedDeviceID
-    let previousSelectedName = previousSelectedID.flatMap { captureDevices[$0]?.localizedName }
-    captureDevices = Dictionary(uniqueKeysWithValues: eligibleDevices.map { ($0.uniqueID, $0) })
-    displayDevices = eligibleDevices.map {
-      DisplayDevice(id: $0.uniqueID, name: $0.localizedName)
-    }
-
-    let desiredSelection = DeviceSelectionPolicy.selectedID(
-      devices: displayDevices,
-      currentID: selectedDeviceID,
-      lastSelectedID: lastSelectedDeviceID
-    )
-
-    AppLogger.device.info(
-      "Found \(self.displayDevices.count) eligible wired Apple mobile device(s)")
-
-    guard let desiredSelection else {
-      cancelRetry()
-      selectedDeviceID = nil
-      stopAndClearSession()
-
-      if displayDevices.isEmpty {
-        publish(
-          status: DeviceAbsenceStatusPolicy.status(
-            previousSelectedName: previousSelectedName,
-            currentStatus: currentStatus
-          ))
-      } else {
-        publish(status: .noDevice)
-      }
-      return
-    }
-
-    if desiredSelection != selectedDeviceID || currentInput?.device.uniqueID != desiredSelection {
-      selectedDeviceID = desiredSelection
-      connectSelectedDevice()
-    } else {
-      publish(status: currentStatus)
+      guard let self, deviceID == self.selectedDeviceID else { return }
+      self.connectSelectedDevice()
     }
   }
 
   private func connectSelectedDevice() {
-    guard
-      started,
-      let selectedDeviceID,
-      let device = captureDevices[selectedDeviceID]
-    else {
+    guard started else { return }
+
+    guard let selectedDeviceID else {
+      cancelRetry()
+      stopAndClearSession()
+      publish(status: .noDevice)
+      return
+    }
+
+    guard let device = MobileScreenDeviceDiscovery.device(withID: selectedDeviceID) else {
+      cancelRetry()
+      stopAndClearSession()
+      publish(status: .interrupted(deviceName: lastKnownDeviceName))
+      return
+    }
+
+    lastKnownDeviceName = device.localizedName
+
+    if currentInput?.device.uniqueID == device.uniqueID, session.isRunning {
+      publish(status: currentStatus)
       return
     }
 
@@ -343,13 +226,7 @@ final class CaptureCoordinator: @unchecked Sendable {
 
       session.addInput(input)
       currentInput = input
-
-      let preset = CaptureQualityPolicy.firstSupportedPreset(
-        for: captureQuality,
-        supports: session.canSetSessionPreset
-      )
-      session.sessionPreset = preset
-      logCaptureConfiguration(device: device, appliedPreset: preset)
+      AppLogger.session.info("Using the system-negotiated mobile screen stream")
     } catch {
       handleConnectionError(error as NSError, device: device)
       return
@@ -364,21 +241,6 @@ final class CaptureCoordinator: @unchecked Sendable {
       publish(status: .failed(message: "The device screen stream did not start."))
       scheduleRetry(for: device, occupied: false)
     }
-  }
-
-  private func logCaptureConfiguration(
-    device: AVCaptureDevice,
-    appliedPreset: AVCaptureSession.Preset
-  ) {
-    let dimensions = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
-    let maximumFrameRate =
-      device.activeFormat.videoSupportedFrameRateRanges
-      .map(\.maxFrameRate)
-      .max() ?? 0
-
-    AppLogger.performance.info(
-      "Capture configuration requested=\(self.captureQuality.rawValue, privacy: .public) appliedPreset=\(appliedPreset.rawValue, privacy: .public) publicFormatWidth=\(dimensions.width) publicFormatHeight=\(dimensions.height) publicMaximumFPS=\(maximumFrameRate, format: .fixed(precision: 2))"
-    )
   }
 
   private func handleConnectionError(_ error: NSError, device: AVCaptureDevice) {
@@ -403,7 +265,6 @@ final class CaptureCoordinator: @unchecked Sendable {
     case .disconnected:
       stopAndClearSession()
       publish(status: .interrupted(deviceName: device.localizedName))
-      refreshDevices()
     case .mediaServicesReset:
       stopAndClearSession()
       scheduleRetry(for: device, occupied: false)
@@ -416,8 +277,10 @@ final class CaptureCoordinator: @unchecked Sendable {
   private func handleRuntimeError(_ error: NSError) {
     guard
       let selectedDeviceID,
-      let device = captureDevices[selectedDeviceID]
+      let device = MobileScreenDeviceDiscovery.device(withID: selectedDeviceID)
     else {
+      stopAndClearSession()
+      publish(status: .interrupted(deviceName: lastKnownDeviceName))
       return
     }
 
@@ -448,8 +311,9 @@ final class CaptureCoordinator: @unchecked Sendable {
   private func handleInterruption() {
     guard
       let selectedDeviceID,
-      let device = captureDevices[selectedDeviceID]
+      let device = MobileScreenDeviceDiscovery.device(withID: selectedDeviceID)
     else {
+      publish(status: .interrupted(deviceName: lastKnownDeviceName))
       return
     }
 
@@ -481,7 +345,7 @@ final class CaptureCoordinator: @unchecked Sendable {
         return
       }
 
-      AppLogger.session.info("Retrying the selected capture device")
+      AppLogger.session.info("Retrying this window's capture device")
       self.connectSelectedDevice()
     }
     retryWorkItem = workItem
@@ -517,7 +381,6 @@ final class CaptureCoordinator: @unchecked Sendable {
   private func publish(status: ConnectionStatus) {
     currentStatus = status
     let snapshot = CaptureSnapshot(
-      devices: displayDevices,
       selectedDeviceID: selectedDeviceID,
       status: status
     )
@@ -526,14 +389,6 @@ final class CaptureCoordinator: @unchecked Sendable {
     Task { @MainActor in
       snapshotHandler(snapshot)
     }
-  }
-
-  private static func descriptor(for device: AVCaptureDevice) -> CaptureDeviceDescriptor {
-    CaptureDeviceDescriptor(
-      isExternal: device.deviceType == .external,
-      hasMuxedMedia: device.hasMediaType(.muxed),
-      manufacturer: device.manufacturer
-    )
   }
 }
 

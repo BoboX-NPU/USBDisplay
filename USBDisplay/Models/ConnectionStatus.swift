@@ -68,24 +68,6 @@ enum ConnectionStatus: Equatable, Sendable {
 }
 
 struct CaptureSnapshot: Equatable, Sendable {
-  let devices: [DisplayDevice]
   let selectedDeviceID: String?
   let status: ConnectionStatus
-}
-
-enum DeviceAbsenceStatusPolicy {
-  static func status(
-    previousSelectedName: String?,
-    currentStatus: ConnectionStatus
-  ) -> ConnectionStatus {
-    if let previousSelectedName {
-      return .interrupted(deviceName: previousSelectedName)
-    }
-
-    if case .interrupted(let deviceName) = currentStatus {
-      return .interrupted(deviceName: deviceName)
-    }
-
-    return .noDevice
-  }
 }
