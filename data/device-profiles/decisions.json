@@ -1,0 +1,38 @@
+{
+  "iPad11,3": {
+    "appleRadius": 18,
+    "bezelRadius": 0,
+    "rounded": false,
+    "resolution": "square",
+    "reason": "DeviceKit explicitly marks both iPad Air 3 identifiers as having no rounded display corners, agreeing with BezelKit's zero radius. Apple specifications confirm the 1668 x 2224 Retina display and product identity; they do not publish a numeric corner radius.",
+    "supportURL": "https://support.apple.com/en-us/111939"
+  },
+  "iPhone13,2": {
+    "appleRadius": 47,
+    "bezelRadius": 47.33,
+    "rounded": true,
+    "resolution": "apple",
+    "reason": "The installed Apple display profile and its DeviceCornerRadius field both specify 47 logical points. Retain this traceable display reference instead of replacing it with BezelKit's runtime-derived 47.33; neither value is claimed to be a physical measurement."
+  },
+  "iPhone13,3": {
+    "appleRadius": 47,
+    "bezelRadius": 47.33,
+    "rounded": true,
+    "resolution": "apple",
+    "reason": "The installed Apple display profile and its DeviceCornerRadius field both specify 47 logical points. Retain the Apple reference; the separate BezelKit runtime-derived value is preserved in the audit."
+  },
+  "iPhone13,4": {
+    "appleRadius": 53,
+    "bezelRadius": 53.33,
+    "rounded": true,
+    "resolution": "apple",
+    "reason": "The installed Apple display profile and its DeviceCornerRadius field both specify 53 logical points. Retain the Apple reference; the separate BezelKit runtime-derived value is preserved in the audit."
+  },
+  "iPad16,8": {
+    "appleRadius": 18,
+    "bezelRadius": 0,
+    "rounded": true,
+    "resolution": "apple",
+    "reason": "DeviceKit groups iPad16,8 and iPad16,9 as iPad Air 11-inch (M4). Apple's iPad16,9 profile supplies the 18 / 820 geometry. Reject BezelKit's first-generation iPad Pro name and zero radius for iPad16,8."
+  }
+}

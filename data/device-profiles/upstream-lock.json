@@ -1,0 +1,30 @@
+{
+  "bezelkit": {
+    "files": {
+      "bezelkit-LICENSE.txt": {
+        "path": "LICENCE",
+        "sha256": "8386f06dbb87fd0781dd4b65178726b96e940d781e366f517239647d5130d690"
+      },
+      "bezelkit.json": {
+        "path": "Sources/BezelKit/Resources/bezel.min.json",
+        "sha256": "77b0caa206799891e42afc131aec080058fd3100238860eef164a37a0e04bdb9"
+      }
+    },
+    "repository": "https://github.com/markbattistella/BezelKit",
+    "revision": "6cd571cd2e07dc6c597cfb9e1281cc0335ecb797"
+  },
+  "devicekit": {
+    "files": {
+      "devicekit-LICENSE.txt": {
+        "path": "LICENSE",
+        "sha256": "725a298bb896f12220f691494f72639f5e4a280627f3222955aed4b441d9b91c"
+      },
+      "devicekit.gyb": {
+        "path": "Source/Device.swift.gyb",
+        "sha256": "f8440ff24f8078556a71ff2eeae2741e3c3dda3846b20645a765aa6de03f75bf"
+      }
+    },
+    "repository": "https://github.com/devicekit/DeviceKit",
+    "revision": "56b997e8a61707218f9af09f32b2a1d1806fd792"
+  }
+}

@@ -23,7 +23,7 @@ A capture device can match a USB identity only when its exact device name occurs
 
 ## Corner Resolution
 
-The exact `ProductType` selects the checked-in [display reference table](device-corner-profiles.md). Radius is the reference logical-point radius divided by the logical screen short side, multiplied by the displayed short side. Rotation uses the same normalized value. The current physical iPhone resolves to `iPhone17,1`, iPhone 16 Pro.
+The exact `ProductType` selects a profile from the bundled [generated display catalog](device-corner-profiles.md). Explicit DeviceKit identifier groups extend Apple reference geometry to corroborated hardware variants; runtime matching still requires the exact product code. Radius is the reference logical-point radius divided by the logical screen short side, multiplied by the displayed short side. Rotation uses the same normalized value. The current physical iPhone resolves to `iPhone17,1`, iPhone 16 Pro.
 
 An unlisted product retains its identified model code but uses zero custom radius. Unavailable or ambiguous identities also use zero and show their status in the device row. The manual adjustment panel is removed. The old `displayCornerRadiusOverrides` preference data remains untouched and has no effect on rendering.
 

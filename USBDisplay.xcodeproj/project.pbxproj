@@ -32,6 +32,8 @@
 		AA0000000000000000000606 /* USBDeviceInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000206 /* USBDeviceInfoTests.swift */; };
 		AA0000000000000000000520 /* USBDeviceInfoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000120; };
 		AA0000000000000000000607 /* WindowRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000207; };
+		AA0000000000000000000521 /* device-corner-profiles.json in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000121; };
+		AA0000000000000000000522 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000122; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +76,8 @@
 		AA0000000000000000000402 /* iPhoneUSBDisplayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iPhoneUSBDisplayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000120 /* USBDeviceInfoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBDeviceInfoService.swift; sourceTree = "<group>"; };
 		AA0000000000000000000207 /* WindowRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowRenderingTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000121 /* device-corner-profiles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = USBDisplay/Resources/device-corner-profiles.json; sourceTree = SOURCE_ROOT; };
+		AA0000000000000000000122 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = USBDisplay/Resources/ThirdPartyNotices.txt; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000000000000000000004 /* Sources */,
+				AA000000000000000000000C /* Resources */,
 				AA000000000000000000000A /* Tests */,
 				AA000000000000000000000B /* Config */,
 				AA0000000000000000000003 /* Products */,
@@ -101,6 +106,7 @@
 		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000114 /* DisplayWindowScene.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */, AA0000000000000000000116 /* WindowLayoutCoordinator.swift */); path = Views; sourceTree = "<group>"; };
 		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (AA0000000000000000000207 /* WindowRenderingTests.swift */, AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000206 /* USBDeviceInfoTests.swift */, AA0000000000000000000205 /* DisplayCornerProfileTests.swift */, AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
 		AA000000000000000000000B /* Config */ = {isa = PBXGroup; children = (AA0000000000000000000301 /* Info.plist */, AA0000000000000000000302 /* USBDisplay.entitlements */); path = Config; sourceTree = "<group>"; };
+		AA000000000000000000000C /* Resources */ = {isa = PBXGroup; children = (AA0000000000000000000121, AA0000000000000000000122); name = Resources; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -146,7 +152,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		AA0000000000000000000803 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000803 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000521, AA0000000000000000000522); runOnlyForDeploymentPostprocessing = 0; };
 		AA0000000000000000000813 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 

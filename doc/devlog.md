@@ -647,3 +647,52 @@
 
 - Inspect the compact running window after unlock against both light and dark backgrounds. Confirm that the reported white line and rectangular outline are gone; shadow suppression alone is not yet claimed to resolve every visible WindowServer artifact.
 - Complete the existing physical drag, hover, full-screen, and video-continuity acceptance checks. No physical acceptance result from the previous entry is extended to this change.
+
+## 2026-09-05 — Expand the Automatic Device Corner Catalog
+
+### Summary
+
+- Replace the 80-entry Swift table with a validated bundled JSON catalog of 164 product identifiers: 60 iPhone and 104 iPad. Retain every previous identifier and add 84 corroborated hardware variants and older devices. Runtime selection still requires the exact USB ProductType and never downloads metadata.
+- Preserve 85 Apple Simulator source-bundle observations, including their original plist hashes. Pin complete BezelKit and DeviceKit metadata snapshots and MIT licenses to immutable upstream revisions and SHA-256 hashes.
+- Generate variant mappings from explicit DeviceKit hardware groups. Use an exact Apple member for rounded-display geometry; accept older square displays only when DeviceKit and BezelKit agree on zero. Parse downloaded GYB literals without executing the source.
+- Review five source conflicts. Correct the iPad Air 3 profile to zero, retain the existing Apple references for iPhone 12 / 12 Pro / 12 Pro Max, and correct BezelKit's iPad16,8 name/radius using the explicit iPad Air M4 group. Exclude six uncorroborated upstream identifiers rather than guessing.
+- Add an offline generator, pinned-download refresh command, generated source audit, and bundled third-party notices. Unreviewed numeric conflicts, stale decisions, changed parser schemas, source-hash mismatches, and invalid geometry stop generation. Keep upstream source files unchanged for reproducible hash verification.
+
+### Affected Files
+
+- `.gitignore` (ignore Python bytecode caches)
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay/Models/DisplayCornerProfile.swift`
+- `USBDisplay/Resources/device-corner-profiles.json`
+- `USBDisplay/Resources/ThirdPartyNotices.txt`
+- `USBDisplayTests/DisplayCornerProfileTests.swift`
+- `data/device-profiles/apple-simulator.json`
+- `data/device-profiles/bezelkit.json`
+- `data/device-profiles/devicekit.gyb`
+- `data/device-profiles/bezelkit-LICENSE.txt`
+- `data/device-profiles/devicekit-LICENSE.txt`
+- `data/device-profiles/upstream-lock.json`
+- `data/device-profiles/decisions.json`
+- `script/update_device_profiles.py`
+- `script/test_device_profiles.py`
+- `doc/device-corner-catalog.md`
+- `doc/device-corner-profiles.md`
+- `doc/usb-device-identification.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Full Debug Xcode suite: Passed 67 tests, zero failures and zero skips. New checks cover bundled coverage, corroborated aliases, reviewed conflicts, old square displays, unknown identifiers, normalization in both orientations, and invalid resource schemas, duplicates, and geometry. Existing protocol, rendering, window lifecycle, and geometry regressions also passed.
+- Python generator suite: Passed nine tests covering reproducibility, preserved Apple coverage, new/stale conflict rejection (including Apple-only fallback records), conflicting memory variants, missing measured geometry, nonfinite values, duplicate/schema changes, and nonexecution of downloaded source.
+- Independently compared the previous Swift table with generated output: all 80 identifiers retained; the only changed existing radius/short-side pair is the reviewed iPad Air 3 correction.
+- Offline generation and `--check`: Passed. The actual `--download` command re-fetched both pinned public sources and licenses with matching hashes; subsequent generation remained reproducible.
+- Strict recursive Swift-format lint, project plist validation, working-tree and staged whitespace checks: Passed. Debug and Release builds: Passed. Both app bundles contain catalog and notice resources byte-identical to the generated files. Strict Debug/Release signature verification: Passed.
+- Canonical `./script/build_and_run.sh --verify`: Passed. The running application showed the connected device as iPhone 16 Pro with `Automatic corners`, confirming the expanded catalog still resolves the current physical device.
+- Live video appearance, continuous playback, and the reported edge artifacts: Not run to acceptance. The Mac was unlocked for this check, but the preview was black in both expanded and compact snapshots. Identification success is not a playback or corner-compositing pass. No device screenshots or identifying serial values were committed.
+
+### Remaining Risks or Follow-up Work
+
+- Validate reference geometry on additional physical iPhone/iPad models. The 164 identifiers represent metadata coverage; unavailable devices and older-device capture compatibility were not tested physically.
+- Review future upstream conflicts against traceable evidence. Six excluded BezelKit identifiers remain explicitly listed in the generated audit; new rounded groups need an Apple geometry anchor before inclusion.
+- Restore or investigate visible live capture, then complete the previously outstanding white-line/rectangular-outline, frame-continuity, pointer-drag, hover, screen-edge, full-screen, and multiple-device acceptance checks. This data-catalog change does not claim to resolve those appearance or playback checks.

@@ -21,9 +21,9 @@ enum DisplayCornerProfileResolver {
     }
     return DisplayCornerProfile(
       modelName: reference.name,
-      fraction: reference.radius / reference.shortSide,
+      fraction: reference.fraction,
       source: .modelMatch,
-      reference: "Apple Simulator display profile"
+      reference: reference.reference
     )
   }
 
@@ -48,88 +48,56 @@ enum DisplayCornerProfileResolver {
     return shortSide * clampedFraction(fraction)
   }
 
-  // Reference measurements in logical points, never inferred from a device name or aspect ratio.
-  // Provenance and source hashes: doc/device-corner-profiles.md.
-  private static let modelProfiles: [String: (name: String, radius: Double, shortSide: Double)] = [
-    "iPad11,1": ("iPad mini (5th generation)", 0.0, 768.0),
-    "iPad11,3": ("iPad Air (3rd generation)", 18.0, 834.0),
-    "iPad11,7": ("iPad (8th generation)", 0.0, 810.0),
-    "iPad12,2": ("iPad", 0.0, 810.0),
-    "iPad13,10": ("iPad Pro (12.9-inch) (5th generation)", 18.0, 1024.0),
-    "iPad13,17": ("iPad Air (5th generation)", 18.0, 820.0),
-    "iPad13,18": ("iPad (10th generation)", 25.0, 820.0),
-    "iPad13,2": ("iPad Air (4th generation)", 18.0, 820.0),
-    "iPad13,5": ("iPad Pro (11-inch) (3rd generation)", 18.0, 834.0),
-    "iPad14,1": ("iPad mini", 21.5, 744.0),
-    "iPad14,11": ("iPad Air 13-inch (M2)", 18.0, 1024.0),
-    "iPad14,3": ("iPad Pro (11-inch) (4th generation)", 18.0, 834.0),
-    "iPad14,4": ("iPad Pro (11-inch) (4th generation)", 18.0, 834.0),
-    "iPad14,5": ("iPad Pro (12.9-inch) (6th generation)", 18.0, 1024.0),
-    "iPad14,9": ("iPad Air 11-inch (M2)", 18.0, 820.0),
-    "iPad15,3": ("iPad Air 11-inch (M3)", 18.0, 820.0),
-    "iPad15,5": ("iPad Air 13-inch (M3)", 18.0, 1024.0),
-    "iPad15,7": ("iPad (A16)", 25.0, 820.0),
-    "iPad16,11": ("iPad Air 13-inch (M4)", 18.0, 1024.0),
-    "iPad16,2": ("iPad mini (A17 Pro)", 21.5, 744.0),
-    "iPad16,4": ("iPad Pro 11-inch (M4)", 30.0, 834.0),
-    "iPad16,6": ("iPad Pro 13-inch (M4)", 30.0, 1032.0),
-    "iPad16,9": ("iPad Air 11-inch (M4)", 18.0, 820.0),
-    "iPad17,2": ("iPad Pro 11-inch (M5)", 30.0, 834.0),
-    "iPad17,4": ("iPad Pro 13-inch (M5)", 30.0, 1032.0),
-    "iPad5,1": ("iPad mini 4", 0.0, 768.0),
-    "iPad5,4": ("iPad Air 2", 0.0, 768.0),
-    "iPad6,12": ("iPad (5th generation)", 0.0, 768.0),
-    "iPad6,4": ("iPad Pro (9.7-inch)", 0.0, 768.0),
-    "iPad6,8": ("iPad Pro", 0.0, 1024.0),
-    "iPad7,1": ("iPad Pro (12.9-inch) (2nd generation)", 0.0, 1024.0),
-    "iPad7,12": ("iPad (7th generation)", 0.0, 810.0),
-    "iPad7,3": ("iPad Pro (10.5-inch)", 0.0, 834.0),
-    "iPad7,6": ("iPad (6th generation)", 0.0, 768.0),
-    "iPad8,1": ("iPad Pro (11-inch) (1st generation)", 18.0, 834.0),
-    "iPad8,12": ("iPad Pro (12.9-inch) (4th generation)", 18.0, 1024.0),
-    "iPad8,5": ("iPad Pro (12.9-inch) (3rd generation)", 18.0, 1024.0),
-    "iPad8,9": ("iPad Pro (11-inch) (2nd generation)", 18.0, 834.0),
-    "iPhone10,4": ("iPhone 8", 0.0, 375.0),
-    "iPhone10,5": ("iPhone 8 Plus", 0.0, 414.0),
-    "iPhone10,6": ("iPhone X", 39.0, 375.0),
-    "iPhone11,2": ("iPhone XS", 39.0, 375.0),
-    "iPhone11,4": ("iPhone XS Max", 39.0, 414.0),
-    "iPhone11,8": ("iPhone XR", 41.5, 414.0),
-    "iPhone12,1": ("iPhone 11", 41.5, 414.0),
-    "iPhone12,3": ("iPhone 11 Pro", 39.0, 375.0),
-    "iPhone12,5": ("iPhone 11 Pro Max", 39.0, 414.0),
-    "iPhone12,8": ("iPhone SE", 0.0, 375.0),
-    "iPhone13,1": ("iPhone 12 mini", 44.0, 360.0),
-    "iPhone13,2": ("iPhone 12", 47.0, 390.0),
-    "iPhone13,3": ("iPhone 12 Pro", 47.0, 390.0),
-    "iPhone13,4": ("iPhone 12 Pro Max", 53.0, 428.0),
-    "iPhone14,2": ("iPhone 13 Pro", 47.33333206176758, 390.0),
-    "iPhone14,3": ("iPhone 13 Pro Max", 53.33333206176758, 428.0),
-    "iPhone14,4": ("iPhone 13 mini", 44.0, 360.0),
-    "iPhone14,5": ("iPhone 13", 47.33333206176758, 390.0),
-    "iPhone14,6": ("iPhone SE (3rd generation)", 0.0, 375.0),
-    "iPhone14,7": ("iPhone 14", 47.33333206176758, 390.0),
-    "iPhone14,8": ("iPhone 14 Plus", 53.33333206176758, 428.0),
-    "iPhone15,2": ("iPhone 14 Pro", 55.0, 393.0),
-    "iPhone15,3": ("iPhone 14 Pro Max", 55.0, 430.0),
-    "iPhone15,4": ("iPhone 15", 55.0, 393.0),
-    "iPhone15,5": ("iPhone 15 Plus", 55.0, 430.0),
-    "iPhone16,1": ("iPhone 15 Pro", 55.0, 393.0),
-    "iPhone16,2": ("iPhone 15 Pro Max", 55.0, 430.0),
-    "iPhone17,1": ("iPhone 16 Pro", 62.0, 402.0),
-    "iPhone17,2": ("iPhone 16 Pro Max", 62.0, 440.0),
-    "iPhone17,3": ("iPhone 16", 55.0, 393.0),
-    "iPhone17,4": ("iPhone 16 Plus", 55.0, 430.0),
-    "iPhone17,5": ("iPhone 16e", 47.33333206176758, 390.0),
-    "iPhone18,1": ("iPhone 17 Pro", 62.0, 402.0),
-    "iPhone18,2": ("iPhone 17 Pro Max", 62.0, 440.0),
-    "iPhone18,3": ("iPhone 17", 62.0, 402.0),
-    "iPhone18,4": ("iPhone Air", 62.0, 420.0),
-    "iPhone18,5": ("iPhone 17e", 47.33333206176758, 390.0),
-    "iPhone8,1": ("iPhone 6s", 0.0, 375.0),
-    "iPhone8,2": ("iPhone 6s Plus", 0.0, 414.0),
-    "iPhone8,4": ("iPhone SE", 0.0, 320.0),
-    "iPhone9,1": ("iPhone 7", 0.0, 375.0),
-    "iPhone9,2": ("iPhone 7 Plus", 0.0, 414.0),
-  ]
+  static let modelProfiles: [String: DeviceCornerReference] = {
+    guard let url = Bundle.main.url(forResource: "device-corner-profiles", withExtension: "json"),
+      let data = try? Data(contentsOf: url),
+      let profiles = try? loadProfiles(from: data)
+    else {
+      AppLogger.interface.error("Bundled device corner catalog is missing or invalid")
+      return [:]
+    }
+    return profiles
+  }()
+
+  static func loadProfiles(from data: Data) throws -> [String: DeviceCornerReference] {
+    let catalog = try JSONDecoder().decode(DeviceCornerCatalog.self, from: data)
+    guard catalog.schemaVersion == 1, !catalog.profiles.isEmpty else {
+      throw DeviceCornerCatalogError.invalidCatalog
+    }
+    var profiles: [String: DeviceCornerReference] = [:]
+    for profile in catalog.profiles {
+      guard
+        profile.productType.range(
+          of: #"^(iPhone|iPad)[1-9][0-9]*,[1-9][0-9]*$"#, options: .regularExpression) != nil,
+        !profile.name.isEmpty, !profile.reference.isEmpty,
+        profile.radius.isFinite, profile.radius >= 0,
+        profile.shortSide.map({ $0.isFinite && $0 > 0 }) ?? (profile.radius == 0),
+        profile.fraction <= maximumFraction,
+        profiles[profile.productType] == nil
+      else {
+        throw DeviceCornerCatalogError.invalidCatalog
+      }
+      profiles[profile.productType] = profile
+    }
+    return profiles
+  }
+}
+
+struct DeviceCornerReference: Decodable, Sendable {
+  let productType: String
+  let name: String
+  let radius: Double
+  let shortSide: Double?
+  let reference: String
+
+  var fraction: Double { radius == 0 ? 0 : radius / (shortSide ?? 1) }
+}
+
+private struct DeviceCornerCatalog: Decodable {
+  let schemaVersion: Int
+  let profiles: [DeviceCornerReference]
+}
+
+enum DeviceCornerCatalogError: Error {
+  case invalidCatalog
 }

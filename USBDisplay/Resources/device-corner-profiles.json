@@ -1,0 +1,1512 @@
+{
+  "appleSnapshotSHA256": "d2f1ee150570dd5d7a85253284fd16dbd1fa96f64a6e2c5fda59edeaf46a5cd1",
+  "profiles": [
+    {
+      "deviceKitGroup": "iPadMini5",
+      "name": "iPad mini (5th generation)",
+      "productType": "iPad11,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad11,1"
+    },
+    {
+      "deviceKitGroup": "iPadMini5",
+      "name": "iPad mini (5th generation)",
+      "productType": "iPad11,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad11,1"
+    },
+    {
+      "deviceKitGroup": "iPadAir3",
+      "name": "iPad Air (3rd generation)",
+      "productType": "iPad11,3",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad11,3"
+    },
+    {
+      "deviceKitGroup": "iPadAir3",
+      "name": "iPad Air (3rd generation)",
+      "productType": "iPad11,4",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad11,3"
+    },
+    {
+      "deviceKitGroup": "iPad8",
+      "name": "iPad (8th generation)",
+      "productType": "iPad11,6",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 810.0,
+      "simulatorProductType": "iPad11,7"
+    },
+    {
+      "deviceKitGroup": "iPad8",
+      "name": "iPad (8th generation)",
+      "productType": "iPad11,7",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 810.0,
+      "simulatorProductType": "iPad11,7"
+    },
+    {
+      "deviceKitGroup": "iPad9",
+      "name": "iPad (9th generation)",
+      "productType": "iPad12,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 810.0,
+      "simulatorProductType": "iPad12,2"
+    },
+    {
+      "deviceKitGroup": "iPad9",
+      "name": "iPad (9th generation)",
+      "productType": "iPad12,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 810.0,
+      "simulatorProductType": "iPad12,2"
+    },
+    {
+      "deviceKitGroup": "iPadAir4",
+      "name": "iPad Air (4th generation)",
+      "productType": "iPad13,1",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad13,2"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch5",
+      "name": "iPad Pro (12.9-inch) (5th generation)",
+      "productType": "iPad13,10",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad13,10"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch5",
+      "name": "iPad Pro (12.9-inch) (5th generation)",
+      "productType": "iPad13,11",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad13,10"
+    },
+    {
+      "deviceKitGroup": "iPadAir5",
+      "name": "iPad Air (5th generation)",
+      "productType": "iPad13,16",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad13,17"
+    },
+    {
+      "deviceKitGroup": "iPadAir5",
+      "name": "iPad Air (5th generation)",
+      "productType": "iPad13,17",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad13,17"
+    },
+    {
+      "deviceKitGroup": "iPad10",
+      "name": "iPad (10th generation)",
+      "productType": "iPad13,18",
+      "radius": 25.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad13,18"
+    },
+    {
+      "deviceKitGroup": "iPad10",
+      "name": "iPad (10th generation)",
+      "productType": "iPad13,19",
+      "radius": 25.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad13,18"
+    },
+    {
+      "deviceKitGroup": "iPadAir4",
+      "name": "iPad Air (4th generation)",
+      "productType": "iPad13,2",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad13,2"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch3",
+      "name": "iPad Pro (11-inch) (3rd generation)",
+      "productType": "iPad13,4",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad13,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch3",
+      "name": "iPad Pro (11-inch) (3rd generation)",
+      "productType": "iPad13,5",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad13,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch3",
+      "name": "iPad Pro (11-inch) (3rd generation)",
+      "productType": "iPad13,6",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad13,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch3",
+      "name": "iPad Pro (11-inch) (3rd generation)",
+      "productType": "iPad13,7",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad13,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch5",
+      "name": "iPad Pro (12.9-inch) (5th generation)",
+      "productType": "iPad13,8",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad13,10"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch5",
+      "name": "iPad Pro (12.9-inch) (5th generation)",
+      "productType": "iPad13,9",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad13,10"
+    },
+    {
+      "deviceKitGroup": "iPadMini6",
+      "name": "iPad mini (6th generation)",
+      "productType": "iPad14,1",
+      "radius": 21.5,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 744.0,
+      "simulatorProductType": "iPad14,1"
+    },
+    {
+      "deviceKitGroup": "iPadAir13M2",
+      "name": "iPad Air (13-inch) (M2)",
+      "productType": "iPad14,10",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad14,11"
+    },
+    {
+      "deviceKitGroup": "iPadAir13M2",
+      "name": "iPad Air (13-inch) (M2)",
+      "productType": "iPad14,11",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad14,11"
+    },
+    {
+      "deviceKitGroup": "iPadMini6",
+      "name": "iPad mini (6th generation)",
+      "productType": "iPad14,2",
+      "radius": 21.5,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 744.0,
+      "simulatorProductType": "iPad14,1"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch4",
+      "name": "iPad Pro (11-inch) (4th generation)",
+      "productType": "iPad14,3",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad14,3"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch4",
+      "name": "iPad Pro (11-inch) (4th generation)",
+      "productType": "iPad14,4",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad14,4"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch6",
+      "name": "iPad Pro (12.9-inch) (6th generation)",
+      "productType": "iPad14,5",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad14,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch6",
+      "name": "iPad Pro (12.9-inch) (6th generation)",
+      "productType": "iPad14,6",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad14,5"
+    },
+    {
+      "deviceKitGroup": "iPadAir11M2",
+      "name": "iPad Air (11-inch) (M2)",
+      "productType": "iPad14,8",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad14,9"
+    },
+    {
+      "deviceKitGroup": "iPadAir11M2",
+      "name": "iPad Air (11-inch) (M2)",
+      "productType": "iPad14,9",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad14,9"
+    },
+    {
+      "deviceKitGroup": "iPadAir11M3",
+      "name": "iPad Air (11-inch) (M3)",
+      "productType": "iPad15,3",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad15,3"
+    },
+    {
+      "deviceKitGroup": "iPadAir11M3",
+      "name": "iPad Air (11-inch) (M3)",
+      "productType": "iPad15,4",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad15,3"
+    },
+    {
+      "deviceKitGroup": "iPadAir13M3",
+      "name": "iPad Air (13-inch) (M3)",
+      "productType": "iPad15,5",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad15,5"
+    },
+    {
+      "deviceKitGroup": "iPadAir13M3",
+      "name": "iPad Air (13-inch) (M3)",
+      "productType": "iPad15,6",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad15,5"
+    },
+    {
+      "deviceKitGroup": "iPadA16",
+      "name": "iPad (A16)",
+      "productType": "iPad15,7",
+      "radius": 25.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad15,7"
+    },
+    {
+      "deviceKitGroup": "iPadA16",
+      "name": "iPad (A16)",
+      "productType": "iPad15,8",
+      "radius": 25.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad15,7"
+    },
+    {
+      "deviceKitGroup": "iPadMiniA17Pro",
+      "name": "iPad mini (A17 Pro)",
+      "productType": "iPad16,1",
+      "radius": 21.5,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 744.0,
+      "simulatorProductType": "iPad16,2"
+    },
+    {
+      "deviceKitGroup": "iPadAir13M4",
+      "name": "iPad Air (13-inch) (M4)",
+      "productType": "iPad16,10",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad16,11"
+    },
+    {
+      "deviceKitGroup": "iPadAir13M4",
+      "name": "iPad Air (13-inch) (M4)",
+      "productType": "iPad16,11",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad16,11"
+    },
+    {
+      "deviceKitGroup": "iPadMiniA17Pro",
+      "name": "iPad mini (A17 Pro)",
+      "productType": "iPad16,2",
+      "radius": 21.5,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 744.0,
+      "simulatorProductType": "iPad16,2"
+    },
+    {
+      "deviceKitGroup": "iPadPro11M4",
+      "name": "iPad Pro (11-inch) (M4)",
+      "productType": "iPad16,3",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad16,4"
+    },
+    {
+      "deviceKitGroup": "iPadPro11M4",
+      "name": "iPad Pro (11-inch) (M4)",
+      "productType": "iPad16,4",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad16,4"
+    },
+    {
+      "deviceKitGroup": "iPadPro13M4",
+      "name": "iPad Pro (13-inch) (M4)",
+      "productType": "iPad16,5",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1032.0,
+      "simulatorProductType": "iPad16,6"
+    },
+    {
+      "deviceKitGroup": "iPadPro13M4",
+      "name": "iPad Pro (13-inch) (M4)",
+      "productType": "iPad16,6",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1032.0,
+      "simulatorProductType": "iPad16,6"
+    },
+    {
+      "deviceKitGroup": "iPadAir11M4",
+      "name": "iPad Air (11-inch) (M4)",
+      "productType": "iPad16,8",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad16,9"
+    },
+    {
+      "deviceKitGroup": "iPadAir11M4",
+      "name": "iPad Air (11-inch) (M4)",
+      "productType": "iPad16,9",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 820.0,
+      "simulatorProductType": "iPad16,9"
+    },
+    {
+      "deviceKitGroup": "iPadPro11M5",
+      "name": "iPad Pro (11-inch) (M5)",
+      "productType": "iPad17,1",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad17,2"
+    },
+    {
+      "deviceKitGroup": "iPadPro11M5",
+      "name": "iPad Pro (11-inch) (M5)",
+      "productType": "iPad17,2",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad17,2"
+    },
+    {
+      "deviceKitGroup": "iPadPro13M5",
+      "name": "iPad Pro (13-inch) (M5)",
+      "productType": "iPad17,3",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1032.0,
+      "simulatorProductType": "iPad17,4"
+    },
+    {
+      "deviceKitGroup": "iPadPro13M5",
+      "name": "iPad Pro (13-inch) (M5)",
+      "productType": "iPad17,4",
+      "radius": 30.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1032.0,
+      "simulatorProductType": "iPad17,4"
+    },
+    {
+      "deviceKitGroup": "iPad2",
+      "name": "iPad 2",
+      "productType": "iPad2,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad2",
+      "name": "iPad 2",
+      "productType": "iPad2,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad2",
+      "name": "iPad 2",
+      "productType": "iPad2,3",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad2",
+      "name": "iPad 2",
+      "productType": "iPad2,4",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini",
+      "name": "iPad mini",
+      "productType": "iPad2,5",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini",
+      "name": "iPad mini",
+      "productType": "iPad2,6",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini",
+      "name": "iPad mini",
+      "productType": "iPad2,7",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad3",
+      "name": "iPad (3rd generation)",
+      "productType": "iPad3,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad3",
+      "name": "iPad (3rd generation)",
+      "productType": "iPad3,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad3",
+      "name": "iPad (3rd generation)",
+      "productType": "iPad3,3",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad4",
+      "name": "iPad (4th generation)",
+      "productType": "iPad3,4",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad4",
+      "name": "iPad (4th generation)",
+      "productType": "iPad3,5",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPad4",
+      "name": "iPad (4th generation)",
+      "productType": "iPad3,6",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadAir",
+      "name": "iPad Air",
+      "productType": "iPad4,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadAir",
+      "name": "iPad Air",
+      "productType": "iPad4,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadAir",
+      "name": "iPad Air",
+      "productType": "iPad4,3",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini2",
+      "name": "iPad mini 2",
+      "productType": "iPad4,4",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini2",
+      "name": "iPad mini 2",
+      "productType": "iPad4,5",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini2",
+      "name": "iPad mini 2",
+      "productType": "iPad4,6",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini3",
+      "name": "iPad mini 3",
+      "productType": "iPad4,7",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini3",
+      "name": "iPad mini 3",
+      "productType": "iPad4,8",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini3",
+      "name": "iPad mini 3",
+      "productType": "iPad4,9",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPadMini4",
+      "name": "iPad mini 4",
+      "productType": "iPad5,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad5,1"
+    },
+    {
+      "deviceKitGroup": "iPadMini4",
+      "name": "iPad mini 4",
+      "productType": "iPad5,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad5,1"
+    },
+    {
+      "deviceKitGroup": "iPadAir2",
+      "name": "iPad Air 2",
+      "productType": "iPad5,3",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad5,4"
+    },
+    {
+      "deviceKitGroup": "iPadAir2",
+      "name": "iPad Air 2",
+      "productType": "iPad5,4",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad5,4"
+    },
+    {
+      "deviceKitGroup": "iPad5",
+      "name": "iPad (5th generation)",
+      "productType": "iPad6,11",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad6,12"
+    },
+    {
+      "deviceKitGroup": "iPad5",
+      "name": "iPad (5th generation)",
+      "productType": "iPad6,12",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad6,12"
+    },
+    {
+      "deviceKitGroup": "iPadPro9Inch",
+      "name": "iPad Pro (9.7-inch)",
+      "productType": "iPad6,3",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad6,4"
+    },
+    {
+      "deviceKitGroup": "iPadPro9Inch",
+      "name": "iPad Pro (9.7-inch)",
+      "productType": "iPad6,4",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad6,4"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch",
+      "name": "iPad Pro (12.9-inch)",
+      "productType": "iPad6,7",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad6,8"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch",
+      "name": "iPad Pro (12.9-inch)",
+      "productType": "iPad6,8",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad6,8"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch2",
+      "name": "iPad Pro (12.9-inch) (2nd generation)",
+      "productType": "iPad7,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad7,1"
+    },
+    {
+      "deviceKitGroup": "iPad7",
+      "name": "iPad (7th generation)",
+      "productType": "iPad7,11",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 810.0,
+      "simulatorProductType": "iPad7,12"
+    },
+    {
+      "deviceKitGroup": "iPad7",
+      "name": "iPad (7th generation)",
+      "productType": "iPad7,12",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 810.0,
+      "simulatorProductType": "iPad7,12"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch2",
+      "name": "iPad Pro (12.9-inch) (2nd generation)",
+      "productType": "iPad7,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad7,1"
+    },
+    {
+      "deviceKitGroup": "iPadPro10Inch",
+      "name": "iPad Pro (10.5-inch)",
+      "productType": "iPad7,3",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad7,3"
+    },
+    {
+      "deviceKitGroup": "iPadPro10Inch",
+      "name": "iPad Pro (10.5-inch)",
+      "productType": "iPad7,4",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad7,3"
+    },
+    {
+      "deviceKitGroup": "iPad6",
+      "name": "iPad (6th generation)",
+      "productType": "iPad7,5",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad7,6"
+    },
+    {
+      "deviceKitGroup": "iPad6",
+      "name": "iPad (6th generation)",
+      "productType": "iPad7,6",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 768.0,
+      "simulatorProductType": "iPad7,6"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch",
+      "name": "iPad Pro (11-inch)",
+      "productType": "iPad8,1",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad8,1"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch2",
+      "name": "iPad Pro (11-inch) (2nd generation)",
+      "productType": "iPad8,10",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad8,9"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch4",
+      "name": "iPad Pro (12.9-inch) (4th generation)",
+      "productType": "iPad8,11",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad8,12"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch4",
+      "name": "iPad Pro (12.9-inch) (4th generation)",
+      "productType": "iPad8,12",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad8,12"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch",
+      "name": "iPad Pro (11-inch)",
+      "productType": "iPad8,2",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad8,1"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch",
+      "name": "iPad Pro (11-inch)",
+      "productType": "iPad8,3",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad8,1"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch",
+      "name": "iPad Pro (11-inch)",
+      "productType": "iPad8,4",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad8,1"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch3",
+      "name": "iPad Pro (12.9-inch) (3rd generation)",
+      "productType": "iPad8,5",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad8,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch3",
+      "name": "iPad Pro (12.9-inch) (3rd generation)",
+      "productType": "iPad8,6",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad8,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch3",
+      "name": "iPad Pro (12.9-inch) (3rd generation)",
+      "productType": "iPad8,7",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad8,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro12Inch3",
+      "name": "iPad Pro (12.9-inch) (3rd generation)",
+      "productType": "iPad8,8",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 1024.0,
+      "simulatorProductType": "iPad8,5"
+    },
+    {
+      "deviceKitGroup": "iPadPro11Inch2",
+      "name": "iPad Pro (11-inch) (2nd generation)",
+      "productType": "iPad8,9",
+      "radius": 18.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 834.0,
+      "simulatorProductType": "iPad8,9"
+    },
+    {
+      "deviceKitGroup": "iPhone8",
+      "name": "iPhone 8",
+      "productType": "iPhone10,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone10,4"
+    },
+    {
+      "deviceKitGroup": "iPhone8Plus",
+      "name": "iPhone 8 Plus",
+      "productType": "iPhone10,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone10,5"
+    },
+    {
+      "deviceKitGroup": "iPhoneX",
+      "name": "iPhone X",
+      "productType": "iPhone10,3",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone10,6"
+    },
+    {
+      "deviceKitGroup": "iPhone8",
+      "name": "iPhone 8",
+      "productType": "iPhone10,4",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone10,4"
+    },
+    {
+      "deviceKitGroup": "iPhone8Plus",
+      "name": "iPhone 8 Plus",
+      "productType": "iPhone10,5",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone10,5"
+    },
+    {
+      "deviceKitGroup": "iPhoneX",
+      "name": "iPhone X",
+      "productType": "iPhone10,6",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone10,6"
+    },
+    {
+      "deviceKitGroup": "iPhoneXS",
+      "name": "iPhone XS",
+      "productType": "iPhone11,2",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone11,2"
+    },
+    {
+      "deviceKitGroup": "iPhoneXSMax",
+      "name": "iPhone XS Max",
+      "productType": "iPhone11,4",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone11,4"
+    },
+    {
+      "deviceKitGroup": "iPhoneXSMax",
+      "name": "iPhone XS Max",
+      "productType": "iPhone11,6",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone11,4"
+    },
+    {
+      "deviceKitGroup": "iPhoneXR",
+      "name": "iPhone XR",
+      "productType": "iPhone11,8",
+      "radius": 41.5,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone11,8"
+    },
+    {
+      "deviceKitGroup": "iPhone11",
+      "name": "iPhone 11",
+      "productType": "iPhone12,1",
+      "radius": 41.5,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone12,1"
+    },
+    {
+      "deviceKitGroup": "iPhone11Pro",
+      "name": "iPhone 11 Pro",
+      "productType": "iPhone12,3",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone12,3"
+    },
+    {
+      "deviceKitGroup": "iPhone11ProMax",
+      "name": "iPhone 11 Pro Max",
+      "productType": "iPhone12,5",
+      "radius": 39.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone12,5"
+    },
+    {
+      "deviceKitGroup": "iPhoneSE2",
+      "name": "iPhone SE (2nd generation)",
+      "productType": "iPhone12,8",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone12,8"
+    },
+    {
+      "deviceKitGroup": "iPhone12Mini",
+      "name": "iPhone 12 mini",
+      "productType": "iPhone13,1",
+      "radius": 44.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 360.0,
+      "simulatorProductType": "iPhone13,1"
+    },
+    {
+      "deviceKitGroup": "iPhone12",
+      "name": "iPhone 12",
+      "productType": "iPhone13,2",
+      "radius": 47.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone13,2"
+    },
+    {
+      "deviceKitGroup": "iPhone12Pro",
+      "name": "iPhone 12 Pro",
+      "productType": "iPhone13,3",
+      "radius": 47.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone13,3"
+    },
+    {
+      "deviceKitGroup": "iPhone12ProMax",
+      "name": "iPhone 12 Pro Max",
+      "productType": "iPhone13,4",
+      "radius": 53.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 428.0,
+      "simulatorProductType": "iPhone13,4"
+    },
+    {
+      "deviceKitGroup": "iPhone13Pro",
+      "name": "iPhone 13 Pro",
+      "productType": "iPhone14,2",
+      "radius": 47.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone14,2"
+    },
+    {
+      "deviceKitGroup": "iPhone13ProMax",
+      "name": "iPhone 13 Pro Max",
+      "productType": "iPhone14,3",
+      "radius": 53.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 428.0,
+      "simulatorProductType": "iPhone14,3"
+    },
+    {
+      "deviceKitGroup": "iPhone13Mini",
+      "name": "iPhone 13 mini",
+      "productType": "iPhone14,4",
+      "radius": 44.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 360.0,
+      "simulatorProductType": "iPhone14,4"
+    },
+    {
+      "deviceKitGroup": "iPhone13",
+      "name": "iPhone 13",
+      "productType": "iPhone14,5",
+      "radius": 47.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone14,5"
+    },
+    {
+      "deviceKitGroup": "iPhoneSE3",
+      "name": "iPhone SE (3rd generation)",
+      "productType": "iPhone14,6",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone14,6"
+    },
+    {
+      "deviceKitGroup": "iPhone14",
+      "name": "iPhone 14",
+      "productType": "iPhone14,7",
+      "radius": 47.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone14,7"
+    },
+    {
+      "deviceKitGroup": "iPhone14Plus",
+      "name": "iPhone 14 Plus",
+      "productType": "iPhone14,8",
+      "radius": 53.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 428.0,
+      "simulatorProductType": "iPhone14,8"
+    },
+    {
+      "deviceKitGroup": "iPhone14Pro",
+      "name": "iPhone 14 Pro",
+      "productType": "iPhone15,2",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 393.0,
+      "simulatorProductType": "iPhone15,2"
+    },
+    {
+      "deviceKitGroup": "iPhone14ProMax",
+      "name": "iPhone 14 Pro Max",
+      "productType": "iPhone15,3",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 430.0,
+      "simulatorProductType": "iPhone15,3"
+    },
+    {
+      "deviceKitGroup": "iPhone15",
+      "name": "iPhone 15",
+      "productType": "iPhone15,4",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 393.0,
+      "simulatorProductType": "iPhone15,4"
+    },
+    {
+      "deviceKitGroup": "iPhone15Plus",
+      "name": "iPhone 15 Plus",
+      "productType": "iPhone15,5",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 430.0,
+      "simulatorProductType": "iPhone15,5"
+    },
+    {
+      "deviceKitGroup": "iPhone15Pro",
+      "name": "iPhone 15 Pro",
+      "productType": "iPhone16,1",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 393.0,
+      "simulatorProductType": "iPhone16,1"
+    },
+    {
+      "deviceKitGroup": "iPhone15ProMax",
+      "name": "iPhone 15 Pro Max",
+      "productType": "iPhone16,2",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 430.0,
+      "simulatorProductType": "iPhone16,2"
+    },
+    {
+      "deviceKitGroup": "iPhone16Pro",
+      "name": "iPhone 16 Pro",
+      "productType": "iPhone17,1",
+      "radius": 62.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 402.0,
+      "simulatorProductType": "iPhone17,1"
+    },
+    {
+      "deviceKitGroup": "iPhone16ProMax",
+      "name": "iPhone 16 Pro Max",
+      "productType": "iPhone17,2",
+      "radius": 62.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 440.0,
+      "simulatorProductType": "iPhone17,2"
+    },
+    {
+      "deviceKitGroup": "iPhone16",
+      "name": "iPhone 16",
+      "productType": "iPhone17,3",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 393.0,
+      "simulatorProductType": "iPhone17,3"
+    },
+    {
+      "deviceKitGroup": "iPhone16Plus",
+      "name": "iPhone 16 Plus",
+      "productType": "iPhone17,4",
+      "radius": 55.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 430.0,
+      "simulatorProductType": "iPhone17,4"
+    },
+    {
+      "deviceKitGroup": "iPhone16e",
+      "name": "iPhone 16e",
+      "productType": "iPhone17,5",
+      "radius": 47.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone17,5"
+    },
+    {
+      "deviceKitGroup": "iPhone17Pro",
+      "name": "iPhone 17 Pro",
+      "productType": "iPhone18,1",
+      "radius": 62.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 402.0,
+      "simulatorProductType": "iPhone18,1"
+    },
+    {
+      "deviceKitGroup": "iPhone17ProMax",
+      "name": "iPhone 17 Pro Max",
+      "productType": "iPhone18,2",
+      "radius": 62.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 440.0,
+      "simulatorProductType": "iPhone18,2"
+    },
+    {
+      "deviceKitGroup": "iPhone17",
+      "name": "iPhone 17",
+      "productType": "iPhone18,3",
+      "radius": 62.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 402.0,
+      "simulatorProductType": "iPhone18,3"
+    },
+    {
+      "deviceKitGroup": "iPhoneAir",
+      "name": "iPhone Air",
+      "productType": "iPhone18,4",
+      "radius": 62.0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 420.0,
+      "simulatorProductType": "iPhone18,4"
+    },
+    {
+      "deviceKitGroup": "iPhone17e",
+      "name": "iPhone 17e",
+      "productType": "iPhone18,5",
+      "radius": 47.33333206176758,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 390.0,
+      "simulatorProductType": "iPhone18,5"
+    },
+    {
+      "deviceKitGroup": "iPhone4",
+      "name": "iPhone 4",
+      "productType": "iPhone3,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone4",
+      "name": "iPhone 4",
+      "productType": "iPhone3,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone4",
+      "name": "iPhone 4",
+      "productType": "iPhone3,3",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone4s",
+      "name": "iPhone 4s",
+      "productType": "iPhone4,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone5",
+      "name": "iPhone 5",
+      "productType": "iPhone5,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone5",
+      "name": "iPhone 5",
+      "productType": "iPhone5,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone5c",
+      "name": "iPhone 5c",
+      "productType": "iPhone5,3",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone5c",
+      "name": "iPhone 5c",
+      "productType": "iPhone5,4",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone5s",
+      "name": "iPhone 5s",
+      "productType": "iPhone6,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone5s",
+      "name": "iPhone 5s",
+      "productType": "iPhone6,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone6Plus",
+      "name": "iPhone 6 Plus",
+      "productType": "iPhone7,1",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone6",
+      "name": "iPhone 6",
+      "productType": "iPhone7,2",
+      "radius": 0,
+      "reference": "BezelKit square-display reference, corroborated by DeviceKit",
+      "shortSide": null,
+      "simulatorProductType": null
+    },
+    {
+      "deviceKitGroup": "iPhone6s",
+      "name": "iPhone 6s",
+      "productType": "iPhone8,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone8,1"
+    },
+    {
+      "deviceKitGroup": "iPhone6sPlus",
+      "name": "iPhone 6s Plus",
+      "productType": "iPhone8,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone8,2"
+    },
+    {
+      "deviceKitGroup": "iPhoneSE",
+      "name": "iPhone SE",
+      "productType": "iPhone8,4",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 320.0,
+      "simulatorProductType": "iPhone8,4"
+    },
+    {
+      "deviceKitGroup": "iPhone7",
+      "name": "iPhone 7",
+      "productType": "iPhone9,1",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone9,1"
+    },
+    {
+      "deviceKitGroup": "iPhone7Plus",
+      "name": "iPhone 7 Plus",
+      "productType": "iPhone9,2",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone9,2"
+    },
+    {
+      "deviceKitGroup": "iPhone7",
+      "name": "iPhone 7",
+      "productType": "iPhone9,3",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 375.0,
+      "simulatorProductType": "iPhone9,1"
+    },
+    {
+      "deviceKitGroup": "iPhone7Plus",
+      "name": "iPhone 7 Plus",
+      "productType": "iPhone9,4",
+      "radius": 0,
+      "reference": "Apple Simulator display profile",
+      "shortSide": 414.0,
+      "simulatorProductType": "iPhone9,2"
+    }
+  ],
+  "schemaVersion": 1,
+  "sources": {
+    "bezelkit": {
+      "files": {
+        "bezelkit-LICENSE.txt": {
+          "path": "LICENCE",
+          "sha256": "8386f06dbb87fd0781dd4b65178726b96e940d781e366f517239647d5130d690"
+        },
+        "bezelkit.json": {
+          "path": "Sources/BezelKit/Resources/bezel.min.json",
+          "sha256": "77b0caa206799891e42afc131aec080058fd3100238860eef164a37a0e04bdb9"
+        }
+      },
+      "repository": "https://github.com/markbattistella/BezelKit",
+      "revision": "6cd571cd2e07dc6c597cfb9e1281cc0335ecb797"
+    },
+    "devicekit": {
+      "files": {
+        "devicekit-LICENSE.txt": {
+          "path": "LICENSE",
+          "sha256": "725a298bb896f12220f691494f72639f5e4a280627f3222955aed4b441d9b91c"
+        },
+        "devicekit.gyb": {
+          "path": "Source/Device.swift.gyb",
+          "sha256": "f8440ff24f8078556a71ff2eeae2741e3c3dda3846b20645a765aa6de03f75bf"
+        }
+      },
+      "repository": "https://github.com/devicekit/DeviceKit",
+      "revision": "56b997e8a61707218f9af09f32b2a1d1806fd792"
+    }
+  }
+}

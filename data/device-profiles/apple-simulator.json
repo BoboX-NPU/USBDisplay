@@ -1,0 +1,686 @@
+{
+  "extractedOn": "2026-09-05",
+  "profiles": [
+    {
+      "bundle": "iPad (10th generation).simdevicetype",
+      "name": "iPad (10th generation)",
+      "productType": "iPad13,18",
+      "radius": 25.0,
+      "sha256": "8fd866f8055ed7775b8c21cc222f6c5aa3dd6440fdbeb0031bb950f838ee7bb0",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad (5th generation).simdevicetype",
+      "name": "iPad (5th generation)",
+      "productType": "iPad6,12",
+      "radius": 0.0,
+      "sha256": "636fcb2d9f159d86e85a647507b918c1051f8a6b29a4ca67a4b396cf67dc4f68",
+      "shortSide": 768.0
+    },
+    {
+      "bundle": "iPad (6th generation).simdevicetype",
+      "name": "iPad (6th generation)",
+      "productType": "iPad7,6",
+      "radius": 0.0,
+      "sha256": "b0d50788c0f799d10a353e4ae1fddcb9aeeb3cf599b7bb016ab14d91283865de",
+      "shortSide": 768.0
+    },
+    {
+      "bundle": "iPad (7th generation).simdevicetype",
+      "name": "iPad (7th generation)",
+      "productType": "iPad7,12",
+      "radius": 0.0,
+      "sha256": "cb0fb660ea3fbe6f9aeab80cef9534465ba5dbed8a361e1a20c0548cbf2447ed",
+      "shortSide": 810.0
+    },
+    {
+      "bundle": "iPad (8th generation).simdevicetype",
+      "name": "iPad (8th generation)",
+      "productType": "iPad11,7",
+      "radius": 0.0,
+      "sha256": "8fddb99fb3b7834e85d9c5c334f91cf1456f13c294b175e18aae1b63a9e399ed",
+      "shortSide": 810.0
+    },
+    {
+      "bundle": "iPad (9th generation).simdevicetype",
+      "name": "iPad",
+      "productType": "iPad12,2",
+      "radius": 0.0,
+      "sha256": "31e7b00de0b8a95a2ad8f3487fc21f531ae940d7fe0f6a056227488e80d1a39a",
+      "shortSide": 810.0
+    },
+    {
+      "bundle": "iPad (A16).simdevicetype",
+      "name": "iPad (A16)",
+      "productType": "iPad15,7",
+      "radius": 25.0,
+      "sha256": "b8f9559ced3fba64e908b5a06a5a5cb33bf7771ece3e211e6072ba37bfc2ea91",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad Air (3rd generation).simdevicetype",
+      "name": "iPad Air (3rd generation)",
+      "productType": "iPad11,3",
+      "radius": 18.0,
+      "sha256": "09083195a26bd525a1e7bac9a4d9ca340a3aa192fbff4f8ed71aff163979e008",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Air (4th generation).simdevicetype",
+      "name": "iPad Air (4th generation)",
+      "productType": "iPad13,2",
+      "radius": 18.0,
+      "sha256": "06a687edc291919f42a40ff5037fd11064308de338285e338caae1bc8c6b5098",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad Air (5th generation).simdevicetype",
+      "name": "iPad Air (5th generation)",
+      "productType": "iPad13,17",
+      "radius": 18.0,
+      "sha256": "4ceec6797499f1461b7e2314220da323c3ea53cd6bd048b8529d2b1abf054143",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad Air 11-inch (M2).simdevicetype",
+      "name": "iPad Air 11-inch (M2)",
+      "productType": "iPad14,9",
+      "radius": 18.0,
+      "sha256": "7b5a697f0f3f926a68ce302bf8fe41654c8cac41a668c8e5c215c05885180612",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad Air 11-inch (M3).simdevicetype",
+      "name": "iPad Air 11-inch (M3)",
+      "productType": "iPad15,3",
+      "radius": 18.0,
+      "sha256": "a68aaa8a63d0fc8fec7dedb33baa11cf11068f4e3799f962a3846aba6bb3b87a",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad Air 11-inch (M4).simdevicetype",
+      "name": "iPad Air 11-inch (M4)",
+      "productType": "iPad16,9",
+      "radius": 18.0,
+      "sha256": "254aba874d806e417120a02c49b4a7cb844455ae6e7dcdb91ba2071aa2eb6bd2",
+      "shortSide": 820.0
+    },
+    {
+      "bundle": "iPad Air 13-inch (M2).simdevicetype",
+      "name": "iPad Air 13-inch (M2)",
+      "productType": "iPad14,11",
+      "radius": 18.0,
+      "sha256": "0df065c95a2508718cbc38d2a4e5c698ee97f3d564d39079229360ef9b5ec4e5",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Air 13-inch (M3).simdevicetype",
+      "name": "iPad Air 13-inch (M3)",
+      "productType": "iPad15,5",
+      "radius": 18.0,
+      "sha256": "bfceec91b1065fd0af90f53899f1784a80515c087aa263c01a0b117ce9fe1ca2",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Air 13-inch (M4).simdevicetype",
+      "name": "iPad Air 13-inch (M4)",
+      "productType": "iPad16,11",
+      "radius": 18.0,
+      "sha256": "cc087ee24531a593a82d6a53173421360434888efdc0add6eb413511d148c159",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Air 2.simdevicetype",
+      "name": "iPad Air 2",
+      "productType": "iPad5,4",
+      "radius": 0.0,
+      "sha256": "353309b8a9b5e514522edfe8a670170ee53dd31c53881a28b2c9a6763d2200f9",
+      "shortSide": 768.0
+    },
+    {
+      "bundle": "iPad Pro (10.5-inch).simdevicetype",
+      "name": "iPad Pro (10.5-inch)",
+      "productType": "iPad7,3",
+      "radius": 0.0,
+      "sha256": "a63565f74d7b2c34deabe9ad04bb0ed1342ea4913e959aa440831d8aab5c04bb",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro (11-inch) (1st generation).simdevicetype",
+      "name": "iPad Pro (11-inch) (1st generation)",
+      "productType": "iPad8,1",
+      "radius": 18.0,
+      "sha256": "7088257081d367892b30448005a7a4f4a881a65df623e4d655547457683299e2",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro (11-inch) (2nd generation).simdevicetype",
+      "name": "iPad Pro (11-inch) (2nd generation)",
+      "productType": "iPad8,9",
+      "radius": 18.0,
+      "sha256": "22704a435e26b74a3234f009f8889a90c5cdf080591fed30f66960fa384401f3",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro (11-inch) (3rd generation).simdevicetype",
+      "name": "iPad Pro (11-inch) (3rd generation)",
+      "productType": "iPad13,5",
+      "radius": 18.0,
+      "sha256": "d214cfefdb177ec42dc6f0f4d12b337ec4897b0b490f33af3f91d0417ea9d18c",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro (11-inch) (4th generation) (16GB).simdevicetype",
+      "name": "iPad Pro (11-inch) (4th generation)",
+      "productType": "iPad14,4",
+      "radius": 18.0,
+      "sha256": "22af62566a89c1bbe6e257455313cf8edcc9814e937d2eb9e7b5117ea0a5b150",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro (11-inch) (4th generation).simdevicetype",
+      "name": "iPad Pro (11-inch) (4th generation)",
+      "productType": "iPad14,3",
+      "radius": 18.0,
+      "sha256": "31c2dc6cfb341c379199d461f883f1bb7abfb913b46a2532be258b96c45ac22d",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (1st generation).simdevicetype",
+      "name": "iPad Pro",
+      "productType": "iPad6,8",
+      "radius": 0.0,
+      "sha256": "b97caac930a56921da247253a934b6157915283ded55a6020b67842d74823bd0",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (2nd generation).simdevicetype",
+      "name": "iPad Pro (12.9-inch) (2nd generation)",
+      "productType": "iPad7,1",
+      "radius": 0.0,
+      "sha256": "6d689bc5412d0332f9fb8f4d6051b641f15d2de91ebca1c9c1ae9252df2d4378",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (3rd generation).simdevicetype",
+      "name": "iPad Pro (12.9-inch) (3rd generation)",
+      "productType": "iPad8,5",
+      "radius": 18.0,
+      "sha256": "3f62440e48979657ba445cee95fa4936eb2bcdccba7556d0869caebe36acc28a",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (4th generation).simdevicetype",
+      "name": "iPad Pro (12.9-inch) (4th generation)",
+      "productType": "iPad8,12",
+      "radius": 18.0,
+      "sha256": "95658fe1b13de12b70457a906d8f6adb3708995b5dacc629c54f9e6203bf9ca6",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (5th generation).simdevicetype",
+      "name": "iPad Pro (12.9-inch) (5th generation)",
+      "productType": "iPad13,10",
+      "radius": 18.0,
+      "sha256": "3f4b0daa23a704b492757c1cf3f5a23e40e6d001b20b1c6dcda3565626df41ac",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (6th generation) (16GB).simdevicetype",
+      "name": "iPad Pro (12.9-inch) (6th generation)",
+      "productType": "iPad14,5",
+      "radius": 18.0,
+      "sha256": "ed4afdc011faa6a2d5834909786330a378af65a56983c3938f417a9ce53b7007",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (12.9-inch) (6th generation).simdevicetype",
+      "name": "iPad Pro (12.9-inch) (6th generation)",
+      "productType": "iPad14,5",
+      "radius": 18.0,
+      "sha256": "39d633860b7cbff648e815dfd595297e7b55ffe3e677a16ba0edbc0a39aa9b54",
+      "shortSide": 1024.0
+    },
+    {
+      "bundle": "iPad Pro (9.7-inch).simdevicetype",
+      "name": "iPad Pro (9.7-inch)",
+      "productType": "iPad6,4",
+      "radius": 0.0,
+      "sha256": "1e7fa67fe178dd097ab621d94f1c62425a0fbb5222f6e2de1220e8f001e87628",
+      "shortSide": 768.0
+    },
+    {
+      "bundle": "iPad Pro 11-inch (M4) (16GB).simdevicetype",
+      "name": "iPad Pro 11-inch (M4)",
+      "productType": "iPad16,4",
+      "radius": 30.0,
+      "sha256": "41eca03dd43dae001f485475859d74f2c2902b8ded957fb6410cd3c0e86efe28",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro 11-inch (M4).simdevicetype",
+      "name": "iPad Pro 11-inch (M4)",
+      "productType": "iPad16,4",
+      "radius": 30.0,
+      "sha256": "ea6c2f0958a295e348b4fd49fa0dbf2b56cc84a61c25b71cac7e66840d36c626",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro 11-inch (M5) (16GB).simdevicetype",
+      "name": "iPad Pro 11-inch (M5)",
+      "productType": "iPad17,2",
+      "radius": 30.0,
+      "sha256": "eef46f0bb81bd40f45e89f3b0d7d2719c6355b3de591f38e03162e2dec235639",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro 11-inch (M5).simdevicetype",
+      "name": "iPad Pro 11-inch (M5)",
+      "productType": "iPad17,2",
+      "radius": 30.0,
+      "sha256": "677d0e5bc15a1376db82cb96510b82bc392765c6018421b4b41a5bb722b139e8",
+      "shortSide": 834.0
+    },
+    {
+      "bundle": "iPad Pro 13-inch (M4) (16GB).simdevicetype",
+      "name": "iPad Pro 13-inch (M4)",
+      "productType": "iPad16,6",
+      "radius": 30.0,
+      "sha256": "2d8ccf47ba240b5d3132f29ba1ba22009f608cf970cb96022534dd88b41ab107",
+      "shortSide": 1032.0
+    },
+    {
+      "bundle": "iPad Pro 13-inch (M4).simdevicetype",
+      "name": "iPad Pro 13-inch (M4)",
+      "productType": "iPad16,6",
+      "radius": 30.0,
+      "sha256": "87af9ba70f2cc92fd1d14dfa37bf445579eac1722d3a5e04ffa963ece56a24da",
+      "shortSide": 1032.0
+    },
+    {
+      "bundle": "iPad Pro 13-inch (M5) (16GB).simdevicetype",
+      "name": "iPad Pro 13-inch (M5)",
+      "productType": "iPad17,4",
+      "radius": 30.0,
+      "sha256": "9695261556f4d8aeff33489ac7d55f1f72641afe57b3c49d1ddc650e752925e7",
+      "shortSide": 1032.0
+    },
+    {
+      "bundle": "iPad Pro 13-inch (M5).simdevicetype",
+      "name": "iPad Pro 13-inch (M5)",
+      "productType": "iPad17,4",
+      "radius": 30.0,
+      "sha256": "d580723780d7c5fff2ddd37730f2541ef5d9c251dda0ad152866221f434fba5e",
+      "shortSide": 1032.0
+    },
+    {
+      "bundle": "iPad mini (5th generation).simdevicetype",
+      "name": "iPad mini (5th generation)",
+      "productType": "iPad11,1",
+      "radius": 0.0,
+      "sha256": "7387b13f13e2044b8d77f442ae22774dcfc661d3d2c3056c173d1fc81bb94a3b",
+      "shortSide": 768.0
+    },
+    {
+      "bundle": "iPad mini (6th generation).simdevicetype",
+      "name": "iPad mini",
+      "productType": "iPad14,1",
+      "radius": 21.5,
+      "sha256": "1d700661fbf83cb8f0d0bdd4661493f39ac0a5ee13a229b9f0f664303ebf2d8b",
+      "shortSide": 744.0
+    },
+    {
+      "bundle": "iPad mini (A17 Pro).simdevicetype",
+      "name": "iPad mini (A17 Pro)",
+      "productType": "iPad16,2",
+      "radius": 21.5,
+      "sha256": "bf9f68f7b7d70879d6d35b60de1b931a092d740f5148e3e88501331c6f1a37df",
+      "shortSide": 744.0
+    },
+    {
+      "bundle": "iPad mini 4.simdevicetype",
+      "name": "iPad mini 4",
+      "productType": "iPad5,1",
+      "radius": 0.0,
+      "sha256": "c73364611774be9f6c994abd87790ee1bdce582454e13c53eae3a491c43f5b92",
+      "shortSide": 768.0
+    },
+    {
+      "bundle": "iPhone 11 Pro Max.simdevicetype",
+      "name": "iPhone 11 Pro Max",
+      "productType": "iPhone12,5",
+      "radius": 39.0,
+      "sha256": "8b9114f11d1145477fa84fd84820d0b88adfd7ef83d5c88b534d904be5161994",
+      "shortSide": 414.0
+    },
+    {
+      "bundle": "iPhone 11 Pro.simdevicetype",
+      "name": "iPhone 11 Pro",
+      "productType": "iPhone12,3",
+      "radius": 39.0,
+      "sha256": "f32b9b1549c8eff8e1686ccd0c4d51b912522fda747d9be5bb5e37e8e3a2a88e",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone 11.simdevicetype",
+      "name": "iPhone 11",
+      "productType": "iPhone12,1",
+      "radius": 41.5,
+      "sha256": "74a8a83e657fff8e0196aba7f0ad71f1332c89cd66cfe54d7adfecdac76d6aab",
+      "shortSide": 414.0
+    },
+    {
+      "bundle": "iPhone 12 Pro Max.simdevicetype",
+      "name": "iPhone 12 Pro Max",
+      "productType": "iPhone13,4",
+      "radius": 53.0,
+      "sha256": "2971a17f9af59f4302fdf1cbdced3d6323d6cb924e6d7dafbdad51d5203ed065",
+      "shortSide": 428.0
+    },
+    {
+      "bundle": "iPhone 12 Pro.simdevicetype",
+      "name": "iPhone 12 Pro",
+      "productType": "iPhone13,3",
+      "radius": 47.0,
+      "sha256": "01700b4e4ca0ce891821b66e6f90a1b7053d708cd2d9f7589672ac915c3c6d00",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 12 mini.simdevicetype",
+      "name": "iPhone 12 mini",
+      "productType": "iPhone13,1",
+      "radius": 44.0,
+      "sha256": "41d9c21c47006586398b96b8b98f7e2ad853f35e117a0673e818f4bd1abc3a57",
+      "shortSide": 360.0
+    },
+    {
+      "bundle": "iPhone 12.simdevicetype",
+      "name": "iPhone 12",
+      "productType": "iPhone13,2",
+      "radius": 47.0,
+      "sha256": "7dde21915a2d979ba9a7d989e5b1071879b859749369289593848d5aab06c50a",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 13 Pro Max.simdevicetype",
+      "name": "iPhone 13 Pro Max",
+      "productType": "iPhone14,3",
+      "radius": 53.33333206176758,
+      "sha256": "8c6d490999750cd6f387ea018a6e7fb46ce1924395ec8ad5673e9a24101da1b8",
+      "shortSide": 428.0
+    },
+    {
+      "bundle": "iPhone 13 Pro.simdevicetype",
+      "name": "iPhone 13 Pro",
+      "productType": "iPhone14,2",
+      "radius": 47.33333206176758,
+      "sha256": "d0a20096f7a7efad64491bfa4c16c07fc79bb9b39212569697d73163314525ba",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 13 mini.simdevicetype",
+      "name": "iPhone 13 mini",
+      "productType": "iPhone14,4",
+      "radius": 44.0,
+      "sha256": "adbdb0a525688e2ef8aebf88adb246c8725e77fb9a6572bd2c0db86e7fde68d9",
+      "shortSide": 360.0
+    },
+    {
+      "bundle": "iPhone 13.simdevicetype",
+      "name": "iPhone 13",
+      "productType": "iPhone14,5",
+      "radius": 47.33333206176758,
+      "sha256": "db8dd292eb722b681d80ea3609c3191169f52c1f7ad86605931d0b65cad1e902",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 14 Plus.simdevicetype",
+      "name": "iPhone 14 Plus",
+      "productType": "iPhone14,8",
+      "radius": 53.33333206176758,
+      "sha256": "512e6960279185a35ecbe80f602a39cd77f98303f331b8bcc068ec5d8aff98eb",
+      "shortSide": 428.0
+    },
+    {
+      "bundle": "iPhone 14 Pro Max.simdevicetype",
+      "name": "iPhone 14 Pro Max",
+      "productType": "iPhone15,3",
+      "radius": 55.0,
+      "sha256": "eef2c2f38e212851c9f8dc1b283e893bcc955f767dc5e757879b4b481772aaa5",
+      "shortSide": 430.0
+    },
+    {
+      "bundle": "iPhone 14 Pro.simdevicetype",
+      "name": "iPhone 14 Pro",
+      "productType": "iPhone15,2",
+      "radius": 55.0,
+      "sha256": "b6d2f52d00e0c0758467c1239affa30adbf425bf5ce93e159807636736cb82ae",
+      "shortSide": 393.0
+    },
+    {
+      "bundle": "iPhone 14.simdevicetype",
+      "name": "iPhone 14",
+      "productType": "iPhone14,7",
+      "radius": 47.33333206176758,
+      "sha256": "01793dd9b4d1abed2358a2893ec31c9b7fa05881a15eb540c69cab999e4c0687",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 15 Plus.simdevicetype",
+      "name": "iPhone 15 Plus",
+      "productType": "iPhone15,5",
+      "radius": 55.0,
+      "sha256": "8c1be0ef0e828a8639d085cbe26b853c371ed82c305c1994deba1b945c9847f6",
+      "shortSide": 430.0
+    },
+    {
+      "bundle": "iPhone 15 Pro Max.simdevicetype",
+      "name": "iPhone 15 Pro Max",
+      "productType": "iPhone16,2",
+      "radius": 55.0,
+      "sha256": "743749bdd84416ead561fc222bc2951ae4e93239fb0a6608e4aa3ae70c3a08a2",
+      "shortSide": 430.0
+    },
+    {
+      "bundle": "iPhone 15 Pro.simdevicetype",
+      "name": "iPhone 15 Pro",
+      "productType": "iPhone16,1",
+      "radius": 55.0,
+      "sha256": "2ad2ba1fe52acef891f5a37d4da7ef51a66a2e815b7e3591f98575839cea1af5",
+      "shortSide": 393.0
+    },
+    {
+      "bundle": "iPhone 15.simdevicetype",
+      "name": "iPhone 15",
+      "productType": "iPhone15,4",
+      "radius": 55.0,
+      "sha256": "da864de8edc16f0ffa51abc33769ccda1aa6afdc870e762b2046805053604c67",
+      "shortSide": 393.0
+    },
+    {
+      "bundle": "iPhone 16 Plus.simdevicetype",
+      "name": "iPhone 16 Plus",
+      "productType": "iPhone17,4",
+      "radius": 55.0,
+      "sha256": "31e8c8d0d101ed05b64fe2dd2753a9a60a2dad587463ca17d0d4a95dc9032029",
+      "shortSide": 430.0
+    },
+    {
+      "bundle": "iPhone 16 Pro Max.simdevicetype",
+      "name": "iPhone 16 Pro Max",
+      "productType": "iPhone17,2",
+      "radius": 62.0,
+      "sha256": "3b007d11cd54f014abc778aecd3eba4ad1fd7f3940c6786f643266473505b279",
+      "shortSide": 440.0
+    },
+    {
+      "bundle": "iPhone 16 Pro.simdevicetype",
+      "name": "iPhone 16 Pro",
+      "productType": "iPhone17,1",
+      "radius": 62.0,
+      "sha256": "48db6ea44c0d3bad40561ee5f62d98afd97ab306ebbb85a0346a2f376987122e",
+      "shortSide": 402.0
+    },
+    {
+      "bundle": "iPhone 16.simdevicetype",
+      "name": "iPhone 16",
+      "productType": "iPhone17,3",
+      "radius": 55.0,
+      "sha256": "f02c4d7e0628ed0d8de0495b2106b8c592f2b7698a895efbf44881626f08caec",
+      "shortSide": 393.0
+    },
+    {
+      "bundle": "iPhone 16e.simdevicetype",
+      "name": "iPhone 16e",
+      "productType": "iPhone17,5",
+      "radius": 47.33333206176758,
+      "sha256": "2116f956eb582a67e28bcac98d91301050d86f4f2d4b2909782566cc381b7c99",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 17 Pro Max.simdevicetype",
+      "name": "iPhone 17 Pro Max",
+      "productType": "iPhone18,2",
+      "radius": 62.0,
+      "sha256": "361987ab7139dc05d3c34d9d80bc649791abe8371b96106da437c760687f4860",
+      "shortSide": 440.0
+    },
+    {
+      "bundle": "iPhone 17 Pro.simdevicetype",
+      "name": "iPhone 17 Pro",
+      "productType": "iPhone18,1",
+      "radius": 62.0,
+      "sha256": "0a1777c9a461ecc20f6cd799b21f9d872a3691f0e31ec69ee0460c9053737f4e",
+      "shortSide": 402.0
+    },
+    {
+      "bundle": "iPhone 17.simdevicetype",
+      "name": "iPhone 17",
+      "productType": "iPhone18,3",
+      "radius": 62.0,
+      "sha256": "5b14e92da16c2d14595b5cf8700935cf6f984917689eda8d7c173416da052e57",
+      "shortSide": 402.0
+    },
+    {
+      "bundle": "iPhone 17e.simdevicetype",
+      "name": "iPhone 17e",
+      "productType": "iPhone18,5",
+      "radius": 47.33333206176758,
+      "sha256": "3878a048ae271f2fdbabfe75618803ec8031598daaa3c5f8ccb61c48e6363a89",
+      "shortSide": 390.0
+    },
+    {
+      "bundle": "iPhone 6s Plus.simdevicetype",
+      "name": "iPhone 6s Plus",
+      "productType": "iPhone8,2",
+      "radius": 0.0,
+      "sha256": "3fd9a46dc8a7444064b10235e72b68b597dc21901bfda157f34cdd2b5d638990",
+      "shortSide": 414.0
+    },
+    {
+      "bundle": "iPhone 6s.simdevicetype",
+      "name": "iPhone 6s",
+      "productType": "iPhone8,1",
+      "radius": 0.0,
+      "sha256": "4d19d971c96ca4323278f40e8c66124421a5d1493c1b865756570dba09fab262",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone 7 Plus.simdevicetype",
+      "name": "iPhone 7 Plus",
+      "productType": "iPhone9,2",
+      "radius": 0.0,
+      "sha256": "3ebd95012ae8b61fbdb91c1a52ac703817454988ba96a47a3f9277a5d2f68edc",
+      "shortSide": 414.0
+    },
+    {
+      "bundle": "iPhone 7.simdevicetype",
+      "name": "iPhone 7",
+      "productType": "iPhone9,1",
+      "radius": 0.0,
+      "sha256": "ed84103dd2fbd94b95a98054247e7585159916ff3481dc186624e9976fbee665",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone 8 Plus.simdevicetype",
+      "name": "iPhone 8 Plus",
+      "productType": "iPhone10,5",
+      "radius": 0.0,
+      "sha256": "8eec0bc058fa72f3487cb19fa487a231dc57536b5d70c5613ae911684e34689c",
+      "shortSide": 414.0
+    },
+    {
+      "bundle": "iPhone 8.simdevicetype",
+      "name": "iPhone 8",
+      "productType": "iPhone10,4",
+      "radius": 0.0,
+      "sha256": "cc139fac9b21011248671c6cd4c7bba33653308c13f6a2f34025713cc2c3b3f4",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone Air.simdevicetype",
+      "name": "iPhone Air",
+      "productType": "iPhone18,4",
+      "radius": 62.0,
+      "sha256": "ed74b9584675b33373ccac32b2e38fdb7dc8ced1f3db94e2800d7d4899304d61",
+      "shortSide": 420.0
+    },
+    {
+      "bundle": "iPhone SE (1st generation).simdevicetype",
+      "name": "iPhone SE",
+      "productType": "iPhone8,4",
+      "radius": 0.0,
+      "sha256": "29075434e6dc89256195d6c5dfbb26eff58ef24be94aec074eae8585c7f33884",
+      "shortSide": 320.0
+    },
+    {
+      "bundle": "iPhone SE (2nd generation).simdevicetype",
+      "name": "iPhone SE",
+      "productType": "iPhone12,8",
+      "radius": 0.0,
+      "sha256": "88dfd0453b1db9fb065bdad514bde9dd28d2cbc0dd58eeefae4fe0d3b6bc4f34",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone SE (3rd generation).simdevicetype",
+      "name": "iPhone SE (3rd generation)",
+      "productType": "iPhone14,6",
+      "radius": 0.0,
+      "sha256": "b0ede511801c484862c46eb0e6183aead98d6f8c1a39cd48823fdff00dd24960",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone X.simdevicetype",
+      "name": "iPhone X",
+      "productType": "iPhone10,6",
+      "radius": 39.0,
+      "sha256": "ce9b8ce53cfef110197d1dd6c2b2455049cda0d32c315f03b2ac1385768d6995",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone Xs Max.simdevicetype",
+      "name": "iPhone XS Max",
+      "productType": "iPhone11,4",
+      "radius": 39.0,
+      "sha256": "9aa342d3e7559204336af385de43c500098154f3e24cfcaa4081cbfc6bd06bf2",
+      "shortSide": 414.0
+    },
+    {
+      "bundle": "iPhone Xs.simdevicetype",
+      "name": "iPhone XS",
+      "productType": "iPhone11,2",
+      "radius": 39.0,
+      "sha256": "0e1ae290053fe9f9bab41c6626fe76472b60a55886e23942beab64a78c2dfbf9",
+      "shortSide": 375.0
+    },
+    {
+      "bundle": "iPhone X\u0280.simdevicetype",
+      "name": "iPhone XR",
+      "productType": "iPhone11,8",
+      "radius": 41.5,
+      "sha256": "b669d19c3ab40ca61280b061097c0c9243d31adf1fecc0ff59deb291e162466b",
+      "shortSide": 414.0
+    }
+  ],
+  "source": "/Library/Developer/CoreSimulator/Profiles/DeviceTypes"
+}
