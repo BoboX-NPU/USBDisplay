@@ -1,14 +1,13 @@
 import AVFoundation
 import Foundation
 import Observation
-import SwiftUI
 
 @MainActor
 @Observable
 final class AppModel {
   private(set) var selectedDeviceID: String?
   private(set) var status: ConnectionStatus = .noDevice
-  private(set) var columnVisibility = NavigationSplitViewVisibility.all
+  private(set) var sidebarIsVisible = true
   private(set) var previewAspectRatio: Double?
   private(set) var sidebarWidth = 220.0
 
@@ -41,8 +40,8 @@ final class AppModel {
     coordinator.setDeviceID(deviceID)
   }
 
-  func setColumnVisibility(_ visibility: NavigationSplitViewVisibility) {
-    columnVisibility = visibility
+  func setSidebarVisible(_ isVisible: Bool) {
+    sidebarIsVisible = isVisible
   }
 
   func updateSidebarWidth(_ width: Double) {

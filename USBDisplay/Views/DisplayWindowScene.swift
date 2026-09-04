@@ -4,7 +4,6 @@ struct DisplayWindowScene: View {
   @Binding var deviceID: String?
   let catalog: DeviceCatalog
   let windowRegistry: DeviceWindowRegistry
-  let cornerPreferences: CornerRadiusPreferences
 
   @Environment(\.openWindow) private var openWindow
   @State private var model: AppModel
@@ -13,13 +12,11 @@ struct DisplayWindowScene: View {
   init(
     deviceID: Binding<String?>,
     catalog: DeviceCatalog,
-    windowRegistry: DeviceWindowRegistry,
-    cornerPreferences: CornerRadiusPreferences
+    windowRegistry: DeviceWindowRegistry
   ) {
     _deviceID = deviceID
     self.catalog = catalog
     self.windowRegistry = windowRegistry
-    self.cornerPreferences = cornerPreferences
     _model = State(initialValue: AppModel(deviceID: deviceID.wrappedValue))
   }
 
@@ -27,7 +24,6 @@ struct DisplayWindowScene: View {
     ContentView(
       model: model,
       devices: catalog.devices,
-      cornerPreferences: cornerPreferences,
       onSelectDevice: selectDevice,
       onOpenDeviceInNewWindow: openDeviceInNewWindow
     )

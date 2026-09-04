@@ -1,31 +1,5 @@
 @preconcurrency import AVFoundation
 import AppKit
-import SwiftUI
-
-struct PreviewView: NSViewRepresentable {
-  let session: AVCaptureSession
-  let onAspectRatioChanged: @MainActor (Double, Double) -> Void
-
-  func makeNSView(context: Context) -> PreviewHostView {
-    let view = PreviewHostView(session: session)
-    update(view)
-    return view
-  }
-
-  func updateNSView(_ nsView: PreviewHostView, context: Context) {
-    update(nsView)
-  }
-
-  static func dismantleNSView(_ nsView: PreviewHostView, coordinator: Void) {
-    nsView.prepareForRemoval()
-  }
-
-  private func update(_ view: PreviewHostView) {
-    view.onAspectRatioChanged = onAspectRatioChanged
-    view.setSession(session)
-    view.reportAspectRatioIfAvailable()
-  }
-}
 
 @MainActor
 final class PreviewHostView: NSView {
@@ -33,6 +7,7 @@ final class PreviewHostView: NSView {
   private var aspectRatioTimer: Timer?
   private var lastReportedAspectRatio: Double?
 
+  var onGeometryApplied: (() -> Void)?
   var onAspectRatioChanged: ((Double, Double) -> Void)?
 
   init(session: AVCaptureSession) {
@@ -40,6 +15,8 @@ final class PreviewHostView: NSView {
     wantsLayer = true
     layer = CALayer()
     layer?.backgroundColor = NSColor.black.cgColor
+    layer?.masksToBounds = true
+    layer?.cornerCurve = .continuous
 
     previewLayer.videoGravity = .resizeAspect
     previewLayer.backgroundColor = NSColor.black.cgColor
@@ -63,8 +40,20 @@ final class PreviewHostView: NSView {
     CATransaction.setDisableActions(true)
     previewLayer.frame = bounds
     CATransaction.commit()
-    reportAspectRatioIfAvailable()
   }
+
+  func applyGeometry(frame: CGRect, cornerFraction: Double) {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    if self.frame != frame { self.frame = frame }
+    previewLayer.frame = bounds
+    layer?.cornerRadius = DisplayCornerProfileResolver.cornerRadius(
+      shortSide: min(bounds.width, bounds.height), fraction: cornerFraction)
+    CATransaction.commit()
+    onGeometryApplied?()
+  }
+
+  override var isOpaque: Bool { false }
 
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
@@ -87,7 +76,7 @@ final class PreviewHostView: NSView {
     if event.clickCount == 2 {
       window?.toggleFullScreen(nil)
     } else {
-      super.mouseDown(with: event)
+      window?.performDrag(with: event)
     }
   }
 

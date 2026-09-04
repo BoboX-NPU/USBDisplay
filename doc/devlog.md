@@ -547,3 +547,72 @@
 - Exact public capture model IDs may be generic or absent from the table. Such devices require manual calibration; simulator reference radii are not live physical hardware measurements. Validate the appearance of matched profiles on corresponding hardware.
 - Recheck native toolbar and safe-area behavior on macOS 14 and 15; live validation used macOS 27.
 - Existing hot-unplug/replug, occupied-device, permission-denial, capture-soak, signing, and external latency checks remain outstanding.
+
+## 2026-09-05 — Keep Preview Geometry Stable and Identify USB Corner Profiles
+
+### Summary
+
+- Moved the persistent preview out of `NavigationSplitView` into an app-owned AppKit container with explicit preview, sidebar, status, divider, and titlebar frames. SwiftUI still owns window lifecycle, selection, and multi-window routing.
+- Removed the outer-frame timer, competing deferred geometry adjustments, preview safe-area switching, and SwiftUI-root corner mask. Chrome commits its complete target geometry synchronously; video stays attached to the same preview layer.
+- Added outside-versus-overlay chrome layout. Sidebar expansion uses space on the left and titlebar expansion uses space above; screen-edge fitting translates without shrinking. Controls overlay along an axis when the combined dimensions cannot fit, and closing them restores preferred geometry.
+- Kept proportional AppKit resize proposals and delegate forwarding, suspended hover during resizing, and moved shadow invalidation to operation completion. Preview bounds and the app-owned continuous mask update in one nonanimated Core Animation transaction.
+- Kept windows and containers transparent, with black confined to the preview. Full-screen validation exposed an empty titlebar strip; full screen now uses the entire display height while native toolbar reveal remains system-managed.
+- Added an asynchronous, read-only usbmuxd/lockdownd client for `ProductType` and `DeviceName`, with a four-second total deadline, bounded framing, fragmented I/O support, cancellation checks, and stale-generation rejection.
+- Associated capture and USB records only by names unique on both sides of a complete snapshot. Generic capture models, aspect ratios, ambiguous names, and enumeration order cannot select a model profile.
+- Applied exact USB product profiles automatically and exposed identification status in the device list. Removed the manual adjustment UI and preference reader/writer without deleting any stored legacy overrides.
+- Updated the current state and profile documentation, and added protocol/compatibility documentation. Added protocol, geometry, multi-window, full-screen, and composed-rendering coverage.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Models/DisplayDevice.swift`
+- `USBDisplay/Models/DisplayCornerProfile.swift`
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Services/AppModel.swift`
+- `USBDisplay/Services/DeviceCatalog.swift`
+- `USBDisplay/Services/USBDeviceInfoService.swift`
+- `USBDisplay/Services/CornerRadiusPreferences.swift` (removed)
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/DisplayWindowScene.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplay/Views/SidebarView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplay/Views/CornerAdjustmentView.swift` (removed)
+- `USBDisplayTests/DisplayCornerProfileTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/USBDeviceInfoTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `USBDisplayTests/CornerRadiusPreferencesTests.swift` (removed)
+- `doc/current.md`
+- `doc/device-corner-profiles.md`
+- `doc/usb-device-identification.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Strict Swift-format lint, working-tree whitespace checks, Debug and Release builds, and strict Debug/Release bundle signature verification: Passed.
+- Full Xcode regression run after the full-screen correction: Passed 62 tests, zero failures and zero skips. The subsequently strengthened rendering test was rerun successfully against the same application implementation.
+- AppKit geometry tests: Passed checks of every applied preview rectangle through 20 sidebar/titlebar cycles, constant layer identity, translation/overlay without scaling, orientation height restoration, independent windows, 160 intermediate resize proposals across compact/expanded states and eight direction vectors, drag takeover, hover suppression, full-screen restoration, and delegate forwarding. These programmatic proposals are not physical pointer acceptance.
+- Rendering checks: Passed 12 changing red/blue synthetic presentations in compact, sidebar-expanded, and hover-titlebar states, with center/right/bottom pixel checks after resizing. The complete SwiftUI hosting surface and native frame hierarchy retained transparent compact corners over black and white backgrounds. An initial test-harness failure compared semantic colors across color spaces and used copy instead of source-over composition; explicit primary-color checks and source-over compositing corrected the measurement. This is AppKit bitmap validation, not a WindowServer frame-pacing recording of captured video.
+- USB checks: Passed model-response/profile fixtures for `iPhone17,1`, `iPhone18,1`, and `iPhone18,2`; duplicate capture/USB names; unknown products; legacy-data preservation; invalid, oversized, and fragmented responses; local-socket timeout, cancellation and disconnect; and late-result rejection after device replacement. Only allowed GetValue keys were sent by the socket fixture.
+- Physical iPhone identification: Passed. The capture model remains `iOS Device`; the running app identifies the USB product as iPhone 16 Pro and displays `Automatic corners`. The normalized profile is 62 / 402. The final app resumed live capture after a camera-permission wait following ad-hoc rebuilding.
+- Physical sidebar/titlebar interaction: Completed 22 recorded round trips, yielding 20 valid endpoint size pairs of 221 x 479 compact and 442 x 531 expanded. Two screenshots returned unexpected small image dimensions (127 x 151 and 143 x 171) and were not counted. A separate ScreenCaptureKit capture error and a stale click-position error interrupted automation. Therefore this is not claimed as 20 uninterrupted, frame-by-frame validated physical cycles. Live phone content continued updating in observed snapshots.
+- Physical full screen: Expanded exit restored 442 x 531 during the earlier live pass. The final corrected build was visually checked in full screen: the white titlebar strip was absent, the complete picture remained visible with side bars, and exit restored the final window's 308 x 668 compact size and hidden sidebar. Sizes from different application lifetimes are not compared as a persistence guarantee.
+- Physical resize attempts on the final build: Tried all eight edges/corners. Every attempt left the 529 x 720 outer size unchanged, and each logged live-resize begin/end with zero constrained proposals. Actual continuous dragging, release anchoring, fast repeated drags, and hover/resize interleaving are not validated by these events.
+- Canonical `./script/build_and_run.sh --verify`: Passed. The final Debug application remains running with the connected iPhone. No phone screenshots or identifying capture/USB serial values were added to the repository.
+
+### Remaining Risks or Follow-up Work
+
+- Perform a physical-pointer acceptance pass for all eight resize handles, rapid successive drags, and hover/resize interleaving; the automation did not generate usable intermediate drag events.
+- Record actual WindowServer-composited video frame by frame over contrasting desktop backgrounds to check physical playback continuity and any one-frame white/black flash. JPEG-only UI snapshots and AppKit bitmap tests cannot establish that result.
+- Repeat 20 uninterrupted physical sidebar cycles and live monitor-edge translation/overlay checks. Physical monitor-edge dragging was not run; edge behavior is covered by deterministic geometry tests.
+- Physical iPhone 17 Pro, iPhone 17 Pro Max, iPad, rotation, hot unplug/replug, and concurrent multi-device capture: Not run. Do not treat protocol/reference fixtures as hardware passes.
+- Maintain compatibility with usbmuxd/lockdownd protocol changes and validate native toolbar behavior on macOS 14/15. Unavailable or ambiguous identities deliberately use zero custom radius.
+- Existing occupied-device recovery, permission-denial, capture-soak, production-signing, distribution, and external latency/frame-rate checks remain outstanding.
+
+### Final Review Follow-up
+
+- Corrected ordinary-window restoration when the source rotates during full screen. Exit now applies the current source ratio to the retained preferred height before committing the restored frame.
+- Extended the full-screen integration test with a rotation during full screen. The final full regression run, including the strengthened rendering test, passed all 62 tests with zero failures or skips. Physical rotation remains Not run.

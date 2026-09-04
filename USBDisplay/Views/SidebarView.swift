@@ -5,8 +5,6 @@ struct SidebarView: View {
   let selectedDeviceID: String?
   let onSelectDevice: (String) -> Void
   let onOpenDeviceInNewWindow: (String) -> Void
-  let onAdjustScreenCorners: (DisplayDevice) -> Void
-  let onWidthChanged: (Double) -> Void
 
   var body: some View {
     List {
@@ -18,45 +16,35 @@ struct SidebarView: View {
           ForEach(devices) { device in
             let isSelected = device.id == selectedDeviceID
 
-            Label(device.name, systemImage: "rectangle.portrait.on.rectangle.portrait")
-              .lineLimit(1)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(.horizontal, 6)
-              .padding(.vertical, 4)
-              .background(
-                isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
-                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-              )
-              .contentShape(Rectangle())
-              .onTapGesture {
-                onSelectDevice(device.id)
+            VStack(alignment: .leading, spacing: 4) {
+              Label(device.name, systemImage: "rectangle.portrait.on.rectangle.portrait")
+              Text(device.identificationDescription)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .help(device.identificationDescription)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+              isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
+              in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+              onSelectDevice(device.id)
+            }
+            .contextMenu {
+              Button("Open in New Window") {
+                onOpenDeviceInNewWindow(device.id)
               }
-              .contextMenu {
-                Button("Open in New Window") {
-                  onOpenDeviceInNewWindow(device.id)
-                }
-                Divider()
-                Button("Adjust Screen Corners…") {
-                  onAdjustScreenCorners(device)
-                }
-              }
-              .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
           }
         }
       }
     }
     .listStyle(.sidebar)
-    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 280)
-    .background {
-      GeometryReader { geometry in
-        Color.clear
-          .onAppear {
-            onWidthChanged(geometry.size.width)
-          }
-          .onChange(of: geometry.size.width) { _, width in
-            onWidthChanged(width)
-          }
-      }
-    }
   }
 }

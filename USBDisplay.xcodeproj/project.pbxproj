@@ -24,14 +24,14 @@
 		AA0000000000000000000515 /* DeviceCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000115 /* DeviceCatalog.swift */; };
 		AA0000000000000000000516 /* WindowLayoutCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000116 /* WindowLayoutCoordinator.swift */; };
 		AA0000000000000000000517 /* DisplayCornerProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000117 /* DisplayCornerProfile.swift */; };
-		AA0000000000000000000518 /* CornerRadiusPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000118 /* CornerRadiusPreferences.swift */; };
-		AA0000000000000000000519 /* CornerAdjustmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000119 /* CornerAdjustmentView.swift */; };
 		AA0000000000000000000601 /* CaptureFailureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000201 /* CaptureFailureTests.swift */; };
 		AA0000000000000000000602 /* WindowLayoutPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */; };
 		AA0000000000000000000603 /* DeviceSelectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000203 /* DeviceSelectionTests.swift */; };
 		AA0000000000000000000604 /* DeviceWindowRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */; };
 		AA0000000000000000000605 /* DisplayCornerProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000205 /* DisplayCornerProfileTests.swift */; };
-		AA0000000000000000000606 /* CornerRadiusPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000206 /* CornerRadiusPreferencesTests.swift */; };
+		AA0000000000000000000606 /* USBDeviceInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000206 /* USBDeviceInfoTests.swift */; };
+		AA0000000000000000000520 /* USBDeviceInfoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000120; };
+		AA0000000000000000000607 /* WindowRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000207; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,18 +62,18 @@
 		AA0000000000000000000115 /* DeviceCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceCatalog.swift; sourceTree = "<group>"; };
 		AA0000000000000000000116 /* WindowLayoutCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutCoordinator.swift; sourceTree = "<group>"; };
 		AA0000000000000000000117 /* DisplayCornerProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayCornerProfile.swift; sourceTree = "<group>"; };
-		AA0000000000000000000118 /* CornerRadiusPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CornerRadiusPreferences.swift; sourceTree = "<group>"; };
-		AA0000000000000000000119 /* CornerAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CornerAdjustmentView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000201 /* CaptureFailureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFailureTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutPolicyTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000203 /* DeviceSelectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSelectionTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceWindowRoutingTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000205 /* DisplayCornerProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayCornerProfileTests.swift; sourceTree = "<group>"; };
-		AA0000000000000000000206 /* CornerRadiusPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CornerRadiusPreferencesTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000206 /* USBDeviceInfoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBDeviceInfoTests.swift; sourceTree = "<group>"; };
 		AA0000000000000000000301 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000000000000000000302 /* USBDisplay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = USBDisplay.entitlements; sourceTree = "<group>"; };
 		AA0000000000000000000401 /* USB Display.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "USB Display.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000402 /* iPhoneUSBDisplayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iPhoneUSBDisplayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000000000000000000120 /* USBDeviceInfoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBDeviceInfoService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000207 /* WindowRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowRenderingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,10 +96,10 @@
 		AA0000000000000000000004 /* Sources */ = {isa = PBXGroup; children = (AA0000000000000000000005 /* App */, AA0000000000000000000006 /* Models */, AA0000000000000000000007 /* Services */, AA0000000000000000000008 /* Support */, AA0000000000000000000009 /* Views */); name = USBDisplay; path = USBDisplay; sourceTree = SOURCE_ROOT; };
 		AA0000000000000000000005 /* App */ = {isa = PBXGroup; children = (AA0000000000000000000101 /* iPhoneUSBDisplayApp.swift */); path = App; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* Models */ = {isa = PBXGroup; children = (AA0000000000000000000102 /* CaptureFailure.swift */, AA0000000000000000000103 /* ConnectionStatus.swift */, AA0000000000000000000117 /* DisplayCornerProfile.swift */, AA0000000000000000000104 /* WindowLayoutPolicy.swift */, AA0000000000000000000105 /* DisplayDevice.swift */, AA0000000000000000000106 /* DeviceWindowRoutingPolicy.swift */); path = Models; sourceTree = "<group>"; };
-		AA0000000000000000000007 /* Services */ = {isa = PBXGroup; children = (AA0000000000000000000107 /* AppModel.swift */, AA0000000000000000000108 /* CaptureCoordinator.swift */, AA0000000000000000000118 /* CornerRadiusPreferences.swift */, AA0000000000000000000115 /* DeviceCatalog.swift */); path = Services; sourceTree = "<group>"; };
+		AA0000000000000000000007 /* Services */ = {isa = PBXGroup; children = (AA0000000000000000000120 /* USBDeviceInfoService.swift */, AA0000000000000000000107 /* AppModel.swift */, AA0000000000000000000108 /* CaptureCoordinator.swift */, AA0000000000000000000115 /* DeviceCatalog.swift */); path = Services; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* Support */ = {isa = PBXGroup; children = (AA0000000000000000000109 /* AppLogger.swift */); path = Support; sourceTree = "<group>"; };
-		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000119 /* CornerAdjustmentView.swift */, AA0000000000000000000114 /* DisplayWindowScene.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */, AA0000000000000000000116 /* WindowLayoutCoordinator.swift */); path = Views; sourceTree = "<group>"; };
-		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000206 /* CornerRadiusPreferencesTests.swift */, AA0000000000000000000205 /* DisplayCornerProfileTests.swift */, AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
+		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000114 /* DisplayWindowScene.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */, AA0000000000000000000116 /* WindowLayoutCoordinator.swift */); path = Views; sourceTree = "<group>"; };
+		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (AA0000000000000000000207 /* WindowRenderingTests.swift */, AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000206 /* USBDeviceInfoTests.swift */, AA0000000000000000000205 /* DisplayCornerProfileTests.swift */, AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
 		AA000000000000000000000B /* Config */ = {isa = PBXGroup; children = (AA0000000000000000000301 /* Info.plist */, AA0000000000000000000302 /* USBDisplay.entitlements */); path = Config; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
@@ -151,8 +151,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		AA0000000000000000000801 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000501, AA0000000000000000000502, AA0000000000000000000503, AA0000000000000000000504, AA0000000000000000000505, AA0000000000000000000506, AA0000000000000000000507, AA0000000000000000000508, AA0000000000000000000509, AA0000000000000000000510, AA0000000000000000000511, AA0000000000000000000512, AA0000000000000000000513, AA0000000000000000000514, AA0000000000000000000515, AA0000000000000000000516, AA0000000000000000000517, AA0000000000000000000518, AA0000000000000000000519); runOnlyForDeploymentPostprocessing = 0; };
-		AA0000000000000000000811 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000601, AA0000000000000000000602, AA0000000000000000000603, AA0000000000000000000604, AA0000000000000000000605, AA0000000000000000000606); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000801 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000520, AA0000000000000000000501, AA0000000000000000000502, AA0000000000000000000503, AA0000000000000000000504, AA0000000000000000000505, AA0000000000000000000506, AA0000000000000000000507, AA0000000000000000000508, AA0000000000000000000509, AA0000000000000000000510, AA0000000000000000000511, AA0000000000000000000512, AA0000000000000000000513, AA0000000000000000000514, AA0000000000000000000515, AA0000000000000000000516, AA0000000000000000000517); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000811 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000607, AA0000000000000000000601, AA0000000000000000000602, AA0000000000000000000603, AA0000000000000000000604, AA0000000000000000000605, AA0000000000000000000606); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */

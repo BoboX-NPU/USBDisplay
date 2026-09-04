@@ -2,11 +2,11 @@
 
 The checked-in table in `DisplayCornerProfile.swift` was extracted on 2026-09-05 from Apple's locally installed CoreSimulator device profiles under `/Library/Developer/CoreSimulator/Profiles/DeviceTypes`. The app does not read these files or call simulator/private APIs at runtime.
 
-These are simulator display-reference measurements, not a claim that AVFoundation reports physical screen corners. Only exact `modelIdentifier` / public capture `modelID` matches are accepted. Regional hardware variants absent from the source are intentionally not guessed. Generic identifiers such as `iPhone` and user-editable device names do not select a profile.
+These are simulator display-reference measurements, not a claim that AVFoundation reports physical screen corners. Only exact `ProductType` values read through the local USB service are matched to the source `modelIdentifier`. AVFoundation capture `modelID` is retained separately and does not select a profile. Regional hardware variants absent from the source are intentionally not guessed. Generic identifiers such as `iPhone` and user-editable device names do not select a profile.
 
 Calibration uses the integrated primary display's four equal `cornerRadiusUL/UR/LL/LR` values in logical points. The normalized radius is `cornerRadiusUL / (min(width, height) / scale)`. This agrees with `DeviceCornerRadius` where present. For example, iPhone 16 Pro is 62 / (1206 / 3) = 15.4229%; iPad Pro 13-inch (M4) is 30 / (2064 / 2) = 2.9070%. CALayer continuous corners render this reference geometry; actual device appearance still requires physical validation.
 
-To refresh, inspect `Contents/Resources/capabilities.plist` in each listed `.simdevicetype`, require an exact model identifier and four explicitly equal radii, and compare source hashes below. Do not add aliases or missing radii by assumption. The existing manual per-device override remains available and takes precedence.
+To refresh, inspect `Contents/Resources/capabilities.plist` in each listed `.simdevicetype`, require an exact model identifier and four explicitly equal radii, and compare source hashes below. Do not add aliases or missing radii by assumption. Legacy per-device manual overrides are no longer read or applied; their stored data is left untouched. Unavailable identities and unlisted products use zero custom radius. iPhone 16 Pro and iPhone 17 Pro both have a 62-point radius and a 402-point logical short side in this source; iPhone 17 Pro Max has the same 62-point radius over 440 points. No artificial per-generation differences are introduced.
 
 | Model ID | Device | Radius (pt) | Short side (pt) | Source bundle | SHA-256 of capabilities.plist |
 | --- | --- | ---: | ---: | --- | --- |

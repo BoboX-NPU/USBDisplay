@@ -8,11 +8,15 @@ import Observation
 final class DeviceCatalog {
   private(set) var devices: [DisplayDevice] = []
 
+  @ObservationIgnored private let identityService = DeviceIdentityService()
   @ObservationIgnored private var monitor: DeviceDiscoveryMonitor!
 
   init() {
     monitor = DeviceDiscoveryMonitor { [weak self] devices in
-      self?.devices = devices
+      guard let self else { return }
+      self.identityService.refresh(devices) { [weak self] resolved in
+        self?.devices = resolved
+      }
     }
   }
 

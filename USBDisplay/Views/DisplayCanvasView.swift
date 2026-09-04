@@ -6,20 +6,10 @@ struct DisplayCanvasView: View {
   let hasAvailableDevices: Bool
 
   var body: some View {
-    ZStack {
-      Color.black
-
-      PreviewView(
-        session: model.session,
-        onAspectRatioChanged: model.updatePreviewAspectRatio
-      )
-
-      if !model.status.isConnected {
-        emptyState
-          .transition(.opacity)
-      }
-    }
-    .clipped()
+    emptyState
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .background(.black)
+      .environment(\.colorScheme, .dark)
   }
 
   private var emptyState: some View {

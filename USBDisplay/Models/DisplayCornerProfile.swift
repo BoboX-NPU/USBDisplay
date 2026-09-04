@@ -2,7 +2,6 @@ import Foundation
 
 enum DisplayCornerSource: String, Equatable, Sendable {
   case modelMatch
-  case manual
   case unmatched
 }
 
@@ -17,7 +16,7 @@ enum DisplayCornerProfileResolver {
   static let maximumFraction = 0.20
 
   static func automaticProfile(for device: DisplayDevice) -> DisplayCornerProfile {
-    guard let reference = modelProfiles[device.modelID] else {
+    guard let productType = device.productType, let reference = modelProfiles[productType] else {
       return DisplayCornerProfile(modelName: nil, fraction: 0, source: .unmatched, reference: nil)
     }
     return DisplayCornerProfile(

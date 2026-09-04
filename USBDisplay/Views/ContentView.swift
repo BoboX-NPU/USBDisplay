@@ -3,82 +3,35 @@ import SwiftUI
 struct ContentView: View {
   @Bindable var model: AppModel
   let devices: [DisplayDevice]
-  @Bindable var cornerPreferences: CornerRadiusPreferences
   let onSelectDevice: (String) -> Void
   let onOpenDeviceInNewWindow: (String) -> Void
 
-  @State private var cornerAdjustmentDevice: DisplayDevice?
-  @State private var compactWindowPresentation = false
-
   var body: some View {
-    NavigationSplitView(columnVisibility: columnVisibility) {
-      SidebarView(
-        devices: devices,
-        selectedDeviceID: model.selectedDeviceID,
-        onSelectDevice: onSelectDevice,
-        onOpenDeviceInNewWindow: onOpenDeviceInNewWindow,
-        onAdjustScreenCorners: { device in
-          cornerAdjustmentDevice = device
-        },
-        onWidthChanged: model.updateSidebarWidth
-      )
-      .toolbar(removing: .sidebarToggle)
-    } detail: {
-      DisplayCanvasView(
-        model: model,
-        hasAvailableDevices: !devices.isEmpty
-      )
-      .ignoresSafeArea(.container, edges: compactWindowPresentation ? .top : [])
-      .toolbar(removing: .sidebarToggle)
-    }
-    .navigationSplitViewStyle(.balanced)
-    .toolbar(removing: .sidebarToggle)
-    .ignoresSafeArea(
-      .container,
-      edges: compactWindowPresentation ? .top : []
-    )
-    .background(
-      WindowLayoutCoordinator(
-        title: logicalWindowTitle,
+    WindowLayoutCoordinator(
+      configuration: WindowLayoutConfiguration(
+        title: selectedDevice?.name ?? "USB Display",
         aspectRatio: model.previewAspectRatio,
         sidebarWidth: model.sidebarWidth,
-        sidebarIsVisible: model.columnVisibility != .detailOnly,
-        cornerRadiusFraction: currentCornerRadiusFraction,
-        onRestoreSidebarAfterFullScreen: { wasVisible in
-          model.setColumnVisibility(wasVisible ? .all : .detailOnly)
-        },
-        onCompactPresentationChanged: { compactWindowPresentation = $0 }
-      )
+        sidebarIsVisible: model.sidebarIsVisible,
+        cornerRadiusFraction: selectedDevice.map {
+          DisplayCornerProfileResolver.automaticProfile(for: $0).fraction
+        } ?? 0
+      ),
+      session: model.session,
+      sidebar: AnyView(
+        SidebarView(
+          devices: devices, selectedDeviceID: model.selectedDeviceID,
+          onSelectDevice: onSelectDevice, onOpenDeviceInNewWindow: onOpenDeviceInNewWindow
+        )),
+      status: AnyView(DisplayCanvasView(model: model, hasAvailableDevices: !devices.isEmpty)),
+      statusIsVisible: !model.status.isConnected,
+      onAspectRatioChanged: model.updatePreviewAspectRatio,
+      onSidebarChanged: model.setSidebarVisible
     )
-    .sheet(item: $cornerAdjustmentDevice) { device in
-      CornerAdjustmentView(
-        device: device,
-        aspectRatio: device.id == model.selectedDeviceID ? model.previewAspectRatio : nil,
-        preferences: cornerPreferences
-      )
-    }
+    .ignoresSafeArea()
   }
 
-  private var logicalWindowTitle: String {
-    devices.first { $0.id == model.selectedDeviceID }?.name ?? "USB Display"
-  }
-
-  private var currentCornerRadiusFraction: Double {
-    guard let device = devices.first(where: { $0.id == model.selectedDeviceID }) else {
-      return 0
-    }
-    return cornerPreferences.resolvedFraction(
-      for: device,
-      aspectRatio: model.previewAspectRatio
-    )
-  }
-
-  private var columnVisibility: Binding<NavigationSplitViewVisibility> {
-    Binding(
-      get: { model.columnVisibility },
-      set: { visibility in
-        model.setColumnVisibility(visibility)
-      }
-    )
+  private var selectedDevice: DisplayDevice? {
+    devices.first { $0.id == model.selectedDeviceID }
   }
 }

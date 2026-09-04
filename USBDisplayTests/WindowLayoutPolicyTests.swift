@@ -253,187 +253,253 @@ struct WindowLayoutPolicyTests {
 struct WindowGeometryStateTests {
   private let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
 
-  @Test
-  func repeatedChromeChangesPreservePreviewAndRestoreOriginalFrame() throws {
+  @Test func chromeAddsSpaceWithoutChangingPreview() throws {
     var state = WindowGeometryState()
-    let compact = CGRect(x: 400, y: 100, width: 300, height: 600)
-    state.rememberUserGeometry(frame: compact, sidebar: 0, titlebar: 0)
+    let preview = CGRect(x: 400, y: 100, width: 300, height: 600)
+    state.rememberPreview(preview)
     for _ in 0..<20 {
-      let expanded = try #require(
-        state.frame(aspectRatio: 0.5, sidebar: 221, titlebar: 52, visibleFrame: screen))
-      #expect(expanded == CGRect(x: 179, y: 100, width: 521, height: 652))
-      let hover = state.frame(aspectRatio: 0.5, sidebar: 0, titlebar: 52, visibleFrame: screen)
-      #expect(hover == CGRect(x: 400, y: 100, width: 300, height: 652))
-      #expect(
-        state.frame(aspectRatio: 0.5, sidebar: 0, titlebar: 0, visibleFrame: screen) == compact)
+      for sidebar in [0.0, 221.0] {
+        for titlebar in [0.0, 52.0] {
+          let layout = try #require(
+            state.layout(sidebar: sidebar, titlebar: titlebar, screen: screen))
+          #expect(layout.previewOnScreen == preview)
+          #expect(
+            layout.frame
+              == CGRect(x: 400 - sidebar, y: 100, width: 300 + sidebar, height: 600 + titlebar))
+        }
+      }
     }
   }
 
-  @Test
-  func screenFittingDoesNotOverwriteUserSize() throws {
-    var state = WindowGeometryState()
-    let smallScreen = CGRect(x: -600, y: 0, width: 600, height: 700)
-    let compact = CGRect(x: -600, y: 0, width: 600, height: 600)
-    state.rememberUserGeometry(frame: compact, sidebar: 0, titlebar: 0)
-    let expanded = try #require(
-      state.frame(aspectRatio: 1, sidebar: 221, titlebar: 52, visibleFrame: smallScreen))
-    #expect(expanded.width == 600)
-    #expect(expanded.height == 431)
-    #expect(
-      state.frame(aspectRatio: 1, sidebar: 0, titlebar: 0, visibleFrame: smallScreen) == compact)
-    state.rememberUserGeometry(frame: expanded, sidebar: 221, titlebar: 52)
-    #expect(
-      state.frame(aspectRatio: 1, sidebar: 0, titlebar: 0, visibleFrame: smallScreen)?.height == 379
-    )
+  @Test func edgeTranslationAndOverlayNeverScalePreview() throws {
+    let screens = [screen, CGRect(x: -600, y: -100, width: 600, height: 650)]
+    for screen in screens {
+      for size in [
+        CGSize(width: 300, height: 600), CGSize(width: screen.width, height: screen.height),
+      ] {
+        for origin in [
+          screen.origin, CGPoint(x: screen.maxX - size.width, y: screen.maxY - size.height),
+        ] {
+          var state = WindowGeometryState()
+          let preview = CGRect(origin: origin, size: size)
+          state.rememberPreview(preview)
+          let layout = try #require(state.layout(sidebar: 221, titlebar: 52, screen: screen))
+          #expect(layout.preview.size == size)
+          #expect(screen.contains(layout.frame))
+          if size.width + 221 > screen.width { #expect(layout.externalSidebar == 0) }
+          if size.height + 52 > screen.height { #expect(layout.externalTitlebar == 0) }
+          #expect(state.layout(sidebar: 0, titlebar: 0, screen: screen)?.previewOnScreen == preview)
+        }
+      }
+    }
   }
 
-  @Test
-  func orientationAndIndependentWindowsKeepIntendedHeight() throws {
+  @Test func rotationRetainsPreferredHeightAndWindowsRemainIndependent() throws {
     var phone = WindowGeometryState()
-    phone.rememberUserGeometry(
-      frame: CGRect(x: 300, y: 100, width: 300, height: 600), sidebar: 0, titlebar: 0)
+    phone.rememberPreview(CGRect(x: 300, y: 100, width: 300, height: 600))
     var tablet = phone
-    tablet.rememberUserGeometry(
-      frame: CGRect(x: 500, y: 200, width: 400, height: 400), sidebar: 0, titlebar: 0)
-    let landscape = try #require(
-      phone.frame(aspectRatio: 2, sidebar: 0, titlebar: 0, visibleFrame: screen))
-    #expect(landscape.height == 600)
-    #expect(landscape.width == 1200)
+    tablet.rememberPreview(CGRect(x: 500, y: 200, width: 400, height: 400))
+    phone.orient(aspectRatio: 3, screen: screen)
+    #expect(phone.previewRect?.size == CGSize(width: 1440, height: 480))
+    phone.orient(aspectRatio: 0.5, screen: screen)
+    #expect(phone.previewRect?.size == CGSize(width: 300, height: 600))
     #expect(tablet.previewRect?.height == 400)
-    #expect(phone.previewRect?.height == 600)
-  }
-
-  @Test
-  func movingAConstrainedWindowPreservesItsPreferredScale() {
-    var state = WindowGeometryState()
-    state.rememberUserGeometry(
-      frame: CGRect(x: 300, y: 100, width: 300, height: 600), sidebar: 0, titlebar: 0)
-    state.move(by: CGSize(width: 40, height: 10))
-    #expect(state.previewRect == CGRect(x: 340, y: 110, width: 300, height: 600))
+    phone.move(by: CGSize(width: 40, height: 10))
+    #expect(phone.previewRect?.origin == CGPoint(x: 340, y: 110))
   }
 }
 
 @Suite(.serialized)
 @MainActor
 struct WindowLayoutIntegrationTests {
-  private func configuration(sidebar: Bool) -> WindowLayoutConfiguration {
+  private func configuration(sidebar: Bool, fraction: Double = 0) -> WindowLayoutConfiguration {
     WindowLayoutConfiguration(
       title: "Layout Test", aspectRatio: 0.5, sidebarWidth: 220,
-      sidebarIsVisible: sidebar, cornerRadiusFraction: 0
-    )
+      sidebarIsVisible: sidebar, cornerRadiusFraction: fraction)
   }
 
   private func makeWindow() -> (NSWindow, WindowLayoutHostView) {
+    let screen = NSScreen.main!.visibleFrame
     let window = NSWindow(
-      contentRect: CGRect(x: 450, y: 200, width: 521, height: 600),
-      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false
-    )
+      contentRect: CGRect(x: screen.midX - 200, y: screen.minY + 100, width: 471, height: 500),
+      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
     window.isReleasedWhenClosed = false
-    let host = WindowLayoutHostView(
-      configuration: configuration(sidebar: true), onRestoreSidebarAfterFullScreen: { _ in })
-    window.contentView?.addSubview(host)
+    let host = WindowLayoutHostView(configuration: configuration(sidebar: true))
+    window.contentView = host
     return (window, host)
   }
 
-  private func settle() async throws {
-    try await Task.sleep(for: .milliseconds(250))
+  private func screenRect(_ host: WindowLayoutHostView) -> CGRect {
+    host.window!.convertToScreen(host.preview.convert(host.preview.bounds, to: nil))
   }
 
-  @Test
-  func sidebarRoundTripsAndRapidInterruptionsKeepStableSize() async throws {
+  @Test func everyChromeLayoutKeepsActualPreviewRectAndLayerIdentity() async throws {
     let (window, host) = makeWindow()
     defer {
       host.prepareForRemoval()
       window.close()
     }
-    try await settle()
-    let expanded = window.frame
+    try await Task.sleep(for: .milliseconds(100))
+    let expected = screenRect(host)
+    let layer = host.preview.layer?.sublayers?.first
+    var samples: [CGRect] = []
+    host.preview.onGeometryApplied = { samples.append(screenRect(host)) }
     for _ in 0..<20 {
       host.updateConfiguration(configuration(sidebar: false))
-      try await settle()
+      host.layoutSubtreeIfNeeded()
+      host.revealTitlebar()
+      host.layoutSubtreeIfNeeded()
+      host.hideTitlebar()
       host.updateConfiguration(configuration(sidebar: true))
-      try await settle()
-      #expect(abs(window.frame.width - expanded.width) < 1)
-      #expect(abs(window.frame.height - expanded.height) < 1)
+      host.layoutSubtreeIfNeeded()
+      await Task.yield()
     }
+    #expect(samples.count >= 80)
+    for sample in samples { #expect(sample == expected) }
+    #expect(host.preview.layer?.sublayers?.first === layer)
+    host.preview.onGeometryApplied = nil
+  }
+
+  @Test func eightResizeDirectionsAreProportionalAtEveryStepWithoutReleaseCorrection() async throws
+  {
+    let (window, host) = makeWindow()
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    for visible in [true, false] {
+      host.updateConfiguration(configuration(sidebar: visible))
+      for delta in [
+        CGSize(width: 2, height: 0), CGSize(width: -2, height: 0),
+        CGSize(width: 0, height: 4), CGSize(width: 0, height: -4),
+        CGSize(width: 2, height: 4), CGSize(width: -2, height: 4),
+        CGSize(width: 2, height: -4), CGSize(width: -2, height: -4),
+      ] {
+        NotificationCenter.default.post(
+          name: NSWindow.willStartLiveResizeNotification, object: window)
+        for _ in 0..<10 {
+          let proposal = CGSize(
+            width: window.frame.width + delta.width, height: window.frame.height + delta.height)
+          let size = try #require(window.delegate?.windowWillResize?(window, to: proposal))
+          window.setFrame(CGRect(origin: window.frame.origin, size: size), display: false)
+          host.layoutSubtreeIfNeeded()
+          let rect = screenRect(host)
+          #expect(abs(rect.width / rect.height - 0.5) < 0.00001)
+        }
+        let released = window.frame
+        NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)
+        #expect(window.frame == released)
+        await Task.yield()
+        #expect(window.frame == released)
+      }
+    }
+  }
+
+  @Test func resizeTakesOverImmediatelyAndSuspendsHover() async throws {
+    let (window, host) = makeWindow()
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
     host.updateConfiguration(configuration(sidebar: false))
     NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
+    let frame = window.frame
+    host.revealTitlebar()
+    #expect(window.frame == frame)
     let desired = try #require(
-      window.delegate?.windowWillResize?(window, to: CGSize(width: 280, height: 560)))
-    window.setFrame(CGRect(origin: window.frame.origin, size: desired), display: false)
+      window.delegate?.windowWillResize?(window, to: CGSize(width: 240, height: 480)))
+    window.setFrame(CGRect(origin: frame.origin, size: desired), display: false)
     NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)
     let released = window.frame
-    try await settle()
-    #expect(abs(window.frame.width - released.width) < 1)
-    #expect(abs(window.frame.height - released.height) < 1)
+    try await Task.sleep(for: .milliseconds(200))
+    #expect(window.frame == released)
     host.updateConfiguration(configuration(sidebar: true))
-    try await settle()
     host.updateConfiguration(configuration(sidebar: false))
-    try await settle()
-    #expect(abs(window.frame.width - released.width) < 1)
-    #expect(abs(window.frame.height - released.height) < 1)
+    #expect(window.frame == released)
   }
 
-  @Test
-  func resizeDelegateConstrainsAllHandlesWithoutReleaseCorrection() async throws {
-    let (window, host) = makeWindow()
-    defer {
-      host.prepareForRemoval()
-      window.close()
-    }
-    try await settle()
-    let titlebar = window.frame.height - window.contentLayoutRect.height
-    for delta in [
-      CGSize(width: 30, height: 0), CGSize(width: -30, height: 0),
-      CGSize(width: 0, height: 40), CGSize(width: 0, height: -40),
-      CGSize(width: 30, height: 40), CGSize(width: -30, height: 40),
-      CGSize(width: 30, height: -40), CGSize(width: -30, height: -40),
-    ] {
+  @Test func fullScreenRestoresOrdinaryGeometryAndSidebarState() async throws {
+    for visible in [false, true] {
+      let (window, host) = makeWindow()
+      defer {
+        host.prepareForRemoval()
+        window.close()
+      }
+      try await Task.sleep(for: .milliseconds(100))
+      host.updateConfiguration(configuration(sidebar: visible))
+      let normal = window.frame
       NotificationCenter.default.post(
-        name: NSWindow.willStartLiveResizeNotification, object: window)
-      let desired = try #require(
-        window.delegate?.windowWillResize?(
-          window,
-          to: CGSize(
-            width: window.frame.width + delta.width, height: window.frame.height + delta.height
-          )))
-      #expect(abs((desired.width - 221) / (desired.height - titlebar) - 0.5) < 0.001)
-      window.setFrame(CGRect(origin: window.frame.origin, size: desired), display: false)
-      NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)
-      let released = window.frame
-      try await settle()
-      #expect(abs(window.frame.width - released.width) < 1)
-      #expect(abs(window.frame.height - released.height) < 1)
+        name: NSWindow.willEnterFullScreenNotification, object: window)
+      window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
+      NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+      #expect(host.surfaceLayout?.preview.height == window.frame.height)
+      #expect(host.surfaceLayout?.titlebar.height == 0)
+      host.updateConfiguration(configuration(sidebar: !visible))
+      NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
+      NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+      #expect(window.frame == normal)
+
+      // A source can rotate while full screen has suspended ordinary geometry.
+      NotificationCenter.default.post(
+        name: NSWindow.willEnterFullScreenNotification, object: window)
+      window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
+      NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+      host.updateConfiguration(
+        WindowLayoutConfiguration(
+          title: "Rotated source", aspectRatio: 2,
+          sidebarWidth: 220, sidebarIsVisible: !visible, cornerRadiusFraction: 0))
+      NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
+      NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+      let rotated = try #require(host.surfaceLayout?.preview)
+      #expect(abs(rotated.width / rotated.height - 2) < 0.00001)
     }
   }
 
-  @Test
-  func compactSafeAreaSignalFollowsChromeAndFullScreen() async throws {
+  @Test func separateWindowsNeverSharePreviewGeometryOrChrome() async throws {
+    let (firstWindow, first) = makeWindow()
+    let (secondWindow, second) = makeWindow()
+    defer {
+      first.prepareForRemoval()
+      second.prepareForRemoval()
+      firstWindow.close()
+      secondWindow.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let secondFrame = secondWindow.frame
+    let secondPreview = screenRect(second)
+    for _ in 0..<5 {
+      first.updateConfiguration(configuration(sidebar: false))
+      first.revealTitlebar()
+      first.hideTitlebar()
+      first.updateConfiguration(configuration(sidebar: true))
+    }
+    #expect(secondWindow.frame == secondFrame)
+    #expect(screenRect(second) == secondPreview)
+    #expect(first.preview !== second.preview)
+  }
+
+  @Test func compactMaskBelongsToPreviewAndWindowRemainsTransparent() async throws {
     let (window, host) = makeWindow()
     defer {
       host.prepareForRemoval()
       window.close()
     }
-    var compact = false
-    host.onCompactPresentationChanged = { compact = $0 }
-    try await settle()
-    host.updateConfiguration(configuration(sidebar: false))
-    try await settle()
-    #expect(compact)
-    let normalFrame = window.frame
-    NotificationCenter.default.post(name: NSWindow.willEnterFullScreenNotification, object: window)
-    try await settle()
-    #expect(!compact)
-    window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
-    NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
-    try await settle()
-    #expect(compact)
-    #expect(abs(window.frame.width - normalFrame.width) < 1)
-    #expect(abs(window.frame.height - normalFrame.height) < 1)
+    try await Task.sleep(for: .milliseconds(100))
+    host.updateConfiguration(configuration(sidebar: false, fraction: 62.0 / 402))
+    #expect(!window.isOpaque)
+    #expect(window.backgroundColor == .clear)
+    #expect(host.layer?.cornerRadius == 0)
+    #expect(host.preview.layer?.masksToBounds == true)
+    #expect((host.preview.layer?.cornerRadius ?? 0) > 0)
+    #expect(window.titlebarAppearsTransparent)
+    host.revealTitlebar()
+    #expect(host.preview.layer?.cornerRadius == 0)
+    #expect(!window.isOpaque)
   }
 
-  @Test
-  func proxyForwardsOriginalLifecycleAndResizeDecisions() throws {
+  @Test func proxyForwardsOriginalLifecycleAndResizeDecisions() throws {
     let original = OriginalWindowDelegate()
     let proxy = WindowResizeDelegate()
     proxy.originalDelegate = original

@@ -13,7 +13,6 @@ enum WindowChromeMode: Equatable, Sendable {
 
 struct WindowChromeVisibilityState: Equatable, Sendable {
   static let hideDelay = 0.5
-  static let animationDuration = 0.15
   static let compactHotZoneHeight = 8.0
 
   private(set) var sidebarIsVisible: Bool
@@ -63,8 +62,6 @@ struct WindowChromeVisibilityState: Equatable, Sendable {
 enum WindowLayoutPolicy {
   static let minimumPreviewHeight = 320.0
   static let splitDividerWidth = 1.0
-  static let sidebarResizeDebounce = 0.1
-  static let nonInteractiveResizeDebounce = 0.04
 
   static func validAspectRatio(width: Double, height: Double) -> Double? {
     guard width.isFinite, height.isFinite, width > 0, height > 0 else {
@@ -173,59 +170,76 @@ enum WindowLayoutPolicy {
 
 }
 
-/// The user's intended preview rectangle, independent of temporary window chrome.
+/// Explicit child geometry. Chrome either extends the outside frame or overlays it;
+/// it never participates in sizing the preview.
+struct WindowSurfaceLayout: Equatable {
+  let frame: CGRect
+  let preview: CGRect
+  let sidebar: CGRect
+  let titlebar: CGRect
+  let externalSidebar: Double
+  let externalTitlebar: Double
+
+  var previewOnScreen: CGRect {
+    preview.offsetBy(dx: frame.minX, dy: frame.minY)
+  }
+
+  static func placing(preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect) -> Self {
+    let externalSidebar = preview.width + sidebar <= screen.width ? sidebar : 0
+    let externalTitlebar = preview.height + titlebar <= screen.height ? titlebar : 0
+    var frame = CGRect(
+      x: preview.minX - externalSidebar, y: preview.minY,
+      width: preview.width + externalSidebar, height: preview.height + externalTitlebar)
+    frame.origin.x = max(screen.minX, min(frame.minX, screen.maxX - frame.width))
+    frame.origin.y = max(screen.minY, min(frame.minY, screen.maxY - frame.height))
+    return resizing(
+      frame: frame, sidebar: sidebar, titlebar: titlebar,
+      externalSidebar: externalSidebar, externalTitlebar: externalTitlebar)
+  }
+
+  static func resizing(
+    frame: CGRect, sidebar: Double, titlebar: Double,
+    externalSidebar: Double, externalTitlebar: Double
+  ) -> Self {
+    Self(
+      frame: frame,
+      preview: CGRect(
+        x: externalSidebar, y: 0,
+        width: max(1, frame.width - externalSidebar),
+        height: max(1, frame.height - externalTitlebar)),
+      sidebar: CGRect(
+        x: 0, y: 0, width: min(sidebar, frame.width), height: max(0, frame.height - titlebar)),
+      titlebar: CGRect(x: 0, y: frame.height - titlebar, width: frame.width, height: titlebar),
+      externalSidebar: externalSidebar, externalTitlebar: externalTitlebar)
+  }
+}
+
+/// Preferred ordinary-window geometry lasts only as long as its owning window.
 struct WindowGeometryState: Equatable {
   private(set) var previewRect: CGRect?
+  private(set) var preferredHeight: Double?
 
-  mutating func rememberUserGeometry(frame: CGRect, sidebar: Double, titlebar: Double) {
-    previewRect = CGRect(
-      x: frame.minX + sidebar, y: frame.minY,
-      width: max(frame.width - sidebar, 1), height: max(frame.height - titlebar, 1)
-    )
+  mutating func rememberPreview(_ rect: CGRect) {
+    previewRect = rect
+    preferredHeight = rect.height
   }
 
   mutating func move(by delta: CGSize) {
     previewRect = previewRect?.offsetBy(dx: delta.width, dy: delta.height)
   }
 
-  func frame(aspectRatio: Double, sidebar: Double, titlebar: Double, visibleFrame: CGRect)
-    -> CGRect?
-  {
-    guard let previewRect,
-      let size = WindowLayoutPolicy.sizePreservingHeight(
-        currentHeight: previewRect.height, aspectRatio: aspectRatio,
-        sidebarWidth: max(sidebar - WindowLayoutPolicy.splitDividerWidth, 0),
-        sidebarIsVisible: sidebar > 0,
-        maximumSize: WindowContentSize(
-          width: visibleFrame.width, height: max(visibleFrame.height - titlebar, 1)
-        )
-      )
-    else { return nil }
-    var result = CGRect(
-      x: previewRect.minX - sidebar, y: previewRect.minY,
-      width: size.width, height: size.height + titlebar
-    )
-    result.origin.x = min(max(result.minX, visibleFrame.minX), visibleFrame.maxX - result.width)
-    result.origin.y = min(max(result.minY, visibleFrame.minY), visibleFrame.maxY - result.height)
-    return result
+  mutating func orient(aspectRatio: Double, screen: CGRect) {
+    guard var previewRect, let preferredHeight,
+      WindowLayoutPolicy.validAspectRatio(width: aspectRatio, height: 1) != nil
+    else { return }
+    // Only a source orientation change may fit the preview itself to the screen.
+    let height = min(preferredHeight, screen.height, screen.width / aspectRatio)
+    previewRect.size = CGSize(width: height * aspectRatio, height: height)
+    self.previewRect = previewRect
   }
-}
 
-/// Only one frame transition can own a window; cancellation discards all future ticks.
-struct WindowFrameTransition {
-  let start: CGRect
-  let target: CGRect
-  let startTime: TimeInterval
-  let duration: TimeInterval
-
-  func frame(at time: TimeInterval) -> CGRect {
-    let progress = min(max((time - startTime) / duration, 0), 1)
-    let eased = progress * progress * (3 - 2 * progress)
-    return CGRect(
-      x: start.minX + (target.minX - start.minX) * eased,
-      y: start.minY + (target.minY - start.minY) * eased,
-      width: start.width + (target.width - start.width) * eased,
-      height: start.height + (target.height - start.height) * eased
-    )
+  func layout(sidebar: Double, titlebar: Double, screen: CGRect) -> WindowSurfaceLayout? {
+    guard let previewRect else { return nil }
+    return .placing(preview: previewRect, sidebar: sidebar, titlebar: titlebar, screen: screen)
   }
 }

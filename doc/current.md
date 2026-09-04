@@ -2,95 +2,64 @@
 
 ## Overview
 
-USB Display is a native macOS 14+ SwiftUI application that displays the screen of a USB-connected iPhone or iPad. Version 0.3.0 is a standard Xcode macOS application with an app target, a unit-test target, a shared scheme, project-owned bundle metadata, and project-owned entitlements.
+USB Display is a native macOS 14+ SwiftUI application for displaying a USB-connected iPhone or iPad. Version 0.3.0 uses a standard Xcode app target, shared scheme, unit-test target, project-owned bundle metadata, and camera-device entitlement.
 
-The application uses only public AVFoundation and CoreMediaIO APIs. It does not install a mobile companion app and does not send input, control commands, audio, recordings, screenshots, or captured frames to any destination.
+Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only client of the local usbmuxd/lockdownd protocols identifies product models. No companion app, Xcode installation, private Apple framework, recording, audio capture, remote transmission, or mobile input control is required.
 
 ## Current Capabilities
 
-- Explicitly enables CoreMediaIO screen-capture-device discovery and disables wireless screen-capture discovery.
-- Discovers wired Apple devices that provide external muxed screen media, including sources that macOS reports with the Other transport type.
-- Publishes device discovery through one application-level catalog shared by every window.
-- Uses a value-based SwiftUI `WindowGroup` keyed by the device unique ID and retains at most one window for each selected device.
-- Switches the current window directly when the user left-clicks an unclaimed device.
-- Provides `Open in New Window` from each device row's context menu; selecting a device that already owns a window focuses that window instead of duplicating its capture session.
-- Gives each device window its own `AVCaptureSession`, connection state, retry lifecycle, sidebar state, and live preview aspect ratio.
-- Releases only the closing window's capture session; another device window continues independently.
-- Uses `AVCaptureVideoPreviewLayer` with `.resizeAspect` for the system-managed direct-preview path supported by wired iPhone and iPad screen sources.
-- Reports the effective preview content rectangle back to the window model and updates the window aspect ratio when the source orientation changes.
-- Keeps a normal window's detail area at the exact source aspect ratio, with no white inset, letterbox, stretching, or cropping.
-- Keeps a per-window in-memory preferred preview rectangle. Orientation changes preserve its height; chrome and screen fitting never overwrite the preferred size. User resizing commits a new preference, and user movement translates it.
-- Constrains live resizing through a forwarding `NSWindowDelegate` before each proposed size is applied, subtracting the sidebar, divider, and title bar. An ordinary drag has no release animation or second ratio snap.
-- Debounces sidebar-width measurements for 0.1 seconds and routes all programmatic frame changes through one cancellable transition. Starting a user resize cancels pending frame work and suspends hover chrome until release.
-- Uses a native `NavigationSplitView` with a collapsible system sidebar containing device names and selection state.
-- Uses a separate native title bar with its system background and separator while the sidebar is visible, keeps the logical window title visually hidden, and places the sidebar and display surface below it.
-- Replaces the automatically positioned split-view toggle with one AppKit navigational toolbar item beside the traffic-light controls. It uses the native responder chain and exposes dynamic `Show Sidebar` and `Hide Sidebar` accessibility labels.
-- Collapses the complete title bar when the sidebar is hidden, including its material, separator, traffic-light buttons, toolbar, and sidebar button, so the compact window contains only the device display surface.
-- Reveals the complete native title bar when the pointer enters the compact window's full-width 8-point top region. The revealed region includes the title bar and an 8-point bridge below it; leaving that region collapses the title bar after 0.5 seconds, while re-entering cancels the pending collapse.
-- Measures the native title bar at runtime and uses one 0.15-second frame transition. Sidebar space is added to the left of the preferred preview rectangle and title-bar space above it. Fitting first translates the window, then scales the preview only if necessary; removing chrome restores the preferred rectangle.
-- Reports actual compact chrome back to SwiftUI and extends the detail view through its top safe area only in fully compact mode, preventing the hidden native title bar from leaving a 32-point empty inset.
-- Applies a continuous transparent-window corner mask only in fully compact mode. Automatic profiles require an exact public capture `modelID` match in an 80-model Apple Simulator display-reference table. Radii scale with the preview short side and do not change on rotation. Unknown identifiers use zero custom radius until manually calibrated; device names and aspect ratios never select a model profile.
-- Provides `Adjust Screen Corners…` from each device row's context menu with Automatic and Custom modes, a 0–20% slider in 0.5% steps, a live outline preview, reset, and explicit matched/manual/unmatched status. Per-device overrides retain the existing SHA-256 preference keys and take precedence over model profiles.
-- Restores the native opaque window presentation and removes the custom mask whenever the title bar is visible or the window is full screen.
-- Uses aspect-fit black bars only as the explicit native full-screen exception, where the display ratio cannot be changed to match the device.
-- Reports no-device, unlock-or-trust, connecting, connected, interrupted, occupied, device-unavailable, camera-permission, and general failure states within the display surface.
-- Retries suspended, occupied, interrupted, and transiently failed devices with bounded delays local to that window.
-- Emits structured device, session, interface, and diagnostic error logs without device identifiers or captured content.
+- Enables wired CoreMediaIO screen sources and disables wireless discovery. Accepts eligible external muxed Apple devices even when their public transport type is `Other`.
+- Shares one device catalog across SwiftUI `WindowGroup` windows, with at most one window per selected device. Left-click switches the current window or focuses an existing owner; `Open in New Window` preserves the existing multi-window route.
+- Gives each window an independent capture session, retry lifecycle, connection status, sidebar state, preview ratio, and ordinary-window geometry. Closing a window releases only its session.
+- Retains the compatible `AVCaptureVideoPreviewLayer` aspect-fit path. Each window owns one persistent preview view and layer, including across sidebar, titlebar, safe-area, and full-screen changes.
+- Hosts the preview, SwiftUI device list, connection overlay, and control backgrounds in an explicit AppKit container. The preview no longer participates in `NavigationSplitView` sizing.
+- Commits the complete outer frame and child frames together with implicit Core Animation actions disabled. There is no timer-driven outer-frame animation, preview snapshot substitution, or delayed resize correction.
+- Adds sidebar space to the left and titlebar space above the preferred preview rectangle. Screen-edge fitting translates the window without scaling the preview. If the combined dimensions cannot fit, controls overlay the preview along the constrained axis; closing them restores the preferred geometry.
+- Keeps preferred geometry in memory per window. User movement translates it; user resizing replaces the preferred size. Source rotation preserves the preferred height and fits the new orientation to the screen independently of chrome.
+- Constrains AppKit resize proposals before application, subtracting the currently external sidebar, divider, and titlebar. Hover changes are suspended during a drag. Shadow invalidation happens at chrome commits or resize completion, not each resize proposal.
+- Preserves SwiftUI's window lifecycle and forwards its original window delegate behavior. An explicit native navigational toolbar item toggles the AppKit sidebar and exposes `Show Sidebar` / `Hide Sidebar` accessibility labels.
+- Keeps native window buttons when controls are visible. Compact mode hides toolbar/buttons/background; an 8-point top region reveals the titlebar, with an 8-point bridge and a 0.5-second hide delay. Local events require no global monitor or Accessibility permission for the application itself.
+- Keeps the window and app-owned container transparent at all times. Black is drawn only inside the preview surface. The compact continuous-corner mask belongs to the preview, not the SwiftUI root layer. Expanded controls draw their own backgrounds.
+- Uses the complete full-screen surface with aspect-fit black bars. The system manages full-screen toolbar reveal; the app does not retain an empty titlebar strip. Exiting restores ordinary geometry and the previous sidebar state, adapting to any source rotation that occurred during full screen.
+- Queries only USB `ProductType` and `DeviceName` off the main thread. Exact names must be unique in both complete capture and USB snapshots. Duplicate names are unresolved, and stale query generations cannot update a replaced device list.
+- Automatically matches verified product types against 80 checked-in Apple Simulator display-reference profiles. Radius scales by the displayed short side and uses the same normalized value in either orientation.
+- Shows identified model/profile status or identifying, ambiguous, unavailable, and unlisted-model states in the device row. Unknown or unresolved products use zero custom radius. Manual sliders are removed; legacy preference data is preserved but never applied.
+- Reports no-device, connecting, unlock/trust, connected, interrupted, occupied, unavailable, permission-denied, and failure states. Bounded capture retries remain local to each window.
 
 ## Architecture
 
-- `DeviceCatalog` owns the application-level CoreMediaIO configuration and AVFoundation device discovery monitor.
-- `DisplayWindowScene` owns a window's `AppModel`, routes left-click switching, and opens or focuses context-menu device windows.
-- `DeviceWindowRegistry` atomically transfers device ownership between the current selection and other windows.
-- `AppModel` owns one window's selected device ID, sidebar presentation and measured width, live aspect ratio, and capture coordinator.
-- `CaptureCoordinator` owns one window's independent capture session, permission handling, connection state, reconnect handling, stabilized connection reporting, and bounded retries.
-- `PreviewHostView` is the narrow AppKit bridge that hosts `AVCaptureVideoPreviewLayer` and measures its effective content rectangle.
-- `DisplayCornerProfileResolver` returns a matched model name, normalized radius, and reference source, or an explicit unmatched profile. `doc/device-corner-profiles.md` records calibration units, source bundles, and SHA-256 hashes.
-- `CornerRadiusPreferences` owns local per-device overrides and persists only SHA-256-derived preference keys.
-- `WindowLayoutPolicy` provides aspect validation, sidebar-aware sizing, screen-bound fitting, and the three-state chrome policy. `WindowGeometryState` separates preferred preview geometry from fitted frames; `WindowFrameTransition` interpolates one cancellable frame transition.
-- `WindowLayoutCoordinator` is the narrow AppKit window bridge that owns the leading sidebar toolbar item, applies compact or native window presentation, tracks the local top-edge reveal region, owns the forwarding resize delegate, one frame timer, and per-window geometry. It preserves ordinary-window geometry and sidebar visibility across full-screen transitions while retaining SwiftUI's window ownership and forwarding its original delegate methods.
-- Pure device filtering, device-window routing, ownership transfer, corner-profile resolution, preference persistence, proportional window layout, error classification, and retry behavior are covered by Swift Testing tests.
+- `DeviceCatalog` owns capture discovery and an independent `DeviceIdentityService` refresh lifecycle.
+- `USBDeviceInfoClient` implements bounded local protocol I/O. `DeviceIdentityMatcher` performs conservative name association. [Protocol and compatibility details](usb-device-identification.md).
+- `DisplayWindowScene`, `DeviceWindowRegistry`, and `AppModel` retain SwiftUI lifecycle, window ownership, device selection, and per-window capture state.
+- `CaptureCoordinator` handles session input, permission, reconnect, stabilization, and retry behavior.
+- `WindowSurfaceLayout` calculates outside-versus-overlay chrome and local child rectangles. `WindowGeometryState` separates preferred preview geometry from current fitted placement.
+- `WindowLayoutHostView` owns the stable children, native toolbar, forwarding resize delegate, hover tracking, and synchronous geometry commits.
+- `PreviewHostView` updates preview-layer bounds and its own corner mask in the same nonanimated transaction. Its half-second timer only detects source aspect changes; it does not animate frames.
+- `DisplayCornerProfileResolver` accepts exact USB product types. [Profile provenance, logical units, source hashes, and normalization](device-corner-profiles.md).
 
-## Public API Boundaries
+## API and Compatibility Boundaries
 
-The connected iPhone and iPad screen sources expose opaque public formats with `0 x 0` dimensions and no public frame-rate range. Although AVFoundation session presets are real APIs, accepting a preset does not prove that these USB sources transmit at the preset's named resolution. The app therefore provides no Auto, 1080p, or 4K controls, sets no session preset, and leaves stream negotiation to AVFoundation.
+Wired mobile screen sources expose opaque public formats with `0 x 0` dimensions and no public frame-rate range. The app sets no session preset and makes no native-resolution, latency-control, or sustained-frame-rate claim. End-to-end latency requires external measurement.
 
-The compatible `AVCaptureVideoPreviewLayer` path exposes no public latency-control parameter or per-frame capture-to-display timing. The app provides and claims no latency adjustment. End-to-end latency requires an external measurement.
+The previous `AVCaptureVideoDataOutput` / `AVSampleBufferDisplayLayer` implementation was removed after the physical iPad source rejected startup with `!dev`; direct preview remains the supported path in this project.
 
-AVFoundation exposes a `modelID` but no public physical display-corner radius. The app matches exact identifiers against checked-in Apple Simulator display-reference measurements, not live hardware radius values. Generic or otherwise unlisted identifiers require manual calibration. The app neither reads simulator files at runtime nor calls private device APIs. Source provenance and the logical-point normalization formula are in `doc/device-corner-profiles.md`.
+The connected iPhone's capture model is `iOS Device`; the read-only USB query resolves `iPhone17,1` (iPhone 16 Pro). usbmuxd/lockdownd are not an Apple-guaranteed public SDK. Identity failures remain independent of capture. There are no pairing changes or authenticated session requests.
 
-A previously tested `AVCaptureVideoDataOutput` and `AVSampleBufferDisplayLayer` path was removed because the physical iPad screen source caused CoreMediaIO to reject stream startup with the `!dev` status even with device-native output settings. The direct preview layer remains the compatible public presentation path for this source.
+Corner values are traceable Simulator display-reference measurements, not live physical hardware measurements. iPhone 16 Pro and iPhone 17 Pro share 62 / 402 in the source; iPhone 17 Pro Max uses 62 / 440. The app does not fabricate differences, infer a specific model from a name/aspect ratio, or read simulator files at runtime.
 
-## Build and Run
+## Build and Validation
 
-- `USBDisplay.xcodeproj` defines the USB Display macOS app target, iPhoneUSBDisplayTests unit-test target, and shared USB Display scheme.
-- `Config/Info.plist` and `Config/USBDisplay.entitlements` own the version 0.3.0 metadata, unchanged `com.xuemingbo.iPhoneUSBDisplay` bundle identifier, explicit camera-device entitlement, and USB mobile-screen permission explanation.
-- `script/build_and_run.sh` is the canonical local entry point with run, debug, logs, telemetry, and verify modes. It builds into the project-local `.build/Xcode` DerivedData directory and launches `USB Display.app` directly.
-- `.codex/environments/environment.toml` exposes the Xcode-backed script as the Codex Run action.
-
-## Validation Status
-
-- Swift format lint: Passed with no warnings.
-- Xcode Debug and Release builds: Passed.
-- Xcode unit and AppKit integration tests: 54 tests passed across eight suites.
-- Build, launch, and process verification through `script/build_and_run.sh --verify`: Passed.
-- Actual connected-iPhone sidebar round trips: Passed 20 consecutive cycles. Compact frames remained 243 x 527 points and expanded frames remained 406 x 579 points in every cycle, with a 52-point title bar and no cumulative size drift.
-- Actual connected-iPhone compact safe-area check: Passed after correcting the 32-point top inset discovered during this task. Compact and expanded previews fill their available detail surfaces; hover chrome reserves its own title-bar space.
-- Actual expanded and compact native full-screen round trips: Passed. Exit restored the respective 406 x 579 and 243 x 527 sizes and the original sidebar visibility. Full screen retained aspect-fit bars.
-- Actual corner-adjustment panel: Passed. The connected device was explicitly unmatched; Custom accepted 10.0%, and Reset returned it to unmatched Automatic at 0.0%. The original automatic preference was restored after testing.
-- Automated NSWindow integration checks: Passed 20 sidebar cycles, interrupted frame transitions, width/height/diagonal resize proposals without release correction, delegate forwarding, compact safe-area signaling, and simulated full-screen restoration.
-- Physical pointer resizing: Attempted, but not validated. Computer Use generated live-resize begin/end events without intermediate resize proposals or an actual size change. This does not establish real drag responsiveness or anchoring.
+- Canonical build/run command: `./script/build_and_run.sh --verify`, using `.build/Xcode` and the shared `USB Display` scheme. The Codex Run action calls this script.
+- Latest Debug and Release builds, strict Swift-format lint, whitespace checks, and strict bundle signature verification: Passed. The final Debug app is running with the connected iPhone.
+- Latest full regression run: 62 tests passed with no failures or skips. The final run includes the strengthened rendering test and full-screen rotation restoration. Coverage includes filtering, routing, retry classification, profiles, protocol framing and fragmented sockets, cancellation/timeouts, stale results, geometry at each commit, resize proposals, full-screen restoration, multiple windows, and composed AppKit rendering.
+- Rendering tests use changing red/blue synthetic frames through the actual preview container inside SwiftUI hosting and the native frame hierarchy. They check preview center/edge pixels and compact corner alpha, composited over light and dark backgrounds. They do not measure WindowServer frame pacing or physical video latency.
+- Detailed results and hardware/tool limitations for the latest change are recorded in the final entry of [the development log](devlog.md).
 
 ## Constraints and Outstanding Validation
 
-- Apple does not guarantee concurrent capture from two external mobile screen devices on macOS. Earlier two-device capture succeeded, but the updated left-click and context-menu interaction requires another live two-device run.
-- Normal-window sizing is driven by the effective live preview rectangle. Until a valid stream ratio is available, the window keeps its current size and shows the black connection surface.
-- Manual resizing from every edge and corner, fast successive drags, and hover/resize interleaving require physical-pointer verification. The real AppKit integration tests cover sizing proposals and interruption behavior, not pointer-handle routing.
-- No iPad or live source with a matched exact model identifier was available for final validation. Automatic reference-profile appearance, physical rotation, and iPad live resizing were not run; model matching, radius scaling, and manual fallback are tested.
-- Dynamic physical rotation, dragging the sidebar divider with a live stream, screen-edge fitting on an actual display, hot unplug/replug, camera permission denial, occupied-device recovery, and a 30-minute two-window soak remain to be run.
-- Native full screen cannot simultaneously match an arbitrary device ratio and the fixed display ratio; the application preserves the complete image and uses black bars in that mode.
-- Compact title-bar reveal is monitored only through local events and tracking areas inside each application window and does not require a global event monitor or Accessibility permission.
-- End-to-end latency and sustained frame rate were not measured. The direct-preview path does not expose the required timing data.
-- The local build is ad-hoc signed because no valid development signing identity is installed. Xcode disables hardened runtime for the Debug ad-hoc build, and rebuilds may require camera permission again.
-- DRM-protected content may display black; the app intentionally does not bypass platform protection.
-- App Store packaging, production signing, notarization, and distribution remain outside this local MVP.
+- Real pointer drags from all eight handles, fast consecutive drags, and hover/resize interleaving need valid intermediate pointer events and physical acceptance. Delegate proposals and endpoint screenshots cannot establish drag smoothness or anchoring.
+- WindowServer frame-by-frame recording of actual video over contrasting desktop content remains separate from the AppKit bitmap tests. JPEG-only UI screenshots cannot independently prove alpha or absence of a one-frame flash.
+- Physical iPhone 17 Pro / Pro Max, iPad, rotation, hot unplug/replug, monitor-edge movement/overlay, and concurrent capture with multiple connected devices remain hardware checks. Fixtures do not count as physical runs of unavailable products.
+- macOS 14/15 toolbar behavior, occupied-device recovery, permission denial, a 30-minute multi-window soak, production signing, notarization, distribution, and external performance measurements remain outstanding.
+- Local builds are ad-hoc signed; rebuilding can require camera permission again. Xcode disables hardened runtime for the Debug ad-hoc build.
+- DRM-protected content may appear black; the app does not bypass platform protections.
