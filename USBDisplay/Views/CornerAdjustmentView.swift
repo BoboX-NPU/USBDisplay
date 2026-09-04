@@ -37,6 +37,11 @@ struct CornerAdjustmentView: View {
           .foregroundStyle(.secondary)
       }
 
+      Text(profileDescription)
+        .font(.callout)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+
       cornerPreview
 
       Picker("Corner Radius", selection: $mode) {
@@ -120,6 +125,18 @@ struct CornerAdjustmentView: View {
     .aspectRatio(previewAspectRatio, contentMode: .fit)
     .frame(maxWidth: .infinity)
     .frame(height: 150)
+  }
+
+  private var profileDescription: String {
+    let profile = preferences.resolvedProfile(for: device)
+    switch profile.source {
+    case .modelMatch:
+      return "Matched: \(profile.modelName ?? "Device"). Apple Simulator display reference."
+    case .manual:
+      return "Manually calibrated for this device."
+    case .unmatched:
+      return "No matching screen profile. Choose Custom to calibrate the corners for this device."
+    }
   }
 
   private var automaticFraction: Double {

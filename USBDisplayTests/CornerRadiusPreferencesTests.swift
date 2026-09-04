@@ -20,7 +20,7 @@ struct CornerRadiusPreferencesTests {
     )
     let preferences = CornerRadiusPreferences(defaults: defaults)
 
-    #expect(preferences.resolvedFraction(for: device, aspectRatio: 9.0 / 19.5) == 0.14)
+    #expect(preferences.resolvedFraction(for: device, aspectRatio: 9.0 / 19.5) == 62.0 / 402.0)
 
     preferences.setOverrideFraction(0.075, for: device.id)
 
@@ -44,14 +44,30 @@ struct CornerRadiusPreferencesTests {
       defaults.removePersistentDomain(forName: suiteName)
     }
 
-    let device = DisplayDevice(id: "tablet", name: "Test iPad", modelID: "iPad16,5")
+    let device = DisplayDevice(id: "tablet", name: "Test iPad", modelID: "iPad16,6")
     let preferences = CornerRadiusPreferences(defaults: defaults)
     preferences.setOverrideFraction(0.09, for: device.id)
 
     preferences.resetOverride(for: device.id)
 
     #expect(preferences.overrideFraction(for: device.id) == nil)
-    #expect(preferences.resolvedFraction(for: device, aspectRatio: 3.0 / 4.0) == 0.03)
+    #expect(preferences.resolvedFraction(for: device, aspectRatio: 3.0 / 4.0) == 30.0 / 1032.0)
+  }
+
+  @Test @MainActor
+  func unknownModelCanBeCalibratedAndResetToUnmatched() throws {
+    let suiteName = "CornerRadiusPreferencesTests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let device = DisplayDevice(id: "unknown", name: "My iPhone", modelID: "iPhone")
+    let preferences = CornerRadiusPreferences(defaults: defaults)
+    #expect(preferences.resolvedProfile(for: device).source == .unmatched)
+    preferences.setOverrideFraction(0.12, for: device.id)
+    #expect(preferences.resolvedProfile(for: device).source == .manual)
+    #expect(preferences.resolvedProfile(for: device).fraction == 0.12)
+    preferences.resetOverride(for: device.id)
+    #expect(preferences.resolvedProfile(for: device).source == .unmatched)
+    #expect(preferences.resolvedProfile(for: device).fraction == 0)
   }
 
   @Test @MainActor

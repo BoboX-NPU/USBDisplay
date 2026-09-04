@@ -84,6 +84,9 @@ final class DeviceDiscoveryMonitor {
         modelID: $0.modelID
       )
     }
+    for device in devices {
+      AppLogger.device.debug("Capture model: \(device.modelID, privacy: .public)")
+    }
     let devicesHandler = devicesHandler
 
     AppLogger.device.info("Found \(devices.count) eligible wired Apple mobile device(s)")

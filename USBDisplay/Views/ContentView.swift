@@ -8,6 +8,7 @@ struct ContentView: View {
   let onOpenDeviceInNewWindow: (String) -> Void
 
   @State private var cornerAdjustmentDevice: DisplayDevice?
+  @State private var compactWindowPresentation = false
 
   var body: some View {
     NavigationSplitView(columnVisibility: columnVisibility) {
@@ -27,13 +28,14 @@ struct ContentView: View {
         model: model,
         hasAvailableDevices: !devices.isEmpty
       )
+      .ignoresSafeArea(.container, edges: compactWindowPresentation ? .top : [])
       .toolbar(removing: .sidebarToggle)
     }
     .navigationSplitViewStyle(.balanced)
     .toolbar(removing: .sidebarToggle)
     .ignoresSafeArea(
       .container,
-      edges: model.columnVisibility == .detailOnly ? .top : []
+      edges: compactWindowPresentation ? .top : []
     )
     .background(
       WindowLayoutCoordinator(
@@ -42,9 +44,10 @@ struct ContentView: View {
         sidebarWidth: model.sidebarWidth,
         sidebarIsVisible: model.columnVisibility != .detailOnly,
         cornerRadiusFraction: currentCornerRadiusFraction,
-        onRestoreSidebarAfterFullScreen: {
-          model.setColumnVisibility(.all)
-        }
+        onRestoreSidebarAfterFullScreen: { wasVisible in
+          model.setColumnVisibility(wasVisible ? .all : .detailOnly)
+        },
+        onCompactPresentationChanged: { compactWindowPresentation = $0 }
       )
     )
     .sheet(item: $cornerAdjustmentDevice) { device in

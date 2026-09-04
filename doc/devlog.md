@@ -498,3 +498,52 @@
 - Confirm native-toolbar placement and title-bar transitions on macOS 14 and 15 because the running-app checks used macOS 27.
 - Run hot unplug/replug, occupied-device recovery, camera-permission denial, a 30-minute capture soak, and external latency and sustained-frame-rate measurements.
 - Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.
+
+## 2026-09-05 — Stabilize Window Geometry and Match Device Corner References
+
+### Summary
+
+- Added per-window in-memory preferred preview geometry. Sidebar and hover chrome now derive their frames from that preference, adding space to the left and above, fitting to the display without overwriting the preferred size, and preserving ordinary-window state across full-screen transitions.
+- Replaced competing AppKit animations and post-release snapping with one cancellable frame timer and a forwarding resize delegate. Live resize proposals subtract fixed sidebar and title-bar contributions before applying the source ratio; ordinary release commits the user geometry without setting another frame. Hover changes are suspended during resizing.
+- Preserved SwiftUI window ownership and original delegate forwarding, and restored the original delegate when detaching.
+- Connected actual compact presentation back to the SwiftUI detail safe area. Physical validation exposed and fixed a 32-point blank top inset that plain AppKit policy tests did not reveal.
+- Replaced guessed iPhone/iPad percentages with exact model-ID matching against 80 checked-in Apple Simulator display-reference profiles. Recorded calibration units and source hashes, exposed matched/manual/unmatched status, retained existing hashed custom overrides, and made unknown models use zero custom radius until manually calibrated.
+- Replaced obsolete post-drag/centered-frame tests with preferred-geometry and AppKit integration coverage. Added narrow resize and public-model diagnostics without logging unique device identifiers or captured content.
+
+### Affected Files
+
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Models/DisplayCornerProfile.swift`
+- `USBDisplay/Services/CornerRadiusPreferences.swift`
+- `USBDisplay/Services/DeviceCatalog.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/CornerAdjustmentView.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/DisplayCornerProfileTests.swift`
+- `USBDisplayTests/CornerRadiusPreferencesTests.swift`
+- `doc/device-corner-profiles.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Swift format lint and whitespace checks: Passed.
+- Xcode Debug and Release builds: Passed.
+- Xcode unit and AppKit integration tests: Passed 54 tests across eight suites.
+- `script/build_and_run.sh --verify`: Passed; the application built, launched, and was detected as running.
+- The sandboxed compiler initially could not run the Observation macro plugin; builds and tests ran successfully outside that sandbox. An initial integration-test crash came from a temporary test window's release-on-close setting; disabling release-on-close and serializing those window tests resolved it.
+- Physical connected-iPhone sidebar check: Passed 20 consecutive expanded/compact round trips. Every expanded frame was 406 x 579 points and every compact frame was 243 x 527 points, without cumulative size drift.
+- Physical compact safe-area check: Passed after the detail-view correction. Debugger inspection had confirmed the old compact frame was 579 points high while its preview occupied only 547 points; the corrected preview filled the compact surface.
+- Physical expanded and compact full-screen round trips: Passed; both restored their previous dimensions and sidebar visibility, and full screen retained the complete aspect-fit picture.
+- Physical corner panel: Passed; the connected capture model was unmatched, Custom accepted 10.0%, and Reset restored unmatched Automatic at 0.0%. The test left the original automatic preference in place.
+- Physical pointer resizing: Attempted but not validated. Computer Use produced resize begin/end events without intermediate resize proposals or a frame change, so it cannot establish drag responsiveness or handle anchoring. Real NSWindow integration tests exercised width, height, diagonal proposals, interruption, and release stability separately.
+- Physical iPad, a live matched model profile, device rotation, and monitor-edge fitting: Not run; those hardware scenarios remain outstanding.
+
+### Remaining Risks or Follow-up Work
+
+- Manually verify all eight resize handles, rapid successive drags, and hover/resize interleaving on a physical pointer. Do not equate the integration-test proposals with an end-to-end gesture check.
+- Verify screen-edge fitting, sidebar-divider dragging, physical rotation, and multiple connected devices. No iPad was available for the final live checks.
+- Exact public capture model IDs may be generic or absent from the table. Such devices require manual calibration; simulator reference radii are not live physical hardware measurements. Validate the appearance of matched profiles on corresponding hardware.
+- Recheck native toolbar and safe-area behavior on macOS 14 and 15; live validation used macOS 27.
+- Existing hot-unplug/replug, occupied-device, permission-denial, capture-soak, signing, and external latency checks remain outstanding.

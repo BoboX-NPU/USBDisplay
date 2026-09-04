@@ -21,11 +21,15 @@ final class CornerRadiusPreferences {
   }
 
   func resolvedFraction(for device: DisplayDevice, aspectRatio: Double?) -> Double {
-    overrideFraction(for: device.id)
-      ?? DisplayCornerProfileResolver.automaticFraction(
-        for: device,
-        aspectRatio: aspectRatio
-      )
+    resolvedProfile(for: device).fraction
+  }
+
+  func resolvedProfile(for device: DisplayDevice) -> DisplayCornerProfile {
+    let automatic = DisplayCornerProfileResolver.automaticProfile(for: device)
+    guard let fraction = overrideFraction(for: device.id) else { return automatic }
+    return DisplayCornerProfile(
+      modelName: automatic.modelName, fraction: fraction, source: .manual, reference: nil
+    )
   }
 
   func overrideFraction(for deviceID: String) -> Double? {

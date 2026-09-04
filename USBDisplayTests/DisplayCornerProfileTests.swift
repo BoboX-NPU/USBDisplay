@@ -7,7 +7,7 @@ struct DisplayCornerProfileTests {
   @Test
   func resolvesDeviceKindFromModelBeforeDisplayName() {
     let phone = DisplayDevice(id: "phone", name: "Personal Device", modelID: "iPhone17,1")
-    let tablet = DisplayDevice(id: "tablet", name: "Studio Screen", modelID: "iPad16,5")
+    let tablet = DisplayDevice(id: "tablet", name: "Studio Screen", modelID: "iPad16,6")
 
     #expect(phone.kind == .iPhone)
     #expect(tablet.kind == .iPad)
@@ -37,13 +37,13 @@ struct DisplayCornerProfileTests {
       aspectRatio: 19.5 / 9.0
     )
 
-    #expect(portrait == DisplayCornerProfileResolver.modernIPhoneFraction)
-    #expect(landscape == DisplayCornerProfileResolver.modernIPhoneFraction)
+    #expect(portrait == 62.0 / 402.0)
+    #expect(landscape == 62.0 / 402.0)
   }
 
   @Test
   func classicIPhoneUsesSquareProfile() {
-    let phone = DisplayDevice(id: "phone", name: "Phone", modelID: "iPhone10,1")
+    let phone = DisplayDevice(id: "phone", name: "Phone", modelID: "iPhone10,4")
 
     let fraction = DisplayCornerProfileResolver.automaticFraction(
       for: phone,
@@ -55,14 +55,14 @@ struct DisplayCornerProfileTests {
 
   @Test
   func iPadUsesTabletProfile() {
-    let tablet = DisplayDevice(id: "tablet", name: "Tablet", modelID: "iPad16,5")
+    let tablet = DisplayDevice(id: "tablet", name: "Tablet", modelID: "iPad16,6")
 
     let fraction = DisplayCornerProfileResolver.automaticFraction(
       for: tablet,
       aspectRatio: 3.0 / 4.0
     )
 
-    #expect(fraction == DisplayCornerProfileResolver.iPadFraction)
+    #expect(fraction == 30.0 / 1032.0)
   }
 
   @Test
@@ -75,6 +75,29 @@ struct DisplayCornerProfileTests {
         aspectRatio: 9.0 / 19.5
       ) == 0
     )
+  }
+
+  @Test
+  func onlyExactModelIdentifiersSelectProfiles() {
+    for modelID in ["", "iPhone", "iPhone99,1", "iPad16,5", "prefix-iPhone17,1"] {
+      let device = DisplayDevice(id: "test", name: "iPhone 16 Pro", modelID: modelID)
+      let profile = DisplayCornerProfileResolver.automaticProfile(for: device)
+      #expect(profile.source == .unmatched)
+      #expect(profile.fraction == 0)
+      #expect(profile.modelName == nil)
+    }
+  }
+
+  @Test
+  func matchedProfileContainsNameAndMeasurementSource() {
+    let device = DisplayDevice(id: "test", name: "Renamed iPad", modelID: "iPhone17,1")
+    let profile = DisplayCornerProfileResolver.automaticProfile(for: device)
+    #expect(profile.source == .modelMatch)
+    #expect(profile.modelName == "iPhone 16 Pro")
+    #expect(profile.reference != nil)
+    #expect(abs(profile.fraction - 62.0 / 402.0) < 0.000001)
+    #expect(DisplayCornerProfileResolver.clampedFraction(.nan) == 0)
+    #expect(DisplayCornerProfileResolver.clampedFraction(.infinity) == 0)
   }
 
   @Test
