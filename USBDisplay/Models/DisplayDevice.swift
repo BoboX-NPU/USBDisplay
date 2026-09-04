@@ -3,6 +3,32 @@ import Foundation
 struct DisplayDevice: Identifiable, Equatable, Sendable {
   let id: String
   let name: String
+  let modelID: String
+  let kind: DisplayDeviceKind
+
+  init(id: String, name: String, modelID: String = "") {
+    self.id = id
+    self.name = name
+    self.modelID = modelID
+    kind = DisplayDeviceKind.resolve(modelID: modelID, name: name)
+  }
+}
+
+enum DisplayDeviceKind: String, Equatable, Sendable {
+  case iPhone
+  case iPad
+  case unknown
+
+  static func resolve(modelID: String, name: String) -> DisplayDeviceKind {
+    let identity = "\(modelID) \(name)".lowercased()
+    if identity.contains("iphone") {
+      return .iPhone
+    }
+    if identity.contains("ipad") {
+      return .iPad
+    }
+    return .unknown
+  }
 }
 
 struct CaptureDeviceDescriptor: Equatable, Sendable {

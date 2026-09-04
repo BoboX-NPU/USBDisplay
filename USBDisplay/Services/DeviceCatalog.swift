@@ -78,7 +78,11 @@ final class DeviceDiscoveryMonitor {
     guard started, let discoverySession else { return }
 
     let devices = MobileScreenDeviceDiscovery.eligibleDevices(in: discoverySession).map {
-      DisplayDevice(id: $0.uniqueID, name: $0.localizedName)
+      DisplayDevice(
+        id: $0.uniqueID,
+        name: $0.localizedName,
+        modelID: $0.modelID
+      )
     }
     let devicesHandler = devicesHandler
 

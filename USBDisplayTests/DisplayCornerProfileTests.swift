@@ -1,0 +1,88 @@
+import Foundation
+import Testing
+
+@testable import iPhoneUSBDisplay
+
+struct DisplayCornerProfileTests {
+  @Test
+  func resolvesDeviceKindFromModelBeforeDisplayName() {
+    let phone = DisplayDevice(id: "phone", name: "Personal Device", modelID: "iPhone17,1")
+    let tablet = DisplayDevice(id: "tablet", name: "Studio Screen", modelID: "iPad16,5")
+
+    #expect(phone.kind == .iPhone)
+    #expect(tablet.kind == .iPad)
+  }
+
+  @Test
+  func fallsBackToLocalizedNameForDeviceKind() {
+    let phone = DisplayDevice(id: "phone", name: "Booo's iPhone")
+    let tablet = DisplayDevice(id: "tablet", name: "Drawing iPad")
+    let unknown = DisplayDevice(id: "unknown", name: "External Screen")
+
+    #expect(phone.kind == .iPhone)
+    #expect(tablet.kind == .iPad)
+    #expect(unknown.kind == .unknown)
+  }
+
+  @Test
+  func modernIPhoneUsesRoundedProfileInEitherOrientation() {
+    let phone = DisplayDevice(id: "phone", name: "Phone", modelID: "iPhone17,1")
+
+    let portrait = DisplayCornerProfileResolver.automaticFraction(
+      for: phone,
+      aspectRatio: 9.0 / 19.5
+    )
+    let landscape = DisplayCornerProfileResolver.automaticFraction(
+      for: phone,
+      aspectRatio: 19.5 / 9.0
+    )
+
+    #expect(portrait == DisplayCornerProfileResolver.modernIPhoneFraction)
+    #expect(landscape == DisplayCornerProfileResolver.modernIPhoneFraction)
+  }
+
+  @Test
+  func classicIPhoneUsesSquareProfile() {
+    let phone = DisplayDevice(id: "phone", name: "Phone", modelID: "iPhone10,1")
+
+    let fraction = DisplayCornerProfileResolver.automaticFraction(
+      for: phone,
+      aspectRatio: 9.0 / 16.0
+    )
+
+    #expect(fraction == 0)
+  }
+
+  @Test
+  func iPadUsesTabletProfile() {
+    let tablet = DisplayDevice(id: "tablet", name: "Tablet", modelID: "iPad16,5")
+
+    let fraction = DisplayCornerProfileResolver.automaticFraction(
+      for: tablet,
+      aspectRatio: 3.0 / 4.0
+    )
+
+    #expect(fraction == DisplayCornerProfileResolver.iPadFraction)
+  }
+
+  @Test
+  func unknownDeviceUsesSquareProfile() {
+    let unknown = DisplayDevice(id: "unknown", name: "External Screen")
+
+    #expect(
+      DisplayCornerProfileResolver.automaticFraction(
+        for: unknown,
+        aspectRatio: 9.0 / 19.5
+      ) == 0
+    )
+  }
+
+  @Test
+  func clampsFractionAndScalesRadiusFromShortSide() {
+    #expect(DisplayCornerProfileResolver.clampedFraction(-0.1) == 0)
+    #expect(DisplayCornerProfileResolver.clampedFraction(0.5) == 0.2)
+    let radius = DisplayCornerProfileResolver.cornerRadius(shortSide: 400, fraction: 0.14)
+    #expect(abs(radius - 56) < 0.000_001)
+    #expect(DisplayCornerProfileResolver.cornerRadius(shortSide: 0, fraction: 0.14) == 0)
+  }
+}

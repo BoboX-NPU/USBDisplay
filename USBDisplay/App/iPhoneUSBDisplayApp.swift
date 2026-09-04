@@ -6,13 +6,15 @@ struct IPhoneUSBDisplayApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
   @State private var catalog = DeviceCatalog()
   @State private var windowRegistry = DeviceWindowRegistry()
+  @State private var cornerPreferences = CornerRadiusPreferences()
 
   var body: some Scene {
     WindowGroup("USB Display", id: "display", for: String.self) { $deviceID in
       DisplayWindowScene(
         deviceID: $deviceID,
         catalog: catalog,
-        windowRegistry: windowRegistry
+        windowRegistry: windowRegistry,
+        cornerPreferences: cornerPreferences
       )
     }
     .defaultSize(width: 980, height: 720)

@@ -438,3 +438,63 @@
 - Reconnect both devices after resetting the macOS capture helper, then validate physical rotation, live proportional resizing, independent two-device capture, and hot unplug behavior.
 - Confirm title-bar animation and delayed-hide timing on macOS 14 and 15 because the runtime check used macOS 27.
 - Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.
+
+## 2026-09-05 — Add Adaptive Device Corners and Post-Drag Window Snapping
+
+### Summary
+
+- Kept expanded display content below the native title bar and limited top safe-area extension to the fully compact state.
+- Replaced the automatically positioned split-view control with one native navigational toolbar item beside the traffic-light controls, using the responder chain and dynamic Show/Hide labels.
+- Added public device-model metadata, iPhone/iPad classification, normalized automatic corner profiles, and local per-device custom overrides stored under SHA-256-derived keys.
+- Added an `Adjust Screen Corners…` context-menu panel with Automatic and Custom modes, a 0–20% slider in 0.5% steps, live preview, reset, and done controls.
+- Applied transparent continuous corner masking only to fully compact windows and restored the native opaque presentation for expanded, hover-revealed, and full-screen states.
+- Removed proportional `setFrame` calls from live resizing, allowed temporary aspect-fit bars during the gesture, and added one 0.12-second edge-anchored ratio snap after release.
+- Debounced sidebar-width changes for 0.1 seconds and coalesced device, orientation, chrome, and programmatic layout updates.
+- Preserved the expanded sidebar across a native full-screen round trip unless it was deliberately changed while full screen.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Models/DisplayCornerProfile.swift`
+- `USBDisplay/Models/DisplayDevice.swift`
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Services/CornerRadiusPreferences.swift`
+- `USBDisplay/Services/DeviceCatalog.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/CornerAdjustmentView.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/DisplayWindowScene.swift`
+- `USBDisplay/Views/SidebarView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/CornerRadiusPreferencesTests.swift`
+- `USBDisplayTests/DisplayCornerProfileTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `xcrun swift-format lint --recursive USBDisplay USBDisplayTests`: Passed with no warnings.
+- Xcode Debug build: Passed.
+- Xcode Release build: Passed.
+- Xcode unit tests: Passed 48 tests across six suites.
+- The initial sandboxed Xcode build could not run the Observation macro plugin; the same build and all final validations passed outside the filesystem sandbox.
+- `script/build_and_run.sh --verify`: Passed; built and launched the final Debug application and confirmed the process.
+- `plutil -lint USBDisplay.xcodeproj/project.pbxproj Config/Info.plist Config/USBDisplay.entitlements`: Passed.
+- Strict ad-hoc signature verification and built entitlement inspection: Passed; the camera-device entitlement remains present.
+- Running-app iPhone safe-area check on macOS 27: Passed; the complete status bar and top sensor region remained below the expanded native title bar.
+- Running-app sidebar-control check: Passed; the control appeared beside the traffic lights, changed between `Hide Sidebar` and `Show Sidebar`, and expanded the sidebar from temporary hover chrome.
+- Running-app corner check: Passed; compact mode used the rounded transparent device presentation, while hover-revealed, expanded, and full-screen modes used the native Mac presentation.
+- Running-app corner-adjustment check: Passed; Automatic and Custom switched correctly, 10.0% was accepted, Reset restored the 14.0% automatic iPhone profile, and Done dismissed the panel.
+- Running-app expanded resize check: Passed; a bottom-right live drag grew the window from 311 x 372 to 452 x 680 points and the settled detail area returned to the exact live portrait ratio without permanent bars, cropping, or stretching.
+- Native full-screen round trip: Passed; full screen used aspect-fit black bars without custom masking and exit restored the expanded sidebar and native title bar.
+- iPad compact corners, physical rotation, and live resizing: Not run because no iPad was available for the final build.
+
+### Remaining Risks or Follow-up Work
+
+- Repeat the physical resize check for every individual edge and corner and with rapid repeated gestures; all eight edge-anchor cases are covered by unit tests, but only an expanded bottom-right live drag was checked in the running app.
+- Repeat compact-corner, rotation, and resize validation with a connected iPad.
+- Confirm native-toolbar placement and title-bar transitions on macOS 14 and 15 because the running-app checks used macOS 27.
+- Run hot unplug/replug, occupied-device recovery, camera-permission denial, a 30-minute capture soak, and external latency and sustained-frame-rate measurements.
+- Install a valid Apple Development signing identity if stable development signing and hardened Debug runtime are required.

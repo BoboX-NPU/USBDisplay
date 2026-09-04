@@ -163,6 +163,74 @@ struct WindowLayoutPolicyTests {
   }
 
   @Test
+  func snapPreservesOppositeEdgesForEveryResizeHandle() {
+    let previousFrame = CGRect(x: 100, y: 100, width: 400, height: 600)
+    let desiredContentSize = WindowContentSize(width: 440, height: 660)
+    let cases = [
+      (
+        currentFrame: CGRect(x: 100, y: 100, width: 460, height: 600),
+        expectedFrame: CGRect(x: 100, y: 70, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 40, y: 100, width: 460, height: 600),
+        expectedFrame: CGRect(x: 60, y: 70, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 100, y: 100, width: 400, height: 680),
+        expectedFrame: CGRect(x: 80, y: 100, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 100, y: 20, width: 400, height: 680),
+        expectedFrame: CGRect(x: 80, y: 40, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 100, y: 100, width: 460, height: 680),
+        expectedFrame: CGRect(x: 100, y: 100, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 40, y: 100, width: 460, height: 680),
+        expectedFrame: CGRect(x: 60, y: 100, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 100, y: 20, width: 460, height: 680),
+        expectedFrame: CGRect(x: 100, y: 40, width: 440, height: 660)
+      ),
+      (
+        currentFrame: CGRect(x: 40, y: 20, width: 460, height: 680),
+        expectedFrame: CGRect(x: 60, y: 40, width: 440, height: 660)
+      ),
+    ]
+
+    for testCase in cases {
+      let snappedFrame = WindowLayoutPolicy.frameByApplyingContentSize(
+        currentFrame: testCase.currentFrame,
+        currentContentSize: WindowContentSize(
+          width: testCase.currentFrame.width,
+          height: testCase.currentFrame.height
+        ),
+        desiredContentSize: desiredContentSize,
+        anchoringAgainst: previousFrame
+      )
+
+      #expect(snappedFrame == testCase.expectedFrame)
+    }
+  }
+
+  @Test
+  func programmaticResizeKeepsWindowCentered() {
+    let currentFrame = CGRect(x: 100, y: 100, width: 400, height: 600)
+
+    let snappedFrame = WindowLayoutPolicy.frameByApplyingContentSize(
+      currentFrame: currentFrame,
+      currentContentSize: WindowContentSize(width: 400, height: 600),
+      desiredContentSize: WindowContentSize(width: 500, height: 700),
+      anchoringAgainst: nil
+    )
+
+    #expect(snappedFrame == CGRect(x: 50, y: 50, width: 500, height: 700))
+  }
+
+  @Test
   func expandedSidebarUsesPersistentNativeChrome() {
     var state = WindowChromeVisibilityState(sidebarIsVisible: true)
 

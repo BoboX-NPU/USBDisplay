@@ -6,14 +6,18 @@ struct WindowLayoutCoordinator: NSViewRepresentable {
   let aspectRatio: Double?
   let sidebarWidth: Double
   let sidebarIsVisible: Bool
+  let cornerRadiusFraction: Double
+  let onRestoreSidebarAfterFullScreen: () -> Void
 
   func makeNSView(context: Context) -> WindowLayoutHostView {
     WindowLayoutHostView(
-      configuration: configuration
+      configuration: configuration,
+      onRestoreSidebarAfterFullScreen: onRestoreSidebarAfterFullScreen
     )
   }
 
   func updateNSView(_ nsView: WindowLayoutHostView, context: Context) {
+    nsView.updateRestoreSidebarAction(onRestoreSidebarAfterFullScreen)
     nsView.updateConfiguration(configuration)
   }
 
@@ -26,7 +30,8 @@ struct WindowLayoutCoordinator: NSViewRepresentable {
       title: title,
       aspectRatio: aspectRatio,
       sidebarWidth: sidebarWidth,
-      sidebarIsVisible: sidebarIsVisible
+      sidebarIsVisible: sidebarIsVisible,
+      cornerRadiusFraction: cornerRadiusFraction
     )
   }
 }
@@ -36,6 +41,63 @@ private struct WindowLayoutConfiguration: Equatable {
   let aspectRatio: Double?
   let sidebarWidth: Double
   let sidebarIsVisible: Bool
+  let cornerRadiusFraction: Double
+}
+
+private struct WindowPresentationSnapshot {
+  let isOpaque: Bool
+  let backgroundColor: NSColor
+  let contentViewWantsLayer: Bool
+  let contentLayerCornerRadius: CGFloat
+  let contentLayerMasksToBounds: Bool
+  let contentLayerCornerCurve: CALayerCornerCurve?
+}
+
+@MainActor
+private final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
+  nonisolated static let itemIdentifier = NSToolbarItem.Identifier(
+    "USBDisplay.SidebarToggle"
+  )
+
+  private let sidebarItem: NSToolbarItem
+
+  init(sidebarIsVisible: Bool) {
+    sidebarItem = NSToolbarItem(itemIdentifier: Self.itemIdentifier)
+    super.init()
+    sidebarItem.image = NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: nil)
+    sidebarItem.isBordered = true
+    sidebarItem.isNavigational = true
+    sidebarItem.target = nil
+    sidebarItem.action = #selector(NSSplitViewController.toggleSidebar(_:))
+    update(sidebarIsVisible: sidebarIsVisible)
+  }
+
+  func update(sidebarIsVisible: Bool) {
+    let label = sidebarIsVisible ? "Hide Sidebar" : "Show Sidebar"
+    sidebarItem.label = label
+    sidebarItem.paletteLabel = label
+    sidebarItem.toolTip = label
+  }
+
+  nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]
+  {
+    [Self.itemIdentifier]
+  }
+
+  nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]
+  {
+    [Self.itemIdentifier]
+  }
+
+  nonisolated func toolbar(
+    _ toolbar: NSToolbar,
+    itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
+    willBeInsertedIntoToolbar flag: Bool
+  ) -> NSToolbarItem? {
+    MainActor.assumeIsolated {
+      itemIdentifier == Self.itemIdentifier ? sidebarItem : nil
+    }
+  }
 }
 
 @MainActor
@@ -56,9 +118,27 @@ final class WindowLayoutHostView: NSView {
   private var measuredTitlebarHeight = 0.0
   private var compactFrameBeforeHover: CGRect?
   private var chromeTransitionGeneration = 0
+  private var layoutTransitionGeneration = 0
+  private var proportionalLayoutWorkItem: DispatchWorkItem?
+  private var liveResizeStartFrame: CGRect?
+  private var liveResizeStartContentSize: CGSize?
+  private var originalWindowPresentation: WindowPresentationSnapshot?
+  private weak var capturedContentView: NSView?
+  private var windowShapeIsRounded = false
+  private var managedSidebarToolbar: NSToolbar?
+  private var sidebarToolbarDelegate: SidebarToolbarDelegate?
+  private var originalWindowToolbar: NSToolbar?
+  private var didCaptureOriginalWindowToolbar = false
+  private var sidebarWasVisibleBeforeFullScreen: Bool?
+  private var sidebarVisibilityChangedDuringFullScreen = false
+  private var onRestoreSidebarAfterFullScreen: () -> Void
 
-  fileprivate init(configuration: WindowLayoutConfiguration) {
+  fileprivate init(
+    configuration: WindowLayoutConfiguration,
+    onRestoreSidebarAfterFullScreen: @escaping () -> Void
+  ) {
     self.configuration = configuration
+    self.onRestoreSidebarAfterFullScreen = onRestoreSidebarAfterFullScreen
     chromeVisibilityState = WindowChromeVisibilityState(
       sidebarIsVisible: configuration.sidebarIsVisible
     )
@@ -70,6 +150,10 @@ final class WindowLayoutHostView: NSView {
     nil
   }
 
+  fileprivate func updateRestoreSidebarAction(_ action: @escaping () -> Void) {
+    onRestoreSidebarAfterFullScreen = action
+  }
+
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
 
@@ -78,6 +162,7 @@ final class WindowLayoutHostView: NSView {
     guard let window else { return }
 
     observedWindow = window
+    scheduleManagedSidebarToolbarSetup(in: window)
     installObservers(for: window)
     installMouseEventMonitor(for: window)
     measuredTitlebarHeight = currentWindowDecorationHeight(of: window)
@@ -100,8 +185,15 @@ final class WindowLayoutHostView: NSView {
 
     let sidebarVisibilityChanged =
       configuration.sidebarIsVisible != newConfiguration.sidebarIsVisible
+    let sidebarWidthChanged =
+      abs(configuration.sidebarWidth - newConfiguration.sidebarWidth) >= 0.5
+    let cornerRadiusChanged =
+      configuration.cornerRadiusFraction != newConfiguration.cornerRadiusFraction
     configuration = newConfiguration
     guard let window = observedWindow else { return }
+    if sidebarVisibilityChanged, window.styleMask.contains(.fullScreen) {
+      sidebarVisibilityChangedDuringFullScreen = true
+    }
     window.title = newConfiguration.title
     window.titleVisibility = .hidden
 
@@ -116,8 +208,19 @@ final class WindowLayoutHostView: NSView {
       )
     }
 
+    if cornerRadiusChanged {
+      updateWindowShape(of: window, invalidateShadow: true)
+    }
+
     if layoutChanged {
-      scheduleProportionalLayout(animated: false)
+      let delay =
+        sidebarVisibilityChanged
+        ? WindowChromeVisibilityState.animationDuration
+        : (sidebarWidthChanged ? WindowLayoutPolicy.sidebarResizeDebounce : 0)
+      scheduleProportionalLayout(
+        animated: sidebarVisibilityChanged,
+        delay: delay
+      )
     }
   }
 
@@ -129,11 +232,39 @@ final class WindowLayoutHostView: NSView {
     let center = NotificationCenter.default
     observers = [
       center.addObserver(
+        forName: NSWindow.didBecomeKeyNotification,
+        object: window,
+        queue: .main
+      ) { [weak self, weak window] _ in
+        MainActor.assumeIsolated {
+          guard let window else { return }
+          self?.installManagedSidebarToolbar(in: window)
+        }
+      },
+      center.addObserver(
+        forName: NSWindow.willStartLiveResizeNotification,
+        object: window,
+        queue: .main
+      ) { [weak self] _ in
+        MainActor.assumeIsolated {
+          self?.handleWindowWillStartLiveResize()
+        }
+      },
+      center.addObserver(
+        forName: NSWindow.didEndLiveResizeNotification,
+        object: window,
+        queue: .main
+      ) { [weak self] _ in
+        MainActor.assumeIsolated {
+          self?.handleWindowDidEndLiveResize()
+        }
+      },
+      center.addObserver(
         forName: NSWindow.didResizeNotification,
         object: window,
         queue: .main
       ) { [weak self] _ in
-        Task { @MainActor in
+        MainActor.assumeIsolated {
           self?.handleWindowResize()
         }
       },
@@ -180,9 +311,12 @@ final class WindowLayoutHostView: NSView {
 
   private func detachFromWindow() {
     cancelPendingChromeHide()
+    cancelScheduledProportionalLayout()
     chromeTransitionGeneration += 1
+    layoutTransitionGeneration += 1
     if let observedWindow {
       restoreNativeChrome(in: observedWindow)
+      restoreOriginalToolbar(in: observedWindow)
       observedWindow.acceptsMouseMovedEvents = windowPreviouslyAcceptedMouseMovedEvents
     }
     removeMouseEventMonitor()
@@ -193,6 +327,17 @@ final class WindowLayoutHostView: NSView {
     lastFrame = nil
     lastContentSize = nil
     compactFrameBeforeHover = nil
+    liveResizeStartFrame = nil
+    liveResizeStartContentSize = nil
+    originalWindowPresentation = nil
+    capturedContentView = nil
+    windowShapeIsRounded = false
+    managedSidebarToolbar = nil
+    sidebarToolbarDelegate = nil
+    originalWindowToolbar = nil
+    didCaptureOriginalWindowToolbar = false
+    sidebarWasVisibleBeforeFullScreen = nil
+    sidebarVisibilityChangedDuringFullScreen = false
   }
 
   override func mouseEntered(with event: NSEvent) {
@@ -213,24 +358,40 @@ final class WindowLayoutHostView: NSView {
     scheduleChromeHideIfNeeded(in: window)
   }
 
-  private func scheduleProportionalLayout(animated: Bool) {
-    DispatchQueue.main.async { [weak self] in
-      self?.applyProportionalLayoutPreservingHeight(animated: animated)
+  private func scheduleProportionalLayout(
+    animated: Bool,
+    delay: TimeInterval = 0
+  ) {
+    cancelScheduledProportionalLayout()
+
+    let workItem = DispatchWorkItem { [weak self] in
+      MainActor.assumeIsolated {
+        guard let self else { return }
+        self.proportionalLayoutWorkItem = nil
+        self.applyProportionalLayoutPreservingHeight(animated: animated)
+      }
     }
+    proportionalLayoutWorkItem = workItem
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
+  }
+
+  private func cancelScheduledProportionalLayout() {
+    proportionalLayoutWorkItem?.cancel()
+    proportionalLayoutWorkItem = nil
   }
 
   private func applyProportionalLayoutPreservingHeight(animated: Bool) {
     if isApplyingFrame {
-      DispatchQueue.main.asyncAfter(
-        deadline: .now() + WindowChromeVisibilityState.animationDuration
-      ) { [weak self] in
-        self?.applyProportionalLayoutPreservingHeight(animated: animated)
-      }
+      scheduleProportionalLayout(
+        animated: animated,
+        delay: WindowLayoutPolicy.nonInteractiveResizeDebounce
+      )
       return
     }
 
     guard
       let window = observedWindow,
+      !window.inLiveResize,
       let aspectRatio = configuration.aspectRatio,
       WindowLayoutPolicy.shouldConstrainWindow(
         isFullScreen: window.styleMask.contains(.fullScreen),
@@ -249,6 +410,13 @@ final class WindowLayoutHostView: NSView {
     }
 
     updateMinimumSize(of: window, aspectRatio: aspectRatio)
+    if abs(desiredSize.width - contentSize.width) < 1,
+      abs(desiredSize.height - contentSize.height) < 1
+    {
+      rememberCurrentGeometry(of: window)
+      return
+    }
+
     apply(
       desiredContentSize: desiredSize,
       to: window,
@@ -258,23 +426,52 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func handleWindowResize() {
-    guard let window = observedWindow, !isApplyingFrame else { return }
+    guard let window = observedWindow else { return }
     refreshChromeTrackingArea()
+    updateWindowShape(of: window)
+
+    guard !isApplyingFrame else { return }
+
+    if window.inLiveResize {
+      updateCompactFrameForCurrentHoverGeometry(of: window)
+      return
+    }
+
+    rememberCurrentGeometry(of: window)
+    updateCompactFrameForCurrentHoverGeometry(of: window)
+    scheduleProportionalLayout(
+      animated: false,
+      delay: WindowLayoutPolicy.nonInteractiveResizeDebounce
+    )
+  }
+
+  private func handleWindowWillStartLiveResize() {
+    guard let window = observedWindow, !window.styleMask.contains(.fullScreen) else {
+      return
+    }
+
+    cancelScheduledProportionalLayout()
+    layoutTransitionGeneration += 1
+    liveResizeStartFrame = window.frame
+    liveResizeStartContentSize = currentContentSize(of: window)
+  }
+
+  private func handleWindowDidEndLiveResize() {
+    guard let window = observedWindow else { return }
+
+    let startFrame = liveResizeStartFrame
+    let startContentSize = liveResizeStartContentSize
+    liveResizeStartFrame = nil
+    liveResizeStartContentSize = nil
+
     guard
       let aspectRatio = configuration.aspectRatio,
       WindowLayoutPolicy.shouldConstrainWindow(
         isFullScreen: window.styleMask.contains(.fullScreen),
         aspectRatio: aspectRatio
       ),
-      let proposedSize = currentContentSize(of: window)
-    else {
-      rememberCurrentGeometry(of: window)
-      updateCompactFrameForCurrentHoverGeometry(of: window)
-      return
-    }
-
-    let previousSize = lastContentSize ?? proposedSize
-    guard
+      let proposedSize = currentContentSize(of: window),
+      let previousSize = startContentSize,
       let desiredSize = WindowLayoutPolicy.constrainedResize(
         proposedSize: WindowContentSize(
           width: proposedSize.width,
@@ -290,22 +487,23 @@ final class WindowLayoutHostView: NSView {
         maximumSize: maximumContentSize(for: window)
       )
     else {
+      rememberCurrentGeometry(of: window)
       return
     }
 
+    updateMinimumSize(of: window, aspectRatio: aspectRatio)
     if abs(desiredSize.width - proposedSize.width) < 1,
       abs(desiredSize.height - proposedSize.height) < 1
     {
       rememberCurrentGeometry(of: window)
-      updateCompactFrameForCurrentHoverGeometry(of: window)
       return
     }
 
     apply(
       desiredContentSize: desiredSize,
       to: window,
-      anchoringAgainst: lastFrame,
-      animated: false
+      anchoringAgainst: startFrame,
+      animated: true
     )
     updateCompactFrameForCurrentHoverGeometry(of: window)
   }
@@ -324,46 +522,85 @@ final class WindowLayoutHostView: NSView {
   ) {
     guard let currentContentSize = currentContentSize(of: window) else { return }
 
-    var frame = window.frame
-    let widthDifference = desiredContentSize.width - currentContentSize.width
-    let heightDifference = desiredContentSize.height - currentContentSize.height
-    frame.size.width += widthDifference
-    frame.size.height += heightDifference
+    var frame = WindowLayoutPolicy.frameByApplyingContentSize(
+      currentFrame: window.frame,
+      currentContentSize: WindowContentSize(
+        width: currentContentSize.width,
+        height: currentContentSize.height
+      ),
+      desiredContentSize: desiredContentSize,
+      anchoringAgainst: previousFrame
+    )
+    frame = clamped(frame: frame, to: window.screen?.visibleFrame)
+    applyLayoutFrame(frame, to: window, animated: animated)
+  }
 
-    if let previousFrame {
-      let leftEdgeMoved =
-        abs(window.frame.minX - previousFrame.minX)
-        > abs(window.frame.maxX - previousFrame.maxX)
-      let bottomEdgeMoved =
-        abs(window.frame.minY - previousFrame.minY)
-        > abs(window.frame.maxY - previousFrame.maxY)
+  private func applyLayoutFrame(_ frame: CGRect, to window: NSWindow, animated: Bool) {
+    layoutTransitionGeneration += 1
+    let generation = layoutTransitionGeneration
+    isApplyingFrame = true
 
-      if leftEdgeMoved {
-        frame.origin.x = window.frame.maxX - frame.width
-      }
-      if bottomEdgeMoved {
-        frame.origin.y = window.frame.maxY - frame.height
-      }
-    } else {
-      frame.origin.x -= widthDifference / 2
-      frame.origin.y -= heightDifference / 2
+    guard animated else {
+      window.setFrame(frame, display: true)
+      isApplyingFrame = false
+      rememberCurrentGeometry(of: window)
+      updateWindowShape(of: window, invalidateShadow: true)
+      return
     }
 
-    frame = clamped(frame: frame, to: window.screen?.visibleFrame)
-    isApplyingFrame = true
-    window.setFrame(frame, display: true, animate: animated)
-    isApplyingFrame = false
-    rememberCurrentGeometry(of: window)
+    NSAnimationContext.runAnimationGroup { context in
+      context.duration = WindowLayoutPolicy.resizeSnapAnimationDuration
+      context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+      window.animator().setFrame(frame, display: true)
+    } completionHandler: { [weak self, weak window] in
+      guard let self, let window else { return }
+      MainActor.assumeIsolated {
+        guard generation == self.layoutTransitionGeneration else { return }
+        self.isApplyingFrame = false
+        self.rememberCurrentGeometry(of: window)
+        self.updateWindowShape(of: window, invalidateShadow: true)
+        self.refreshChromeTrackingArea()
+      }
+    }
   }
 
   private func handleDidEnterFullScreen() {
     cancelPendingChromeHide()
+    cancelScheduledProportionalLayout()
     chromeTransitionGeneration += 1
+    sidebarWasVisibleBeforeFullScreen = configuration.sidebarIsVisible
+    sidebarVisibilityChangedDuringFullScreen = false
     removeChromeTrackingArea()
+    if let window = observedWindow {
+      updateWindowShape(of: window, invalidateShadow: true)
+    }
   }
 
   private func handleDidExitFullScreen() {
     guard let window = observedWindow else { return }
+    let shouldRestoreSidebar =
+      sidebarWasVisibleBeforeFullScreen == true
+      && !sidebarVisibilityChangedDuringFullScreen
+    sidebarWasVisibleBeforeFullScreen = nil
+    sidebarVisibilityChangedDuringFullScreen = false
+
+    if shouldRestoreSidebar {
+      onRestoreSidebarAfterFullScreen()
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self, weak window] in
+        MainActor.assumeIsolated {
+          guard
+            let self,
+            let window,
+            self.observedWindow === window,
+            !self.configuration.sidebarIsVisible
+          else {
+            return
+          }
+          self.onRestoreSidebarAfterFullScreen()
+        }
+      }
+    }
+
     chromeVisibilityState.updateSidebarVisibility(configuration.sidebarIsVisible)
     applyChromeMode(
       chromeVisibilityState.mode,
@@ -371,6 +608,7 @@ final class WindowLayoutHostView: NSView {
       preservingContentSize: true,
       animated: false
     )
+    updateWindowShape(of: window, invalidateShadow: true)
     refreshChromeTrackingArea()
   }
 
@@ -467,6 +705,7 @@ final class WindowLayoutHostView: NSView {
 
     window.title = configuration.title
     window.titleVisibility = .hidden
+    installManagedSidebarToolbar(in: window)
     switch mode {
     case .sidebarVisible, .hoverRevealed:
       window.styleMask.remove(.fullSizeContentView)
@@ -484,9 +723,9 @@ final class WindowLayoutHostView: NSView {
       window.toolbar?.isVisible = false
       setTitlebarButtons(hidden: true, in: window)
     }
-
     window.contentView?.layoutSubtreeIfNeeded()
     window.contentView?.superview?.layoutSubtreeIfNeeded()
+    updateWindowShape(of: window, invalidateShadow: true)
 
     guard preservingContentSize else {
       refreshChromeTrackingArea()
@@ -515,6 +754,54 @@ final class WindowLayoutHostView: NSView {
     applyChromeFrame(targetFrame, to: window, animated: animated)
   }
 
+  private func scheduleManagedSidebarToolbarSetup(in window: NSWindow) {
+    for delay in [0.0, 0.1, 0.5] {
+      DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak window] in
+        MainActor.assumeIsolated {
+          guard let self, let window, self.observedWindow === window else { return }
+          self.installManagedSidebarToolbar(in: window)
+        }
+      }
+    }
+  }
+
+  private func installManagedSidebarToolbar(in window: NSWindow) {
+    if !didCaptureOriginalWindowToolbar {
+      originalWindowToolbar = window.toolbar
+      didCaptureOriginalWindowToolbar = true
+    }
+
+    let toolbar: NSToolbar
+    if let managedSidebarToolbar {
+      toolbar = managedSidebarToolbar
+    } else {
+      let toolbarDelegate = SidebarToolbarDelegate(
+        sidebarIsVisible: configuration.sidebarIsVisible
+      )
+      toolbar = NSToolbar(identifier: "USBDisplay.WindowToolbar")
+      toolbar.allowsUserCustomization = false
+      toolbar.autosavesConfiguration = false
+      toolbar.displayMode = .iconOnly
+      toolbar.sizeMode = .regular
+      toolbar.delegate = toolbarDelegate
+      sidebarToolbarDelegate = toolbarDelegate
+      managedSidebarToolbar = toolbar
+    }
+
+    sidebarToolbarDelegate?.update(sidebarIsVisible: configuration.sidebarIsVisible)
+    toolbar.isVisible = chromeVisibilityState.mode != .compact
+    toolbar.showsBaselineSeparator = chromeVisibilityState.mode != .compact
+    if window.toolbar !== toolbar {
+      window.toolbar = toolbar
+    }
+  }
+
+  private func restoreOriginalToolbar(in window: NSWindow) {
+    if window.toolbar === managedSidebarToolbar {
+      window.toolbar = originalWindowToolbar
+    }
+  }
+
   private func applyChromeFrame(_ frame: CGRect, to window: NSWindow, animated: Bool) {
     chromeTransitionGeneration += 1
     let generation = chromeTransitionGeneration
@@ -524,6 +811,7 @@ final class WindowLayoutHostView: NSView {
       window.setFrame(frame, display: true)
       isApplyingFrame = false
       rememberCurrentGeometry(of: window)
+      updateWindowShape(of: window, invalidateShadow: true)
       refreshChromeTrackingArea()
       return
     }
@@ -544,12 +832,90 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func restoreNativeChrome(in window: NSWindow) {
+    restoreWindowPresentation(in: window, clearSnapshot: true)
     window.styleMask.remove(.fullSizeContentView)
     window.titlebarAppearsTransparent = false
     window.titlebarSeparatorStyle = .automatic
     window.toolbar?.isVisible = true
     window.toolbar?.showsBaselineSeparator = true
     setTitlebarButtons(hidden: false, in: window)
+  }
+
+  private func updateWindowShape(
+    of window: NSWindow,
+    invalidateShadow: Bool = false
+  ) {
+    guard let contentView = window.contentView else { return }
+    captureWindowPresentationIfNeeded(window: window, contentView: contentView)
+
+    let shouldRound =
+      chromeVisibilityState.mode == .compact
+      && !window.styleMask.contains(.fullScreen)
+      && configuration.cornerRadiusFraction > 0
+
+    if shouldRound {
+      window.isOpaque = false
+      window.backgroundColor = .clear
+      contentView.wantsLayer = true
+      if let layer = contentView.layer {
+        let shortSide = min(contentView.bounds.width, contentView.bounds.height)
+        layer.cornerRadius = DisplayCornerProfileResolver.cornerRadius(
+          shortSide: shortSide,
+          fraction: configuration.cornerRadiusFraction
+        )
+        layer.cornerCurve = .continuous
+        layer.masksToBounds = true
+      }
+    } else {
+      restoreWindowPresentation(in: window, clearSnapshot: false)
+    }
+
+    let shapeChanged = windowShapeIsRounded != shouldRound
+    windowShapeIsRounded = shouldRound
+    if shapeChanged || invalidateShadow {
+      window.invalidateShadow()
+    }
+  }
+
+  private func captureWindowPresentationIfNeeded(
+    window: NSWindow,
+    contentView: NSView
+  ) {
+    guard originalWindowPresentation == nil || capturedContentView !== contentView else {
+      return
+    }
+
+    capturedContentView = contentView
+    originalWindowPresentation = WindowPresentationSnapshot(
+      isOpaque: window.isOpaque,
+      backgroundColor: window.backgroundColor,
+      contentViewWantsLayer: contentView.wantsLayer,
+      contentLayerCornerRadius: contentView.layer?.cornerRadius ?? 0,
+      contentLayerMasksToBounds: contentView.layer?.masksToBounds ?? false,
+      contentLayerCornerCurve: contentView.layer?.cornerCurve
+    )
+  }
+
+  private func restoreWindowPresentation(in window: NSWindow, clearSnapshot: Bool) {
+    guard let snapshot = originalWindowPresentation else { return }
+
+    window.isOpaque = snapshot.isOpaque
+    window.backgroundColor = snapshot.backgroundColor
+    if let contentView = capturedContentView {
+      contentView.layer?.cornerRadius = snapshot.contentLayerCornerRadius
+      contentView.layer?.masksToBounds = snapshot.contentLayerMasksToBounds
+      if let cornerCurve = snapshot.contentLayerCornerCurve {
+        contentView.layer?.cornerCurve = cornerCurve
+      }
+      contentView.wantsLayer = snapshot.contentViewWantsLayer
+    }
+
+    if clearSnapshot {
+      originalWindowPresentation = nil
+      capturedContentView = nil
+      windowShapeIsRounded = false
+      window.invalidateShadow()
+    }
   }
 
   private func setTitlebarButtons(hidden: Bool, in window: NSWindow) {

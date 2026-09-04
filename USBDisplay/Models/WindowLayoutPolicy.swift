@@ -63,6 +63,9 @@ struct WindowChromeVisibilityState: Equatable, Sendable {
 enum WindowLayoutPolicy {
   static let minimumPreviewHeight = 320.0
   static let splitDividerWidth = 1.0
+  static let sidebarResizeDebounce = 0.1
+  static let nonInteractiveResizeDebounce = 0.04
+  static let resizeSnapAnimationDuration = 0.12
 
   static func validAspectRatio(width: Double, height: Double) -> Double? {
     guard width.isFinite, height.isFinite, width > 0, height > 0 else {
@@ -167,6 +170,42 @@ enum WindowLayoutPolicy {
   static func shouldConstrainWindow(isFullScreen: Bool, aspectRatio: Double?) -> Bool {
     guard !isFullScreen, let aspectRatio else { return false }
     return validAspectRatio(width: aspectRatio, height: 1) != nil
+  }
+
+  static func frameByApplyingContentSize(
+    currentFrame: CGRect,
+    currentContentSize: WindowContentSize,
+    desiredContentSize: WindowContentSize,
+    anchoringAgainst previousFrame: CGRect?
+  ) -> CGRect {
+    let widthDifference = desiredContentSize.width - currentContentSize.width
+    let heightDifference = desiredContentSize.height - currentContentSize.height
+    var frame = currentFrame
+    frame.size.width += widthDifference
+    frame.size.height += heightDifference
+
+    if let previousFrame {
+      let leftMovement = abs(currentFrame.minX - previousFrame.minX)
+      let rightMovement = abs(currentFrame.maxX - previousFrame.maxX)
+      if abs(leftMovement - rightMovement) < 0.5 {
+        frame.origin.x -= widthDifference / 2
+      } else if leftMovement > rightMovement {
+        frame.origin.x = currentFrame.maxX - frame.width
+      }
+
+      let bottomMovement = abs(currentFrame.minY - previousFrame.minY)
+      let topMovement = abs(currentFrame.maxY - previousFrame.maxY)
+      if abs(bottomMovement - topMovement) < 0.5 {
+        frame.origin.y -= heightDifference / 2
+      } else if bottomMovement > topMovement {
+        frame.origin.y = currentFrame.maxY - frame.height
+      }
+    } else {
+      frame.origin.x -= widthDifference / 2
+      frame.origin.y -= heightDifference / 2
+    }
+
+    return frame
   }
 
   static func frameByRevealingTitlebar(

@@ -5,6 +5,7 @@ struct SidebarView: View {
   let selectedDeviceID: String?
   let onSelectDevice: (String) -> Void
   let onOpenDeviceInNewWindow: (String) -> Void
+  let onAdjustScreenCorners: (DisplayDevice) -> Void
   let onWidthChanged: (Double) -> Void
 
   var body: some View {
@@ -33,6 +34,10 @@ struct SidebarView: View {
               .contextMenu {
                 Button("Open in New Window") {
                   onOpenDeviceInNewWindow(device.id)
+                }
+                Divider()
+                Button("Adjust Screen Corners…") {
+                  onAdjustScreenCorners(device)
                 }
               }
               .accessibilityAddTraits(isSelected ? .isSelected : [])
