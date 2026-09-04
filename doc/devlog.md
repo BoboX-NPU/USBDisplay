@@ -616,3 +616,34 @@
 
 - Corrected ordinary-window restoration when the source rotates during full screen. Exit now applies the current source ratio to the retained preferred height before committing the restored frame.
 - Extended the full-screen integration test with a rotation during full screen. The final full regression run, including the strengthened rendering test, passed all 62 tests with zero failures or skips. Physical rotation remains Not run.
+
+## 2026-09-05 — Suppress Compact Window Shadows and Check Outermost Edges
+
+### Summary
+
+- Disable the native window shadow when the controls are fully collapsed, preserving the existing rounded preview mask and opaque video content. Restore the original shadow setting when controls return or the host detaches.
+- Preserve the native window style, SwiftUI scene ownership, preview layer, resize behavior, and macOS 14 deployment target.
+- Extend rendering coverage to the outermost pixel on all four straight edges. Compare each sampled pixel with the rendered center in the same color space so a one-pixel rim cannot pass an inset-only check.
+- Add a real SwiftUI scene regression check for compact key/main-window eligibility and the native close/full-screen buttons after titlebar reveal.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Strict recursive Swift-format lint and working-tree whitespace checks: Passed.
+- Debug and Release builds: Passed. Full regression suite: 63 tests passed, zero failures and zero skips.
+- Synthetic AppKit rendering: Passed changing red/blue frames, corner alpha over light/dark backgrounds, all four outermost edge pixels, and compact/expanded shadow state. These are bitmap checks, not WindowServer screenshots.
+- Actual SwiftUI scene ownership: Passed compact key/main-window eligibility and restored native buttons.
+- Canonical `./script/build_and_run.sh --verify`: Passed; the final Debug process launched. Strict Debug/Release bundle signature verification after the canonical build completed: Passed.
+- An initial sandboxed build could not launch Swift macro plugins; the authorized build outside the sandbox succeeded. Experimental removal of the titled window style, including a plain-scene variant, failed actual SwiftUI focus/button tests and was fully reverted. A color assertion was corrected to compare pixels within the same rendered color space.
+- Physical appearance, right-edge white-line removal, and live playback inspection: Not run. Computer-use inspection reported that the Mac was locked and automatic unlock failed. The user was asked to unlock it.
+
+### Remaining Risks or Follow-up Work
+
+- Inspect the compact running window after unlock against both light and dark backgrounds. Confirm that the reported white line and rectangular outline are gone; shadow suppression alone is not yet claimed to resolve every visible WindowServer artifact.
+- Complete the existing physical drag, hover, full-screen, and video-continuity acceptance checks. No physical acceptance result from the previous entry is extended to this change.

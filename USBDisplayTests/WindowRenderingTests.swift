@@ -7,6 +7,38 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct WindowRenderingTests {
+  @Test func swiftUISceneKeepsCompactWindowFocusable() async throws {
+    try await Task.sleep(for: .milliseconds(200))
+    func surface(in view: NSView) -> WindowLayoutHostView? {
+      if let host = view as? WindowLayoutHostView { return host }
+      for child in view.subviews {
+        if let host = surface(in: child) { return host }
+      }
+      return nil
+    }
+    // Include the real SwiftUI scene owner, whose window behavior differs from
+    // the isolated NSWindow fixture below.
+    let window = try #require(
+      NSApp.windows.first {
+        type(of: $0) != NSWindow.self && $0.contentView.flatMap { surface(in: $0) } != nil
+      })
+    let host = try #require(window.contentView.flatMap { surface(in: $0) })
+    let wasVisible = (host.surfaceLayout?.sidebar.width ?? 0) > 0
+    if wasVisible { host.toggleSidebar() }
+    try await Task.sleep(for: .milliseconds(100))
+    defer { if wasVisible { host.toggleSidebar() } }
+    host.hideTitlebar()
+    #expect(window.styleMask.contains(.titled))
+    #expect(!window.hasShadow)
+    #expect(window.canBecomeKey)
+    #expect(window.canBecomeMain)
+    host.revealTitlebar()
+    #expect(window.styleMask.contains(.titled))
+    #expect(window.standardWindowButton(.closeButton)?.isHidden == false)
+    #expect(window.standardWindowButton(.zoomButton)?.isHidden == false)
+    host.hideTitlebar()
+  }
+
   @Test func composedHostingSurfaceHasTransparentCornersAndCurrentDynamicFrame() async throws {
     let window = NSWindow(
       contentRect: CGRect(x: 500, y: 200, width: 240, height: 480),
@@ -39,6 +71,9 @@ struct WindowRenderingTests {
       let compact = step % 3 == 1
       if step % 3 == 0 { surface.updateConfiguration(config.showingSidebar(true)) }
       if step % 3 == 2 { surface.revealTitlebar() }
+      #expect(window.styleMask.contains(.titled))
+      #expect(window.hasShadow == !compact)
+      #expect(window.styleMask.contains(.resizable))
       let current = try #require(surface.surfaceLayout)
       NotificationCenter.default.post(
         name: NSWindow.willStartLiveResizeNotification, object: window)
@@ -70,11 +105,26 @@ struct WindowRenderingTests {
       // Sample the center and the newly exposed edges, away from the corner mask.
       let previewRect = frameView.convert(surface.preview.bounds, from: surface.preview)
       let scale = Double(bitmap.pixelsWide) / frameView.bounds.width
-      for point in [
+      let centerPixel = try #require(
+        bitmap.colorAt(
+          x: Int(previewRect.midX * scale),
+          y: bitmap.pixelsHigh - 1 - Int(previewRect.midY * scale))?.usingColorSpace(.sRGB))
+      var samplePoints = [
         CGPoint(x: previewRect.midX, y: previewRect.midY),
         CGPoint(x: previewRect.maxX - 3, y: previewRect.midY),
         CGPoint(x: previewRect.midX, y: previewRect.minY + 3),
-      ] {
+      ]
+      if compact {
+        // Include the outermost pixel: inset samples miss a one-pixel white rim.
+        let halfPixel = 0.5 / scale
+        samplePoints += [
+          CGPoint(x: previewRect.minX + halfPixel, y: previewRect.midY),
+          CGPoint(x: previewRect.maxX - halfPixel, y: previewRect.midY),
+          CGPoint(x: previewRect.midX, y: previewRect.minY + halfPixel),
+          CGPoint(x: previewRect.midX, y: previewRect.maxY - halfPixel),
+        ]
+      }
+      for point in samplePoints {
         let x = Int(point.x * scale)
         let y = bitmap.pixelsHigh - 1 - Int(point.y * scale)
         let pixel = try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB))
@@ -84,6 +134,10 @@ struct WindowRenderingTests {
           #expect(pixel.blueComponent > 0.8 && pixel.redComponent < 0.4)
         }
         #expect(pixel.alphaComponent > 0.98)
+        // Compare within the same rendered color space, including its edge pixels.
+        #expect(abs(pixel.redComponent - centerPixel.redComponent) < 0.02)
+        #expect(abs(pixel.greenComponent - centerPixel.greenComponent) < 0.02)
+        #expect(abs(pixel.blueComponent - centerPixel.blueComponent) < 0.02)
       }
       // Use source-over composition, preserving the background under alpha = 0.
       for white in compact ? [true, false] : [] {

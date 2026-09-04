@@ -122,6 +122,7 @@ final class WindowLayoutHostView: NSView {
   private var originalBackground: NSColor?
   private var originalOpaque = true
   private var originalFullSize = false
+  private var originalShadow = true
   private var originalMouseMoved = false
   private var observers: [NSObjectProtocol] = []
   private var mouseMonitor: Any?
@@ -184,6 +185,7 @@ final class WindowLayoutHostView: NSView {
     originalBackground = window.backgroundColor
     originalOpaque = window.isOpaque
     originalFullSize = window.styleMask.contains(.fullSizeContentView)
+    originalShadow = window.hasShadow
     originalMouseMoved = window.acceptsMouseMovedEvents
     window.acceptsMouseMovedEvents = true
     // Always use one full-size transparent content coordinate system.
@@ -316,6 +318,9 @@ final class WindowLayoutHostView: NSView {
     CATransaction.setDisableActions(true)
     window.contentMinSize = .zero
     window.minSize = .zero
+    // The system shadow is outside the preview mask and can reveal the
+    // rectangular window behind the rounded picture.
+    window.hasShadow = chrome.mode == .compact && !fullScreen ? false : originalShadow
     toolbarDelegate.update(visible: configuration.sidebarIsVisible)
     toolbar.isVisible = chrome.showsTitlebar || fullScreen
     toolbar.showsBaselineSeparator = false
@@ -560,6 +565,7 @@ final class WindowLayoutHostView: NSView {
       if window.delegate === resizeDelegate { window.delegate = resizeDelegate?.originalDelegate }
       if window.toolbar === toolbar { window.toolbar = originalToolbar }
       window.isOpaque = originalOpaque
+      window.hasShadow = originalShadow
       if let originalBackground { window.backgroundColor = originalBackground }
       if !originalFullSize { window.styleMask.remove(.fullSizeContentView) }
       window.acceptsMouseMovedEvents = originalMouseMoved
