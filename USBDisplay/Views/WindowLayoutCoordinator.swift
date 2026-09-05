@@ -480,11 +480,17 @@ final class WindowLayoutHostView: NSView {
     // rectangular window behind the rounded picture.
     window.hasShadow = !reservedSidebar && !reservedTitlebar && !fullScreen ? false : originalShadow
     toolbarDelegate.update(visible: configuration.sidebarIsVisible)
-    toolbar.isVisible = reservedTitlebar || fullScreen
-    toolbar.showsBaselineSeparator = false
+    let showsToolbar = reservedTitlebar || fullScreen
+    let isRevealingToolbar = showsToolbar && !toolbar.isVisible
+    // AppKit measures navigational items when the toolbar becomes visible.
+    // Restore the traffic lights and their measurement opacity first; the
+    // current fade is reapplied below, inside this same nonanimated transaction.
     for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-      window.standardWindowButton(type)?.isHidden = !toolbar.isVisible
+      window.standardWindowButton(type)?.isHidden = !showsToolbar
+      if isRevealingToolbar { window.standardWindowButton(type)?.alphaValue = 1 }
     }
+    toolbar.isVisible = showsToolbar
+    toolbar.showsBaselineSeparator = false
     surfaceLayout = target
     // No run-loop yield, intermediate outer frame, or forced display is allowed here.
     if !fullScreen, window.frame != target.frame { window.setFrame(target.frame, display: false) }

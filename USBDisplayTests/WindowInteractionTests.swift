@@ -133,6 +133,53 @@ struct WindowChromeInteractionTests {
     }
   }
 
+  @Test func unifiedToolbarToggleStaysClearOfWindowButtons() async throws {
+    let (window, host) = makeWindow()
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    // Match the real SwiftUI scene; the default fixture uses expanded chrome.
+    window.toolbarStyle = .unified
+    window.orderFront(nil)
+    try await Task.sleep(for: .milliseconds(100))
+    func checkPlacement() throws {
+      guard window.toolbar?.isVisible == true else { return }
+      window.contentView?.superview?.layoutSubtreeIfNeeded()
+      let toggle = try #require(window.toolbar?.items.first?.view)
+      let rect = toggle.convert(toggle.bounds, to: nil)
+      for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+        let button = try #require(window.standardWindowButton(type))
+        let control = button.convert(button.bounds, to: nil)
+        #expect(!rect.intersects(control))
+        #expect(rect.minX >= control.maxX + 8)
+        #expect(abs(button.alphaValue - host.chromeAnimator.presentation.titlebar) < 0.00001)
+      }
+    }
+    func checkAnimation() throws {
+      if let start = host.chromeAnimator.startedAt {
+        for progress in [0.0, 0.25, 0.5, 0.75, 1] {
+          host.chromeAnimator.advance(to: start + progress * WindowChromeAnimator.duration)
+          try checkPlacement()
+        }
+      } else {
+        try checkPlacement()
+      }
+    }
+    for _ in 0..<5 {
+      host.updateConfiguration(configuration(sidebar: true))
+      try checkAnimation()
+      host.updateConfiguration(configuration(sidebar: false))
+      try checkAnimation()
+      host.revealTitlebar()
+      try checkAnimation()
+      host.hideTitlebar()
+      try checkAnimation()
+      host.revealTitlebar()
+      try checkAnimation()
+    }
+  }
+
   @Test func twentyCyclesKeepPreviewFixedAtEveryAnimationSample() async throws {
     let (window, host) = makeWindow()
     defer {

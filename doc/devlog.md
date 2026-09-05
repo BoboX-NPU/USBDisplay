@@ -891,3 +891,31 @@
 
 - Complete physical all-handle anchoring and smoothness acceptance, sidebar/hover interleaving, and continuous video capture over contrasting backgrounds. Endpoint screenshots and proportional delegate tests cannot rule out a transient compositor or driver artifact.
 - Recheck real rotation, reconnect, monitor changes/edge overlays, multiple devices, Reduce Motion, and macOS 14/15 native toolbar behavior. Existing capture first-frame timing, distribution/signing, and external latency measurements remain separate acceptance items.
+
+
+## 2026-09-05 — Reserve Native Window Button Space Before Toolbar Reveal
+
+### Summary
+
+- Fix the supplied screenshot's Show Sidebar button overlapping the native traffic lights after compact mode reveals its titlebar.
+- Restore native button visibility and measurement opacity before making the toolbar visible. AppKit then includes the native control area when placing the navigational item. Restore the animation's current opacity inside the same nonanimated transaction, preserving the existing fade and slide without a hard-coded horizontal offset.
+- Add a regression fixture using the real scene's unified toolbar style, checking separation from all three native window buttons and the current fade at intermediate animation samples across five sidebar/titlebar cycles.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Baseline focused regression: Failed as expected with ten overlap/spacing assertions. The narrow revealed toolbar placed the toggle at x=26 points while the native buttons occupied x=19...79. Merely changing visibility order still failed; restoring measurement opacity before toolbar reveal placed the toggle at x=96 and passed the focused regression.
+- Final full Debug suite: Passed 90 tests, zero failures and zero skips. The expanded regression also checks native-button opacity against the animation progress at 0%, 25%, 50%, 75%, and 100%. Existing resize, alpha-mask rendering, and device tests passed.
+- Debug and Release builds, canonical `./script/build_and_run.sh --verify`, strict recursive Swift-format lint, and working-tree whitespace checks: Passed.
+- Running application with the connected iPhone 16 Pro in landscape: Revealed the titlebar from the top region, clicked Show Sidebar, clicked Hide Sidebar, and revealed the titlebar again. Screenshots showed the toggle to the right of the native window-control area on both reveals and while expanded. Live video continued changing. No phone screenshots were added to the repository.
+- Physical portrait-mode repetition and older macOS versions: Not run in this check. The native unified-toolbar fixture covers narrow portrait geometry. Continuous WindowServer frame pacing and all-handle drag acceptance were not rerun for this focused positioning fix.
+
+### Remaining Risks or Follow-up Work
+
+- Verify macOS 14/15 native toolbar behavior when hardware is available. Previously documented continuous-resize and frame-pacing acceptance items remain outstanding.
