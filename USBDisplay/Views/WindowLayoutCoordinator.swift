@@ -50,6 +50,7 @@ private final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
   private let item = NSToolbarItem(itemIdentifier: identifier)
   let button = NSButton()
   var toggle: (() -> Void)?
+  private var sidebarIsVisible: Bool?
 
   override init() {
     super.init()
@@ -67,6 +68,8 @@ private final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
   @objc private func toggleSidebar() { toggle?() }
 
   func update(visible: Bool) {
+    guard sidebarIsVisible != visible else { return }
+    sidebarIsVisible = visible
     let label = visible ? "Hide Sidebar" : "Show Sidebar"
     item.label = label
     item.paletteLabel = label
@@ -176,8 +179,6 @@ final class WindowLayoutHostView: NSView {
   private var fullScreen = false
   private var sidebarBeforeFullScreen: Bool?
   private var fullScreenSidebarVisible = false
-  private var fullScreenToolbarVisible = false
-  private var toolbarHideWork: DispatchWorkItem?
   var onSidebarChanged: (Bool) -> Void = { _ in }
   // Tests observe every committed presentation, including synchronous chrome changes.
   var onLayoutCommitted: ((WindowSurfaceLayout) -> Void)?
@@ -210,6 +211,7 @@ final class WindowLayoutHostView: NSView {
     toolbar.allowsUserCustomization = false
     toolbar.autosavesConfiguration = false
     toolbar.displayMode = .iconOnly
+    toolbar.showsBaselineSeparator = false
     toolbar.delegate = toolbarDelegate
     toolbarDelegate.toggle = { [weak self] in self?.toggleSidebar() }
     chromeAnimator.onUpdate = { [weak self] _ in self?.applyChromePresentation() }
@@ -484,19 +486,13 @@ final class WindowLayoutHostView: NSView {
     titlebar.alphaValue = fullScreen ? 0 : value.titlebar
     titlebar.layer?.transform = CATransform3DMakeTranslation(0, travel * (1 - value.titlebar), 0)
     // Public button APIs and our own toolbar view avoid traversing native chrome.
-    if !fullScreen {
+    if !fullScreen && !fullScreenTransition {
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
         window.standardWindowButton(type)?.alphaValue = value.titlebar
       }
       toolbarDelegate.button.alphaValue = value.titlebar
       toolbarDelegate.button.layer?.transform = CATransform3DMakeTranslation(
         0, travel * (1 - value.titlebar), 0)
-    } else {
-      toolbarDelegate.button.alphaValue = 1
-      toolbarDelegate.button.layer?.transform = CATransform3DIdentity
-      for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-        window.standardWindowButton(type)?.alphaValue = 1
-      }
     }
     preview.applyCornerFraction(cornerFraction, retainingMask: retainsCornerMask)
     if let layer = status.layer {
@@ -534,17 +530,17 @@ final class WindowLayoutHostView: NSView {
     window.hasShadow = !reservedSidebar && !reservedTitlebar && !fullScreen ? false : originalShadow
     toolbarDelegate.update(
       visible: fullScreen ? fullScreenSidebarVisible : configuration.sidebarIsVisible)
-    let showsToolbar = fullScreen ? fullScreenToolbarVisible : reservedTitlebar
-    let isRevealingToolbar = showsToolbar && !toolbar.isVisible
-    // AppKit measures navigational items when the toolbar becomes visible.
-    // Restore the traffic lights and their measurement opacity first; the
-    // current fade is reapplied below, inside this same nonanimated transaction.
-    for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-      window.standardWindowButton(type)?.isHidden = !showsToolbar
-      if isRevealingToolbar { window.standardWindowButton(type)?.alphaValue = 1 }
+    // Full-screen toolbar visibility and traffic-light animation belong to AppKit.
+    // Ordinary-window compact controls still use the app's existing reveal behavior.
+    if !fullScreen {
+      let showsToolbar = reservedTitlebar
+      let isRevealingToolbar = showsToolbar && !toolbar.isVisible
+      for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+        window.standardWindowButton(type)?.isHidden = !showsToolbar
+        if isRevealingToolbar { window.standardWindowButton(type)?.alphaValue = 1 }
+      }
+      if toolbar.isVisible != showsToolbar { toolbar.isVisible = showsToolbar }
     }
-    toolbar.isVisible = showsToolbar
-    toolbar.showsBaselineSeparator = false
     surfaceLayout = target
     // No run-loop yield, intermediate outer frame, or forced display is allowed here.
     if !fullScreen, window.frame != target.frame { window.setFrame(target.frame, display: false) }
@@ -605,6 +601,13 @@ final class WindowLayoutHostView: NSView {
         to: layer, bounds: status.bounds, radius: preview.displayCornerRadius,
         scale: window.backingScaleFactor, retainingMask: retainsCornerMask)
     }
+    layoutControls(layout)
+    CATransaction.commit()
+  }
+
+  private func layoutControls(_ layout: WindowSurfaceLayout) {
+    let origin = convert(CGPoint.zero, from: nil)
+    func local(_ rect: CGRect) -> CGRect { rect.offsetBy(dx: origin.x, dy: origin.y) }
     sidebar.frame = local(layout.sidebar)
     sidebar.isHidden = !reservedSidebar
     divider.frame = local(
@@ -612,7 +615,6 @@ final class WindowLayoutHostView: NSView {
     divider.isHidden = sidebar.isHidden
     titlebar.frame = local(layout.titlebar)
     titlebar.isHidden = fullScreen || layout.titlebar.height == 0
-    CATransaction.commit()
   }
 
   private func installDelegate(in window: NSWindow) {
@@ -668,8 +670,16 @@ final class WindowLayoutHostView: NSView {
         guard let self, self.fullScreen, !self.fullScreenTransition, !self.applyingGeometry else {
           return
         }
-        self.layoutSurface()
-        if let layout = self.surfaceLayout { self.onLayoutCommitted?(layout) }
+        guard self.reservedSidebar, let window = self.observedWindow else { return }
+        let layout = WindowSurfaceLayout.resizing(
+          frame: window.frame, sidebar: self.sidebarWidth, titlebar: self.titlebarHeight,
+          externalSidebar: 0, externalTitlebar: 0)
+        self.surfaceLayout = layout
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        self.layoutControls(layout)
+        CATransaction.commit()
+        self.onLayoutCommitted?(layout)
       }
     }
     func observe(
@@ -690,12 +700,13 @@ final class WindowLayoutHostView: NSView {
     observe(NSWindow.didMoveNotification) { $0.moved() }
     observe(NSWindow.willEnterFullScreenNotification) { host in
       host.cancelHide()
-      host.cancelToolbarHide()
+      host.fullScreenTransition = true
       host.chromeAnimator.reset(to: host.desiredChrome)
+      host.toolbarDelegate.button.alphaValue = 1
+      host.toolbarDelegate.button.layer?.transform = CATransform3DIdentity
       host.reservedSidebar = host.configuration.sidebarIsVisible
       host.reservedTitlebar = host.chrome.showsTitlebar
       host.pendingReservationRelease = false
-      host.fullScreenTransition = true
       host.preview.isGeometryChanging = true
       host.sidebarBeforeFullScreen = host.configuration.sidebarIsVisible
       host.layoutSurface()
@@ -704,7 +715,6 @@ final class WindowLayoutHostView: NSView {
       host.fullScreenTransition = false
       host.fullScreen = true
       host.fullScreenSidebarVisible = false
-      host.fullScreenToolbarVisible = false
       host.reservedSidebar = false
       host.preparePreviewGeometry()
       host.chromeAnimator.reset(to: host.desiredChrome)
@@ -720,8 +730,6 @@ final class WindowLayoutHostView: NSView {
       host.fullScreenTransition = false
       host.fullScreen = false
       host.fullScreenSidebarVisible = false
-      host.fullScreenToolbarVisible = false
-      host.cancelToolbarHide()
       host.cancelHide()
       let visible = host.sidebarBeforeFullScreen ?? host.configuration.sidebarIsVisible
       host.sidebarBeforeFullScreen = nil
@@ -837,16 +845,6 @@ final class WindowLayoutHostView: NSView {
       let inside =
         point.x >= 0 && point.x <= window.frame.width
         && point.y >= 0 && point.y <= window.frame.height
-      let topRegion = fullScreenToolbarVisible ? max(measuredTitlebar, titlebarHeight) + 8 : 8
-      if inside && point.y >= window.frame.height - topRegion {
-        cancelToolbarHide()
-        if !fullScreenToolbarVisible {
-          fullScreenToolbarVisible = true
-          commitChrome()
-        }
-      } else {
-        scheduleToolbarHide()
-      }
       if inside && point.x <= 8 {
         cancelHide()
         if !fullScreenSidebarVisible {
@@ -891,25 +889,6 @@ final class WindowLayoutHostView: NSView {
       deadline: .now() + WindowChromeVisibilityState.hideDelay, execute: work)
   }
 
-  private func scheduleToolbarHide() {
-    guard fullScreenToolbarVisible, toolbarHideWork == nil else { return }
-    let work = DispatchWorkItem { [weak self] in
-      guard let self else { return }
-      self.toolbarHideWork = nil
-      guard self.fullScreen, !self.fullScreenTransition else { return }
-      self.fullScreenToolbarVisible = false
-      self.commitChrome()
-    }
-    toolbarHideWork = work
-    DispatchQueue.main.asyncAfter(
-      deadline: .now() + WindowChromeVisibilityState.hideDelay, execute: work)
-  }
-
-  private func cancelToolbarHide() {
-    toolbarHideWork?.cancel()
-    toolbarHideWork = nil
-  }
-
   private func hideFullScreenSidebar() {
     cancelHide()
     guard fullScreen, !fullScreenTransition else { return }
@@ -929,7 +908,6 @@ final class WindowLayoutHostView: NSView {
 
   private func detach() {
     cancelHide()
-    cancelToolbarHide()
     chromeAnimator.reset(to: chromeAnimator.target)
     resizeSession = nil
     resizeConfiguration = nil

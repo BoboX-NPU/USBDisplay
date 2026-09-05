@@ -140,7 +140,7 @@ struct WindowChromeInteractionTests {
       window.close()
     }
     // Match the real SwiftUI scene; the default fixture uses expanded chrome.
-    window.toolbarStyle = .unified
+    window.toolbarStyle = .unifiedCompact
     window.orderFront(nil)
     try await Task.sleep(for: .milliseconds(100))
     func checkPlacement() throws {
@@ -381,12 +381,19 @@ struct WindowChromeInteractionTests {
     window.setFrame(NSScreen.main!.frame, display: false)
     NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
     let video = previewRect(host)
-    #expect(window.toolbar?.isVisible == false)
+    let nativeToolbar = try #require(window.toolbar)
+    var visibilityChanges = 0
+    let observation = nativeToolbar.observe(\.isVisible, options: [.new]) { _, _ in
+      MainActor.assumeIsolated { visibilityChanges += 1 }
+    }
+    defer { observation.invalidate() }
+    #expect(nativeToolbar.isVisible)
     host.updatePointer(CGPoint(x: window.frame.width / 2, y: window.frame.height - 1))
     #expect(window.toolbar?.isVisible == true)
     host.updatePointer(CGPoint(x: window.frame.width / 2, y: window.frame.height / 2))
     try await Task.sleep(for: .milliseconds(650))
-    #expect(window.toolbar?.isVisible == false)
+    #expect(nativeToolbar.isVisible)
+    #expect(visibilityChanges == 0)
     #expect(host.surfaceLayout?.sidebar.width == 0)
     let layoutWindow = try #require(window as? ToolbarLayoutWindow)
     host.toggleSidebar()
@@ -406,7 +413,8 @@ struct WindowChromeInteractionTests {
       host.updatePointer(CGPoint(x: 1, y: window.frame.height / 2))
       finish(host)
       #expect(host.surfaceLayout!.sidebar.width > 0)
-      #expect(window.toolbar?.isVisible == false)
+      #expect(nativeToolbar.isVisible)
+      #expect(visibilityChanges == 0)
       #expect(previewRect(host) == video)
       host.updatePointer(CGPoint(x: window.frame.width / 2, y: window.frame.height / 2))
       try await Task.sleep(for: .milliseconds(650))
@@ -420,6 +428,8 @@ struct WindowChromeInteractionTests {
     host.toggleSidebar()
     finish(host)
     #expect(host.surfaceLayout?.sidebar.width == 0)
+    #expect(visibilityChanges == 0)
+    observation.invalidate()
     NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
     NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
     #expect(window.toolbar?.isVisible == true)

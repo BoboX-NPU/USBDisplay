@@ -1028,3 +1028,39 @@
 ### Remaining Risks or Follow-up Work
 
 - Complete an uninterrupted physical top-edge hover round trip and older-macOS acceptance. Pointer transitions are covered by the integration fixture, while the tool-limited live check confirms the hidden endpoint only.
+
+
+## 2026-09-05 — Use the Native Full-Screen Toolbar Policy
+
+### Summary
+
+- Put the sidebar button in a unified-compact native toolbar so it shares the window-control row. Configure the SwiftUI window owner with `windowToolbarFullScreenVisibility(.onHover)` on macOS 15 and later; retain AppKit full-screen presentation options for macOS 14 compatibility.
+- Remove the manual full-screen toolbar hover state, hide timer, and pointer-driven visibility mutations. Leave toolbar timing, animation, and native button opacity to AppKit after one-time full-screen entry preparation. Keep the existing ordinary-window compact behavior and left-edge sidebar overlay.
+- Update only sidebar/control frames in response to full-screen toolbar inset notifications, skipping this work when the sidebar is hidden. Do not reassign unchanged toolbar labels or update the preview layer from those inset callbacks.
+- Replace the manual-hide test expectation with a check that full-screen pointer/sidebar changes never rewrite native toolbar visibility. Verify the unified-compact toolbar stays clear of native window controls. Correct an older restoration assertion: native toolbar overlay height can be nonzero, while external video insets remain zero.
+
+### Affected Files
+
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Views/DisplayWindowScene.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Final full Debug regression suite: Passed 91 tests, zero failures and zero skips, confirmed by `xcresulttool get test-results summary`. The first broad run had 90 passes and one outdated assertion requiring zero toolbar overlay height; the corrected assertion preserves the actual requirement of zero external video inset. The earlier unrelated USB timeout test passed in the final suite.
+- Canonical Debug build and launch, strict Swift-format lint on changed Swift files, and Git whitespace checks: Passed.
+- Connected iPhone: Observed the compact native control row, entered native full screen, and moved the pointer into the black preview margin. The following screenshot showed the toolbar and white strip hidden with the complete preview occupying the full-screen height. Native View-menu full-screen actions remained available. No phone screenshots were stored in the repository.
+- Continuous frame pacing and a pure-hover reveal/hide recording: Not run. Computer-use snapshots and click/drag actions do not measure animation smoothness. Release build and macOS 14/15 hardware checks: Not run for this change.
+
+### Remaining Risks or Follow-up Work
+
+- Confirm perceived smoothness in repeated physical hover cycles and validate the macOS 14 fallback when available. Automated noninterference and geometry checks are not a frame-by-frame performance measurement.
+
+### API References
+
+- [SwiftUI full-screen toolbar visibility](https://developer.apple.com/documentation/swiftui/windowtoolbarfullscreenvisibility)
+- [AppKit auto-hide toolbar presentation option](https://developer.apple.com/documentation/appkit/nsapplication/presentationoptions-swift.struct/autohidetoolbar)

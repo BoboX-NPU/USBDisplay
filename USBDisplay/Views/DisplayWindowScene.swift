@@ -27,6 +27,7 @@ struct DisplayWindowScene: View {
       onSelectDevice: selectDevice,
       onOpenDeviceInNewWindow: openDeviceInNewWindow
     )
+    .modifier(NativeFullScreenToolbar())
     .onAppear {
       catalog.start()
       if let deviceID {
@@ -78,5 +79,18 @@ struct DisplayWindowScene: View {
 
   private func openDeviceInNewWindow(_ deviceID: String) {
     openWindow(id: "display", value: deviceID)
+  }
+}
+
+/// Keep the full-screen toolbar policy on the SwiftUI window owner. The AppKit
+/// window delegate supplies the equivalent presentation options on macOS 14.
+private struct NativeFullScreenToolbar: ViewModifier {
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if #available(macOS 15.0, *) {
+      content.windowToolbarFullScreenVisibility(.onHover)
+    } else {
+      content
+    }
   }
 }

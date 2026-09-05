@@ -17,7 +17,7 @@ struct IPhoneUSBDisplayApp: App {
     }
     .defaultSize(width: 980, height: 720)
     .windowResizability(.automatic)
-    .windowToolbarStyle(.unified)
+    .windowToolbarStyle(.unifiedCompact)
   }
 }
 

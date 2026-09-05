@@ -576,7 +576,11 @@ struct WindowLayoutIntegrationTests {
       window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
       NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
       #expect(host.surfaceLayout?.preview.height == window.frame.height)
-      #expect(host.surfaceLayout?.titlebar.height == 0)
+      // The native toolbar may overlay the sidebar; it never reserves video space.
+      #expect(host.surfaceLayout?.externalTitlebar == 0)
+      #expect(
+        host.surfaceLayout?.titlebar.height
+          == max(0, window.frame.height - window.contentLayoutRect.maxY))
       host.updateConfiguration(configuration(sidebar: !visible))
       NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
       NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
