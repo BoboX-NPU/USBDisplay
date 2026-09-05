@@ -633,10 +633,13 @@ struct WindowLayoutIntegrationTests {
     #expect(window.backgroundColor == .clear)
     #expect(host.layer?.cornerRadius == 0)
     #expect(host.preview.layer?.masksToBounds == true)
-    #expect((host.preview.layer?.cornerRadius ?? 0) > 0)
+    #expect(host.preview.displayCornerRadius > 0)
+    #expect(host.preview.layer?.cornerRadius == 0)
+    #expect(host.preview.layer?.mask is CAShapeLayer)
     #expect(window.titlebarAppearsTransparent)
     host.revealTitlebar()
     #expect(host.preview.layer?.cornerRadius == 0)
+    #expect(host.preview.layer?.mask == nil)
     #expect(!window.isOpaque)
   }
 

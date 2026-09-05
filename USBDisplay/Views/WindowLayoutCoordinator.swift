@@ -107,6 +107,7 @@ final class WindowLayoutHostView: NSView {
   let preview: PreviewHostView
   private let sidebar = NSHostingView(rootView: AnyView(EmptyView()))
   private let status = NSHostingView(rootView: AnyView(EmptyView()))
+  private let statusMask = RoundedContentMask()
   private let titlebar = NSView()
   private let divider = NSView()
   private var configuration: WindowLayoutConfiguration
@@ -406,9 +407,11 @@ final class WindowLayoutHostView: NSView {
       fillsBounds: !fullScreen && !fullScreenTransition && !usesPlaceholderLayout)
     status.frame = local(layout.preview)
     status.wantsLayer = true
-    status.layer?.cornerRadius = preview.layer?.cornerRadius ?? 0
-    status.layer?.cornerCurve = .continuous
-    status.layer?.masksToBounds = true
+    if let layer = status.layer {
+      statusMask.apply(
+        to: layer, bounds: status.bounds, radius: preview.displayCornerRadius,
+        scale: window.backingScaleFactor)
+    }
     sidebar.frame = local(layout.sidebar)
     sidebar.isHidden = !layoutConfiguration.sidebarIsVisible
     divider.frame = local(

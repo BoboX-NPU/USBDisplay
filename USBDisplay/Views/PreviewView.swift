@@ -1,12 +1,15 @@
 @preconcurrency import AVFoundation
 import AppKit
+import SwiftUI
 
 @MainActor
 final class PreviewHostView: NSView {
   private let previewLayer = AVCaptureVideoPreviewLayer()
+  private let contentMask = RoundedContentMask()
   private var aspectRatioTimer: Timer?
   private var lastReportedAspectRatio: Double?
   private var cornerFraction = 0.0
+  private(set) var displayCornerRadius: CGFloat = 0
 
   var onGeometryApplied: (() -> Void)?
   var onAspectRatioChanged: ((Double, Double) -> Void)?
@@ -17,7 +20,6 @@ final class PreviewHostView: NSView {
     layer = CALayer()
     layer?.backgroundColor = NSColor.black.cgColor
     layer?.masksToBounds = true
-    layer?.cornerCurve = .continuous
 
     previewLayer.videoGravity = .resizeAspect
     previewLayer.backgroundColor = NSColor.black.cgColor
@@ -77,10 +79,12 @@ final class PreviewHostView: NSView {
     if layer?.contentsScale != scale { layer?.contentsScale = scale }
     if previewLayer.contentsScale != scale { previewLayer.contentsScale = scale }
     if previewLayer.frame != bounds { previewLayer.frame = bounds }
-    let radius = CGFloat(
+    displayCornerRadius = CGFloat(
       DisplayCornerProfileResolver.cornerRadius(
         shortSide: min(bounds.width, bounds.height), fraction: cornerFraction))
-    if layer?.cornerRadius != radius { layer?.cornerRadius = radius }
+    if let layer {
+      contentMask.apply(to: layer, bounds: bounds, radius: displayCornerRadius, scale: scale)
+    }
     CATransaction.commit()
   }
 
@@ -157,4 +161,39 @@ final class PreviewHostView: NSView {
     ]
   }
 
+}
+
+/// One complete alpha shape clips the background and video together. The mask
+/// stays attached across resizes and changes geometry in the caller's transaction.
+@MainActor
+final class RoundedContentMask {
+  private let shape = CAShapeLayer()
+  private var pathSize = CGSize.zero
+  private var pathRadius: CGFloat = -1
+
+  init() {
+    shape.fillColor = NSColor.black.cgColor
+    shape.strokeColor = nil
+    shape.actions = [
+      "bounds": NSNull(), "position": NSNull(), "path": NSNull(),
+      "contentsScale": NSNull(),
+    ]
+  }
+
+  func apply(to layer: CALayer, bounds: CGRect, radius: CGFloat, scale: CGFloat) {
+    guard radius > 0, !bounds.isEmpty else {
+      if layer.mask != nil { layer.mask = nil }
+      return
+    }
+    if shape.frame != bounds { shape.frame = bounds }
+    if shape.contentsScale != scale { shape.contentsScale = scale }
+    if pathSize != bounds.size || pathRadius != radius {
+      shape.path =
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+        .path(in: CGRect(origin: .zero, size: bounds.size)).cgPath
+      pathSize = bounds.size
+      pathRadius = radius
+    }
+    if layer.mask !== shape { layer.mask = shape }
+  }
 }

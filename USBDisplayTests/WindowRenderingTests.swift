@@ -47,25 +47,32 @@ struct WindowRenderingTests {
       frame: CGRect(x: 0, y: 0, width: 238, height: 516),
       cornerFraction: fraction, fillsBounds: true)
     let video = try #require(preview.layer?.sublayers?.first as? AVCaptureVideoPreviewLayer)
+    let mask = try #require(preview.layer?.mask as? CAShapeLayer)
     for step in 0..<40 {
       let height = 400 + Double(step) * 3.25
       preview.setFrameSize(CGSize(width: ceil(height * 402 / 874), height: height))
       #expect(video.frame == preview.bounds)
       #expect(
-        abs((preview.layer?.cornerRadius ?? 0) - preview.bounds.width * CGFloat(fraction))
+        abs(preview.displayCornerRadius - preview.bounds.width * CGFloat(fraction))
           < 0.000001)
+      #expect(preview.layer?.mask === mask)
+      #expect(mask.frame == preview.bounds)
+      #expect(mask.path?.boundingBoxOfPath == preview.bounds)
+      #expect(mask.animationKeys()?.isEmpty ?? true)
       #expect(video.animationKeys()?.isEmpty ?? true)
       #expect(preview.layer?.animationKeys()?.isEmpty ?? true)
     }
     preview.setBoundsSize(CGSize(width: 200, height: 435))
     #expect(video.frame == preview.bounds)
-    #expect(abs((preview.layer?.cornerRadius ?? 0) - CGFloat(200 * fraction)) < 0.000001)
+    #expect(abs(preview.displayCornerRadius - CGFloat(200 * fraction)) < 0.000001)
+    #expect(mask.frame == preview.bounds)
     #expect(video.videoGravity == .resizeAspectFill)
     preview.applyGeometry(
       frame: CGRect(x: 0, y: 0, width: 1000, height: 800),
       cornerFraction: 0, fillsBounds: false)
     #expect(video.videoGravity == .resizeAspect)
     #expect(preview.layer?.cornerRadius == 0)
+    #expect(preview.layer?.mask == nil)
   }
 
   @Test func fractionalPhoneGeometryCoversTheCommittedWindowImmediately() async throws {
@@ -193,12 +200,23 @@ struct WindowRenderingTests {
       let bitmap = try #require(frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds))
       frameView.cacheDisplay(in: frameView.bounds, to: bitmap)
       if compact {
-        for (x, y) in [
-          (1, 1), (bitmap.pixelsWide - 2, 1), (1, bitmap.pixelsHigh - 2),
-          (bitmap.pixelsWide - 2, bitmap.pixelsHigh - 2),
-        ] {
-          let corner = try #require(bitmap.colorAt(x: x, y: y))
-          #expect(corner.alphaComponent < 0.02)
+        // Check the whole outer corner strip, including the mid-corner areas
+        // where stale rectangular video fragments can survive a resize.
+        let reach = Int(Double(bitmap.pixelsWide) * 62 / 402 * 0.75)
+        for offset in 0..<reach {
+          for inset in 0..<2 {
+            for (x, y) in [
+              (offset, inset), (bitmap.pixelsWide - 1 - offset, inset),
+              (offset, bitmap.pixelsHigh - 1 - inset),
+              (bitmap.pixelsWide - 1 - offset, bitmap.pixelsHigh - 1 - inset),
+              (inset, offset), (bitmap.pixelsWide - 1 - inset, offset),
+              (inset, bitmap.pixelsHigh - 1 - offset),
+              (bitmap.pixelsWide - 1 - inset, bitmap.pixelsHigh - 1 - offset),
+            ] {
+              let corner = try #require(bitmap.colorAt(x: x, y: y))
+              #expect(corner.alphaComponent < 0.02)
+            }
+          }
         }
       }
       // Sample the center and the newly exposed edges, away from the corner mask.

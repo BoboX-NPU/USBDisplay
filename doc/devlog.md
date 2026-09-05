@@ -816,3 +816,37 @@
 ### Remaining Risks or Follow-up Work
 
 - None specific to this row presentation change. Existing capture and window acceptance items remain unchanged.
+
+
+## 2026-09-05 — Clip Compact Previews with Explicit Alpha Masks
+
+### Summary
+
+- Respond to the supplied compact-window image showing rectangular fragments and isolated pixels outside the rounded video outline.
+- Replace implicit layer corner clipping with a persistent `CAShapeLayer` alpha mask covering the complete preview, including video and black backing. Build its path from SwiftUI's continuous rounded rectangle using the existing model-derived radius. The preview layer, session, device profiles, and proportional window geometry remain unchanged.
+- Update mask bounds, path, and backing scale in the same nonanimated transaction as the preview. Reuse the mask across resizes and regenerate its path only for size/radius changes. Remove it for zero-radius, expanded, and full-screen presentation. Give the status overlay its own matching mask.
+- Expand corner checks beyond the former extreme-corner sample to the entire two-pixel outer strip through 75% of the reference radius at every corner.
+- API reference: Apple's [CALayer mask documentation](https://developer.apple.com/documentation/quartzcore/calayer/mask) specifies alpha clipping of both layer content and background and requires the mask's size and position to align with its target.
+
+### Affected Files
+
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Baseline expanded corner-strip check: Passed all 5 rendering-suite tests with the old implicit mask. The user's supplied image is evidence of the live artifact; the bitmap test did not reproduce it. No underlying WindowServer or hardware-driver cause is claimed proven.
+- Final full Debug suite: Passed 75 tests, zero failures and zero skips. Updated tests verify the explicit mask persists across 40 preview resizes, follows a direct bounds change without implicit animations, and is removed outside compact mode. Dynamic composed-window checks passed all four outer corner strips and straight edges; existing chrome, source-ratio, empty-state, identity, and capture coverage passed.
+- Debug and Release builds, canonical `./script/build_and_run.sh --verify`, strict recursive Swift-format lint, working-tree/staged whitespace checks, and strict Debug/Release signature verification: Passed. Python catalog-generator tests were not rerun because the catalog and generator were unchanged.
+- Connected iPhone: Live colored home-screen snapshots showed clean rounded boundaries in compact mode. A computer-use bottom-right drag enlarged the window from approximately 211-by-458 to 271-by-590 image pixels. Further live activity logged two drags with 47 and 28 constrained proposals; a later approximately 233-by-508 snapshot showed clean corners after shrinking. Video content changed between observations, and the preview was not replaced with a still image.
+- Further scripted drags were rejected while computer use reported concurrent user changes. The recorded additional drags are live-session observations, not claimed as successful scripted gestures. Native Zoom did not establish a distinct size change in this run and is not counted as resize evidence.
+- Continuous WindowServer recording and exhaustive eight-handle/hover-interleaving acceptance: Not run. JPEG snapshots establish visible endpoint appearance, while alpha assertions come from the composed AppKit bitmap checks. No phone screenshots or temporary telemetry files were committed.
+
+### Remaining Risks or Follow-up Work
+
+- Complete all-eight-handle, rapid-reversal, hover/resize, and frame-by-frame WindowServer validation. Recheck the exact original artifact if it recurs; the baseline bitmap test cannot isolate its cause.
+- Existing multi-device, older-macOS, physical full-screen/rotation, and first-frame capture timing acceptance items remain as recorded in the current state.
