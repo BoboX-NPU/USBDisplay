@@ -113,7 +113,7 @@ struct WindowChromeInteractionTests {
     ratio: Double? = 0.5, clock: @escaping () -> TimeInterval = CACurrentMediaTime
   ) -> (NSWindow, WindowLayoutHostView) {
     let screen = NSScreen.main!.visibleFrame
-    let window = NSWindow(
+    let window = ToolbarLayoutWindow(
       contentRect: CGRect(x: screen.midX - 200, y: screen.minY + 100, width: 471, height: 500),
       styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
     window.isReleasedWhenClosed = false
@@ -382,6 +382,20 @@ struct WindowChromeInteractionTests {
     NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
     let video = previewRect(host)
     #expect(host.surfaceLayout?.sidebar.width == 0)
+    let layoutWindow = try #require(window as? ToolbarLayoutWindow)
+    host.toggleSidebar()
+    finish(host)
+    let outerFrame = window.frame
+    for inset in [0.0, 20.0, 42.0, 60.0, 20.0, 0.0] {
+      layoutWindow.setUnobscuredContent(
+        CGRect(x: 0, y: 0, width: window.frame.width, height: window.frame.height - inset))
+      #expect(abs(host.surfaceLayout!.sidebar.maxY - (window.frame.height - inset)) < 0.000001)
+      #expect(host.surfaceLayout?.sidebar.minY == 0)
+      #expect(previewRect(host) == video)
+      #expect(window.frame == outerFrame)
+    }
+    host.toggleSidebar()
+    finish(host)
     for _ in 0..<3 {
       host.updatePointer(CGPoint(x: 1, y: window.frame.height / 2))
       finish(host)
@@ -459,5 +473,18 @@ struct WindowChromeInteractionTests {
     host.updateConfiguration(configuration(sidebar: false, ratio: 2))
     finish(host)
     #expect(previewRect(host) == video)
+  }
+}
+
+@MainActor
+private final class ToolbarLayoutWindow: NSWindow {
+  private var unobscuredContent: CGRect?
+
+  override var contentLayoutRect: NSRect { unobscuredContent ?? super.contentLayoutRect }
+
+  func setUnobscuredContent(_ rect: CGRect) {
+    willChangeValue(forKey: "contentLayoutRect")
+    unobscuredContent = rect
+    didChangeValue(forKey: "contentLayoutRect")
   }
 }

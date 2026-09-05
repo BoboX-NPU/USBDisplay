@@ -153,6 +153,7 @@ final class WindowLayoutHostView: NSView {
   private var originalShadow = true
   private var originalMouseMoved = false
   private var observers: [NSObjectProtocol] = []
+  private var contentLayoutObservation: NSKeyValueObservation?
   private var mouseMonitor: Any?
   private var tracking: NSTrackingArea?
   private var hideWork: DispatchWorkItem?
@@ -386,7 +387,12 @@ final class WindowLayoutHostView: NSView {
     return WindowLayoutPolicy.sidebarContribution(
       width: layoutConfiguration.sidebarWidth, isVisible: reservedSidebar)
   }
-  private var titlebarHeight: Double { !fullScreen && reservedTitlebar ? measuredTitlebar : 0 }
+  private var titlebarHeight: Double {
+    if fullScreen, let window = observedWindow {
+      return min(window.frame.height, max(0, window.frame.height - window.contentLayoutRect.maxY))
+    }
+    return reservedTitlebar ? measuredTitlebar : 0
+  }
   private var screenFrame: CGRect {
     observedWindow?.screen?.visibleFrame ?? CGRect(x: -5000, y: -5000, width: 10000, height: 10000)
   }
@@ -560,7 +566,7 @@ final class WindowLayoutHostView: NSView {
       layout = current
     } else if fullScreen {
       layout = .resizing(
-        frame: window.frame, sidebar: sidebarWidth, titlebar: 0,
+        frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
         externalSidebar: 0, externalTitlebar: 0)
       surfaceLayout = layout
     } else if usesPlaceholderLayout {
@@ -597,7 +603,7 @@ final class WindowLayoutHostView: NSView {
       CGRect(x: max(0, layout.sidebar.maxX - 1), y: 0, width: 1, height: layout.sidebar.height))
     divider.isHidden = sidebar.isHidden
     titlebar.frame = local(layout.titlebar)
-    titlebar.isHidden = layout.titlebar.height == 0
+    titlebar.isHidden = fullScreen || layout.titlebar.height == 0
     CATransaction.commit()
   }
 
@@ -646,6 +652,18 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func installObservers(in window: NSWindow) {
+    // Full-screen auto-hide chrome changes the unobscured content rectangle
+    // without resizing the window. Only relayout children; never move native chrome.
+    contentLayoutObservation = window.observe(\.contentLayoutRect, options: [.new]) {
+      [weak self] _, _ in
+      MainActor.assumeIsolated {
+        guard let self, self.fullScreen, !self.fullScreenTransition, !self.applyingGeometry else {
+          return
+        }
+        self.layoutSurface()
+        if let layout = self.surfaceLayout { self.onLayoutCommitted?(layout) }
+      }
+    }
     func observe(
       _ name: Notification.Name, action: @escaping @MainActor (WindowLayoutHostView) -> Void
     ) {
@@ -878,6 +896,8 @@ final class WindowLayoutHostView: NSView {
     preview.isGeometryChanging = false
     setupWork?.cancel()
     setupWork = nil
+    contentLayoutObservation?.invalidate()
+    contentLayoutObservation = nil
     observers.forEach(NotificationCenter.default.removeObserver)
     observers.removeAll()
     if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }

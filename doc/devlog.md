@@ -973,3 +973,30 @@
 ### Remaining Risks or Follow-up Work
 
 - Confirm pure top-edge hover/reveal and physical exit restoration, especially on macOS 14/15. The native auto-hide contract and presentation options are covered by Apple's API documentation and regression assertions; they do not replace physical hover acceptance.
+
+
+## 2026-09-05 — Keep Full-Screen Sidebar Below the Toolbar
+
+### Summary
+
+- Derive the full-screen sidebar's top inset from `NSWindow.contentLayoutRect`, subtracting only the native toolbar's actual occupied height.
+- Observe changes to that KVO-compliant rectangle so the sidebar and divider respond to native toolbar reveal/hide without moving the toolbar, resizing the outer window, or changing the full-screen preview rectangle. Remove the observer when the host detaches.
+- Keep the app-owned titlebar background hidden in full screen to avoid duplicating native chrome.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- All 10 `WindowChromeInteractionTests`: Passed. Extended the existing full-screen test with observable unobscured-content changes at 0, 20, 42, 60, 20, and 0 points; verified sidebar top/bottom placement and unchanged video/window geometry. Initial exact floating-point comparisons failed despite identical rounded values; a one-millionth-point tolerance fixed the assertion.
+- Canonical Debug build and launch, strict Swift-format lint on changed files, and Git whitespace checks: Passed.
+- Connected iPhone: Show Sidebar displayed the Devices header and complete device row below the visible native toolbar; the toolbar remained at its existing top position. A left-edge gesture also revealed the sidebar below the still-visible toolbar. No phone screenshots were saved in the repository.
+- Full regression suite and Release build: Not run. Existing unrelated USB timeout failure was not rerun.
+
+### Remaining Risks or Follow-up Work
+
+- Pure-hover toolbar hiding and the resulting physical return to a zero sidebar inset were not conclusively reproduced with computer use; zero-inset restoration is covered by the KVO integration fixture. Older macOS and continuous transition acceptance remain outstanding.
