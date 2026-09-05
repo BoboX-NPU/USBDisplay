@@ -152,31 +152,25 @@ struct WindowLayoutPolicyTests {
 
   @Test
   func widthDrivenResizeAdjustsHeight() {
-    let size = WindowLayoutPolicy.constrainedResize(
-      proposedSize: WindowContentSize(width: 1021, height: 600),
-      previousSize: WindowContentSize(width: 821, height: 600),
-      aspectRatio: 4.0 / 3.0,
-      sidebarWidth: 220,
-      sidebarIsVisible: true,
-      maximumSize: WindowContentSize(width: 1600, height: 1000)
-    )
-
-    #expect(size == WindowContentSize(width: 1021, height: 600))
+    var session = ResizeSession(
+      frame: CGRect(x: 0, y: 0, width: 821, height: 600), aspectRatio: 4.0 / 3.0,
+      externalSidebar: 221, externalTitlebar: 0, strategy: .width)
+    let size = session.constrain(
+      CGSize(width: 1021, height: 600),
+      maximumSize: CGSize(width: 1600, height: 1000))
+    #expect(size == CGSize(width: 1021, height: 600))
   }
 
   @Test
   func heightDrivenResizeAdjustsWidth() {
-    let size = WindowLayoutPolicy.constrainedResize(
-      proposedSize: WindowContentSize(width: 821, height: 700),
-      previousSize: WindowContentSize(width: 821, height: 600),
-      aspectRatio: 4.0 / 3.0,
-      sidebarWidth: 220,
-      sidebarIsVisible: true,
-      maximumSize: WindowContentSize(width: 1600, height: 1000)
-    )
-
-    #expect(abs((size?.width ?? 0) - 1154.3333333333333) < 0.001)
-    #expect(size?.height == 700)
+    var session = ResizeSession(
+      frame: CGRect(x: 0, y: 0, width: 821, height: 600), aspectRatio: 4.0 / 3.0,
+      externalSidebar: 221, externalTitlebar: 0, strategy: .height)
+    let size = session.constrain(
+      CGSize(width: 821, height: 700),
+      maximumSize: CGSize(width: 1600, height: 1000))
+    #expect(abs(size.width - 1154.3333333333333) < 0.001)
+    #expect(size.height == 700)
   }
 
   @Test
@@ -350,7 +344,7 @@ struct WindowLayoutIntegrationTests {
       styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
     window.isReleasedWhenClosed = false
     let host = WindowLayoutHostView(
-      configuration: configuration(sidebar: true, aspectRatio: aspectRatio))
+      configuration: configuration(sidebar: true, aspectRatio: aspectRatio), animatesChrome: false)
     window.contentView = host
     return (window, host)
   }
@@ -522,11 +516,17 @@ struct WindowLayoutIntegrationTests {
         for _ in 0..<10 {
           let proposal = CGSize(
             width: window.frame.width + delta.width, height: window.frame.height + delta.height)
+          let insets = try #require(host.surfaceLayout)
           let size = try #require(window.delegate?.windowWillResize?(window, to: proposal))
+          #expect(
+            abs(
+              (size.width - insets.externalSidebar)
+                / (size.height - insets.externalTitlebar) - 0.5) < 0.00001)
           window.setFrame(CGRect(origin: window.frame.origin, size: size), display: false)
           host.layoutSubtreeIfNeeded()
           let rect = screenRect(host)
-          #expect(abs(rect.width / rect.height - 0.5) < 0.00001)
+          // AppKit rounds a fractional diagonal projection to backing pixels.
+          #expect(abs(rect.width - rect.height * 0.5) <= 1 / window.backingScaleFactor + 0.00001)
         }
         let released = window.frame
         NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)

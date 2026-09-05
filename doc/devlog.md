@@ -850,3 +850,44 @@
 
 - Complete all-eight-handle, rapid-reversal, hover/resize, and frame-by-frame WindowServer validation. Recheck the exact original artifact if it recurs; the baseline bitmap test cannot isolate its cause.
 - Existing multi-device, older-macOS, physical full-screen/rotation, and first-frame capture timing acceptance items remain as recorded in the current state.
+
+
+## 2026-09-05 — Stabilize Live Resizing and Animate Window Controls
+
+### Summary
+
+- Replace per-event width/height arbitration with a per-window resize session. A read-only reproduction of the old solver returned widths 301, 300, 303, 300 for monotonically increasing proposals 301, 302, 303, 304. The new solver selects one strategy per gesture, uses raw proposals, freezes actual control insets and screen limits, and leaves origin/anchor handling to AppKit.
+- Keep width-driven edges, height-driven edges, and proportional corner projection in one constraint path, with shared minimum/maximum handling and no post-release size correction. Preserve user video geometry when a completed control fade releases reserved space after a drag.
+- Introduce a 200-millisecond display-linked control timeline with 8-point travel and fading. Retarget from the current presentation, retain space until closing completes, remove travel under Reduce Motion, and preserve the 30/70 empty-state endpoint. Full-screen native chrome remains system-managed.
+- Keep the same capture session, preview view, video layer, and explicit continuous masks. Update controls and masks without implicit animations or per-frame outer-window resizing. Coalesce explicit preview frame/bounds updates, preserve mask path topology at transition endpoints, and keep the black backing inside the same clip.
+- Freeze source-ratio publication during geometry changes and require two consistent samples before accepting a subsequent ratio change. Keep the first usable sample immediate. Replace the toolbar item's implicit content with an app-owned native button, preserving navigation placement and accessibility labels.
+
+### Affected Files
+
+- `USBDisplay/Models/ResizeSession.swift`
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Views/WindowChromeAnimator.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Final full Debug regression suite: Passed 89 Swift tests, zero failures and zero skips. Fourteen added tests cover raw monotonic proposals; eight handle strategies; diagonal projection, noise and clamp reversal; ratio confirmation; every sampled stage of 20 animated open/close cycles; rapid reversal and metadata updates; drag takeover; hover timelines; separate windows; empty proportions; deferred disconnect/rotation; full-screen cleanup; and edge overlay without video shrinkage.
+- Rendered transition checks: Passed current red/blue center and edge colors, stable video-layer identity and screen-space preview rectangle, and all four transparent corner samples at intermediate progress, including light/dark composition. Existing full corner-strip and fractional-window rendering regressions passed. Model-time sampling is separate from live WindowServer frame capture.
+- Debug and Release builds, canonical `./script/build_and_run.sh --verify`, strict recursive Swift-format lint, working-tree whitespace checks, and strict Debug/Release bundle signature verification: Passed. The usual App Intents metadata warning reports that this target does not link AppIntents.framework.
+- During development, corrected duplicate new Xcode file-reference IDs and Swift Testing assertions involving mutating methods/mixed numeric types. Updated the old exact-window-ratio assertion to distinguish exact delegate results from one-backing-pixel AppKit rounding. A reversal test initially depended on a 60-millisecond task wake-up and failed when scheduling passed the animation deadline; the final test uses the animator's injected clock. The final full suite passed after those corrections.
+- Connected iPhone: the relaunched app identified iPhone 16 Pro and displayed live content with clean compact rounded boundaries in observed snapshots. Diagnostics recorded a real resize from 09:03:11.217 to 09:03:15.459 with 341 constrained proposals. This was observed session activity, not a successfully automated gesture or frame-by-frame proof of smoothness.
+- Native View-menu full-screen entry/exit: Completed. The complete portrait picture appeared with necessary side bars; exit restored compact rounded presentation at approximately its previous size. No phone screenshots or temporary diagnostics were added to the repository.
+- Computer-use right-edge drag attempts: Not completed. One attempt required refreshing a changed application instance/state; two further attempts returned `windowNotFoundAtPosition`, including after raising the window. A transient toolbar item after full-screen exit expired before a click, so that attempt is not counted as sidebar validation. The available tool provides no hover-only gesture or continuous window recording.
+- Physical all-eight-handle dragging, rapid reversal and hover interleaving, 20 sidebar round trips, rotation, unplug/replug, multiple physical devices, screen-edge overlay, Reduce Motion, and continuous WindowServer frame pacing: Not run to completion. Unconnected iPhone 17 models/iPads are not claimed as hardware passes. The nine Python generator tests were not rerun because catalog data/generation were unchanged; the Swift catalog regression passed.
+
+### Remaining Risks or Follow-up Work
+
+- Complete physical all-handle anchoring and smoothness acceptance, sidebar/hover interleaving, and continuous video capture over contrasting backgrounds. Endpoint screenshots and proportional delegate tests cannot rule out a transient compositor or driver artifact.
+- Recheck real rotation, reconnect, monitor changes/edge overlays, multiple devices, Reduce Motion, and macOS 14/15 native toolbar behavior. Existing capture first-frame timing, distribution/signing, and external latency measurements remain separate acceptance items.

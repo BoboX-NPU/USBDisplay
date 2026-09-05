@@ -83,7 +83,7 @@ struct WindowRenderingTests {
     let config = WindowLayoutConfiguration(
       title: "Fractional phone geometry", aspectRatio: 402.0 / 874,
       sidebarWidth: 220, sidebarIsVisible: true, cornerRadiusFraction: 62.0 / 402)
-    let surface = WindowLayoutHostView(configuration: config)
+    let surface = WindowLayoutHostView(configuration: config, animatesChrome: false)
     window.contentView = NSHostingView(
       rootView: RenderingFixture(surface: surface).ignoresSafeArea())
     window.orderFront(nil)
@@ -131,9 +131,10 @@ struct WindowRenderingTests {
     let host = try #require(window.contentView.flatMap { surface(in: $0) })
     let wasVisible = (host.surfaceLayout?.sidebar.width ?? 0) > 0
     if wasVisible { host.toggleSidebar() }
-    try await Task.sleep(for: .milliseconds(100))
+    try await Task.sleep(for: .milliseconds(250))
     defer { if wasVisible { host.toggleSidebar() } }
     host.hideTitlebar()
+    try await Task.sleep(for: .milliseconds(250))
     #expect(window.styleMask.contains(.titled))
     #expect(!window.hasShadow)
     #expect(window.canBecomeKey)
@@ -153,7 +154,7 @@ struct WindowRenderingTests {
     let config = WindowLayoutConfiguration(
       title: "Synthetic rendering test", aspectRatio: 402.0 / 874,
       sidebarWidth: 220, sidebarIsVisible: false, cornerRadiusFraction: 62.0 / 402)
-    let surface = WindowLayoutHostView(configuration: config)
+    let surface = WindowLayoutHostView(configuration: config, animatesChrome: false)
     let hosting = NSHostingView(rootView: RenderingFixture(surface: surface).ignoresSafeArea())
     window.contentView = hosting
     window.orderFront(nil)
@@ -275,6 +276,86 @@ struct WindowRenderingTests {
       }
     }
     surface.preview.onGeometryApplied = nil
+  }
+
+  @Test func animatedChromeKeepsDynamicEdgesAndClipsEveryIntermediateCorner() async throws {
+    let window = NSWindow(
+      contentRect: CGRect(x: 500, y: 150, width: 459, height: 568),
+      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    let config = WindowLayoutConfiguration(
+      title: "Animated rendering fixture", aspectRatio: 402.0 / 874, sidebarWidth: 220,
+      sidebarIsVisible: true, cornerRadiusFraction: 62.0 / 402)
+    let surface = WindowLayoutHostView(configuration: config)
+    window.contentView = NSHostingView(
+      rootView: RenderingFixture(surface: surface).ignoresSafeArea())
+    window.orderFront(nil)
+    defer {
+      surface.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let pattern = CALayer()
+    pattern.frame = surface.preview.bounds
+    surface.preview.layer?.addSublayer(pattern)
+    defer { pattern.removeFromSuperlayer() }
+    let video = surface.preview.layer?.sublayers?.first
+    let expected = window.convertToScreen(surface.preview.convert(surface.preview.bounds, to: nil))
+    for visible in [false, true] {
+      surface.updateConfiguration(config.showingSidebar(visible))
+      let start = try #require(surface.chromeAnimator.startedAt)
+      for (index, progress) in [0.0, 0.25, 0.5, 0.75, 1].enumerated() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let color = index.isMultiple(of: 2) ? NSColor.red : NSColor.blue
+        pattern.backgroundColor = color.cgColor
+        surface.chromeAnimator.advance(to: start + progress * WindowChromeAnimator.duration)
+        CATransaction.commit()
+        #expect(surface.preview.layer?.sublayers?.first === video)
+        #expect(
+          window.convertToScreen(surface.preview.convert(surface.preview.bounds, to: nil))
+            == expected)
+        let frameView = try #require(window.contentView?.superview)
+        let bitmap = try #require(frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds))
+        frameView.cacheDisplay(in: frameView.bounds, to: bitmap)
+        let rect = frameView.convert(surface.preview.bounds, from: surface.preview)
+        let scale = Double(bitmap.pixelsWide) / frameView.bounds.width
+        let inset = 0.5 / scale
+        for point in [
+          CGPoint(x: rect.midX, y: rect.midY), CGPoint(x: rect.minX + inset, y: rect.midY),
+          CGPoint(x: rect.maxX - inset, y: rect.midY), CGPoint(x: rect.midX, y: rect.minY + inset),
+          CGPoint(x: rect.midX, y: rect.maxY - inset),
+        ] {
+          let pixel = try #require(
+            bitmap.colorAt(
+              x: Int(point.x * scale), y: bitmap.pixelsHigh - 1 - Int(point.y * scale))?
+              .usingColorSpace(.sRGB))
+          #expect(pixel.alphaComponent > 0.98)
+          #expect(index.isMultiple(of: 2) ? pixel.redComponent > 0.8 : pixel.blueComponent > 0.8)
+        }
+        if surface.preview.displayCornerRadius > 4 {
+          for point in [
+            CGPoint(x: rect.minX + inset, y: rect.minY + inset),
+            CGPoint(x: rect.maxX - inset, y: rect.minY + inset),
+            CGPoint(x: rect.minX + inset, y: rect.maxY - inset),
+            CGPoint(x: rect.maxX - inset, y: rect.maxY - inset),
+          ] {
+            let pixel = try #require(
+              bitmap.colorAt(
+                x: Int(point.x * scale), y: bitmap.pixelsHigh - 1 - Int(point.y * scale)))
+            #expect(pixel.alphaComponent < 0.02)
+            // Source-over on either a dark or a light desktop retains that
+            // background at a transparent corner, throughout the transition.
+            for background in [0.0, 1.0] {
+              let composed =
+                pixel.alphaComponent * pixel.redComponent
+                + (1 - pixel.alphaComponent) * background
+              #expect(abs(composed - background) < 0.02)
+            }
+          }
+        }
+      }
+    }
   }
 }
 

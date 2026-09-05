@@ -151,37 +151,6 @@ enum WindowLayoutPolicy {
     )
   }
 
-  static func constrainedResize(
-    proposedSize: WindowContentSize,
-    previousSize: WindowContentSize,
-    aspectRatio: Double,
-    sidebarWidth: Double,
-    sidebarIsVisible: Bool,
-    maximumSize: WindowContentSize
-  ) -> WindowContentSize? {
-    let sidebar = sidebarContribution(width: sidebarWidth, isVisible: sidebarIsVisible)
-    let widthDelta = abs(proposedSize.width - previousSize.width)
-    let heightDelta = abs(proposedSize.height - previousSize.height) * aspectRatio
-    let previewHeight: Double
-
-    if widthDelta > heightDelta {
-      previewHeight = max(
-        (proposedSize.width - sidebar) / aspectRatio,
-        minimumPreviewHeight
-      )
-    } else {
-      previewHeight = max(proposedSize.height, minimumPreviewHeight)
-    }
-
-    return sizePreservingHeight(
-      currentHeight: previewHeight,
-      aspectRatio: aspectRatio,
-      sidebarWidth: sidebarWidth,
-      sidebarIsVisible: sidebarIsVisible,
-      maximumSize: maximumSize
-    )
-  }
-
   static func shouldConstrainWindow(isFullScreen: Bool, aspectRatio: Double?) -> Bool {
     guard !isFullScreen, let aspectRatio else { return false }
     return validAspectRatio(width: aspectRatio, height: 1) != nil
