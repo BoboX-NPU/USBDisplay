@@ -730,3 +730,30 @@
 - Recheck the final build with only the hovered titlebar visible and the sidebar closed, against light and dark backgrounds. Record actual WindowServer frames if any white line or flash remains.
 - Investigate the initially narrow restored window and delayed/black preview observed after relaunch. Native Zoom recovered playback during this run; startup behavior was not changed or claimed fixed.
 - Existing multi-device, rotation, monitor-edge, full-screen hardware, older macOS, and performance acceptance work remains as recorded in the current project state.
+
+## 2026-09-05 — Show Only Device Models in the Sidebar
+
+### Summary
+
+- Replace the device-name/status stack with a single model label, such as `iPhone 16 Pro`.
+- Remove automatic-corner, missing-profile, and identification-status annotations and their tooltip. Fall back to ProductType, then the capture name, when a model name is unavailable.
+- Preserve automatic corner selection, identity matching, capture routing, and device identifiers.
+
+### Affected Files
+
+- `USBDisplay/Models/DisplayDevice.swift`
+- `USBDisplay/Views/SidebarView.swift`
+- `doc/current.md`
+- `doc/usb-device-identification.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Canonical `./script/build_and_run.sh --verify`: Passed; Debug build and process launch succeeded.
+- Strict recursive Swift-format lint and working-tree/staged whitespace checks: Passed. Source inspection confirms the old status strings and tooltip are no longer part of the device row.
+- Release build and unit tests: Not run for this display-text-only change. No new tests were added.
+- Running-window visual/accessibility verification: Not run. Computer use reported that the Mac was locked and automatic unlock failed.
+
+### Remaining Risks or Follow-up Work
+
+- Confirm the single model label in the unlocked application. Existing window/capture acceptance items remain unchanged.

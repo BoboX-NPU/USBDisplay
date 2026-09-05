@@ -16,31 +16,25 @@ struct SidebarView: View {
           ForEach(devices) { device in
             let isSelected = device.id == selectedDeviceID
 
-            VStack(alignment: .leading, spacing: 4) {
-              Label(device.name, systemImage: "rectangle.portrait.on.rectangle.portrait")
-              Text(device.identificationDescription)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-            .help(device.identificationDescription)
-            .lineLimit(1)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .background(
-              isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
-              in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-            )
-            .contentShape(Rectangle())
-            .onTapGesture {
-              onSelectDevice(device.id)
-            }
-            .contextMenu {
-              Button("Open in New Window") {
-                onOpenDeviceInNewWindow(device.id)
+            Label(device.modelDisplayName, systemImage: "rectangle.portrait.on.rectangle.portrait")
+              .lineLimit(1)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(.horizontal, 6)
+              .padding(.vertical, 4)
+              .background(
+                isSelected ? Color.accentColor.opacity(0.18) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+              )
+              .contentShape(Rectangle())
+              .onTapGesture {
+                onSelectDevice(device.id)
               }
-            }
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
+              .contextMenu {
+                Button("Open in New Window") {
+                  onOpenDeviceInNewWindow(device.id)
+                }
+              }
+              .accessibilityAddTraits(isSelected ? .isSelected : [])
           }
         }
       }

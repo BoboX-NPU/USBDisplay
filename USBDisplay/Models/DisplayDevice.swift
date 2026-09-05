@@ -25,16 +25,8 @@ struct DisplayDevice: Identifiable, Equatable, Sendable {
       id: id, name: name, modelID: modelID, productType: productType, identificationState: state)
   }
 
-  var identificationDescription: String {
-    let profile = DisplayCornerProfileResolver.automaticProfile(for: self)
-    if let model = profile.modelName { return model + " · Automatic corners" }
-    if let productType { return productType + " · No corner profile" }
-    switch identificationState {
-    case .identifying: return "Identifying device…"
-    case .ambiguous: return "Same-name devices · Model unresolved"
-    case .unavailable: return "Model unavailable · Square corners"
-    case .identified: return "No corner profile"
-    }
+  var modelDisplayName: String {
+    DisplayCornerProfileResolver.automaticProfile(for: self).modelName ?? productType ?? name
   }
 }
 
