@@ -1064,3 +1064,33 @@
 
 - [SwiftUI full-screen toolbar visibility](https://developer.apple.com/documentation/swiftui/windowtoolbarfullscreenvisibility)
 - [AppKit auto-hide toolbar presentation option](https://developer.apple.com/documentation/appkit/nsapplication/presentationoptions-swift.struct/autohidetoolbar)
+
+## 2026-09-05 — Audit Code, Native APIs, and Validation Coverage
+
+### Summary
+
+- Review all 20 production Swift files, eight Swift test files, three developer scripts, Xcode configuration, and resource-generation validation at baseline `397b1f9`.
+- Record nine prioritized findings and native-component recommendations in `code-audit-2026-09-05.md`. Reproduce six source-state/window issues in a temporary project copy; identify the capture interruption recovery defect through source tracing and the installed SDK contract.
+- Identify unused geometry/model helpers, duplicate discovery work, and responsibilities that can be separated after behavior fixes. Verify macOS API availability before recommending substitutions; `isPreviewing`, `isInterrupted`, and the named media-services-reset error are not direct macOS replacements.
+- Update current constraints and validation results. Clarify that retry delays are capped but attempts are not limited. Application behavior and production/test source files remain unchanged.
+
+### Affected Files
+
+- `doc/code-audit-2026-09-05.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Existing full Debug regression: 91 tests, 90 passed, one failed, zero skipped. `USBDeviceInfoTests/timeoutIsAnExplicitUnresolvedState()` still saw `.identifying` after its fixed 30 ms sleep. Result bundle: `/tmp/USBDisplay-Audit-Debug-Allowed-20260905.xcresult`.
+- Isolated USB identity suite: Nine passed, zero failures/skips, including the same timeout test. This supports a timing-dependent test failure; it does not establish a socket-timeout defect. Result bundle: `/tmp/USBDisplay-Audit-USB-Suite-20260905.xcresult`.
+- Temporary regression probes: Six unique tests failed the corrected-behavior expectations and reproduced source-ratio caching, obsolete snapshot acceptance, non-live resize restoration, failed full-screen cleanup, smaller-screen fitting, and stale appearance colors. The copied project only exposed two private members without changing production method bodies. Diagnostic tests are outside the repository at `/tmp/usbdisplay-code-audit-20260905`; result bundle: `/tmp/USBDisplay-Audit-Probes-Final-20260905.xcresult`.
+- Normal Release build for arm64 and x86_64, strict deep signature verification, nine Python tests, offline catalog verification, strict recursive Swift-format lint, shell syntax, plist/project syntax, and Git whitespace checks: Passed.
+- Release Analyze: Failed because the shared scheme includes unit tests whose `@testable import` requires a Release app module built with testability. Normal Release build was checked separately and passed.
+- Initial sandboxed Debug build: Blocked by Swift macro execution; repeated through permitted Xcode execution. Two function-level test selectors matched zero tests and are excluded from validation. The first temporary harness had a Swift Testing macro syntax error, fixed before its six probes executed.
+- Physical capture/device switching, monitor removal, TCC permission changes, native Zoom/tiling acceptance, continuous interaction recording, older macOS runtime checks, and Instruments profiling: Not run. The canonical run script was reviewed and syntax-checked; no normal-app relaunch through that script was performed.
+
+### Remaining Risks or Follow-up Work
+
+- Implement and validate the nine findings in focused changes. No audit finding is claimed as fixed by this documentation commit.
+- Confirm capture interruption/recovery and permission-change behavior on hardware, then complete the existing multi-device, monitor, full-screen, and frame-pacing acceptance work. Temporary event/state injection is not physical acceptance.

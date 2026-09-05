@@ -29,7 +29,7 @@ Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only clie
 - Queries only USB `ProductType` and `DeviceName` off the main thread. Exact names must be unique in both complete capture and USB snapshots. Duplicate names are unresolved, and stale query generations cannot update a replaced device list.
 - Automatically matches exact USB product types against 164 bundled reference profiles: 60 iPhone and 104 iPad identifiers. Apple Simulator geometry is extended through explicit DeviceKit hardware groups and cross-checked with BezelKit. Radius scales by the displayed short side and uses the same normalized value in either orientation.
 - Shows the device name as each row's primary label and the resolved model, such as `iPhone 16 Pro`, below it in smaller secondary text. Unlisted products fall back to ProductType. The subtitle is omitted when model resolution falls back to the same device name, avoiding duplicate lines. Corner and identification-status annotations remain hidden. Unknown or unresolved products still use zero custom radius. Manual sliders are removed; legacy preference data is preserved but never applied.
-- Reports no-device, connecting, unlock/trust, connected, interrupted, occupied, unavailable, permission-denied, and failure states. Bounded capture retries remain local to each window.
+- Reports no-device, connecting, unlock/trust, connected, interrupted, occupied, unavailable, permission-denied, and failure states. Capture retries remain local to each window and use capped delays; the number of attempts is not limited.
 
 ## Architecture
 
@@ -55,6 +55,8 @@ Rounded corner values are traceable Simulator display-reference measurements, no
 
 ## Build and Validation
 
+- Latest comprehensive code audit: [findings and API recommendations](code-audit-2026-09-05.md). Full existing Debug suite: 90 passed, one failed, zero skipped; `timeoutIsAnExplicitUnresolvedState` observed `.identifying` after its fixed 30 ms wait. All nine USB identity tests passed in an isolated rerun. Ordinary universal Release build and strict bundle signature verification, nine Python tests, catalog verification, strict Swift-format lint, shell/plist checks, and Git whitespace checks passed. Release Analyze failed because the scheme includes the unit-test target while the Release app module is not built for testing. Six temporary regression probes reproduced the documented source-state/window defects; no application fix or physical-device acceptance was performed in the audit.
+
 - Latest native toolbar update: Debug build/launch, strict Swift-format lint, and whitespace checks passed. Full Debug regression: 91 tests passed, zero failures and zero skips, confirmed from the Xcode result bundle. Tests verify compact toolbar spacing, no app-driven toolbar visibility changes during full-screen pointer/sidebar updates, and preserved video geometry and sidebar insets. The prior USB timeout test passed in this run. Connected-iPhone checks exercised native full-screen entry and observed the toolbar disappear after the pointer moved into the preview's black margin. A full continuous hover animation recording and older-macOS runtime validation remain outstanding.
 
 - Canonical build/run command: `./script/build_and_run.sh --verify`, using `.build/Xcode` and the shared `USB Display` scheme. The Codex Run action calls this script.
@@ -72,6 +74,8 @@ Rounded corner values are traceable Simulator display-reference measurements, no
 
 ## Constraints and Outstanding Validation
 
+- The [2026-09-05 audit](code-audit-2026-09-05.md) identified unresolved source-state defects: selecting a new device with the same aspect ratio can leave the model without proportional geometry, and queued snapshots can overwrite a newer selection. Code tracing also found that automatic capture recovery can retain an interrupted status. Correct these lifecycle paths and add deterministic state-delivery tests before treating existing unit coverage as capture recovery acceptance.
+- Temporary probes reproduced non-live resize dimensions reverting on a later chrome change, incomplete cleanup after failed full-screen entry, oversized preview geometry on a smaller screen, and stale app-owned layer colors after an appearance change. The fixed-delay USB test and Release Analyze configuration also need correction. The audit did not modify these behaviors.
 - Current physical validation includes observed compact resize activity, clean endpoint snapshots, and one native full-screen round trip. Repeated drags from all eight handles, continuous fast reversal, physical 20-cycle sidebar toggling, and titlebar-hover/resize interleaving remain incomplete. No continuous WindowServer recording has established frame-by-frame smoothness or freedom from a one-frame flash.
 - Empty-state narrow restoration is now covered by the balanced split and minimum-size repair. The earlier delayed/black live-preview startup remains a separate capture acceptance item; this layout update does not claim to resolve video first-frame timing.
 - Real pointer drags from all eight handles, fast consecutive drags, and hover/resize interleaving need valid intermediate pointer events and physical acceptance. Delegate proposals and endpoint screenshots cannot establish drag smoothness or anchoring.
