@@ -790,3 +790,29 @@
 
 - Recheck physical unplug/reconnect and first-frame video timing. The earlier black preview at startup is not claimed fixed by the placeholder layout.
 - Existing continuous-pointer, WindowServer frame pacing, multi-device, monitor-edge, hardware full-screen/rotation, and older-macOS acceptance items remain as recorded in the current state.
+
+
+## 2026-09-05 — Show Device Names with Model Subtitles
+
+### Summary
+
+- Restore the device name as the sidebar row's primary label and place its resolved model below it in smaller secondary text.
+- Omit the subtitle when the model fallback duplicates the device name. Keep identification and corner-status annotations hidden, and preserve row selection and the existing context-menu action.
+
+### Affected Files
+
+- `USBDisplay/Views/SidebarView.swift`
+- `doc/current.md`
+- `doc/usb-device-identification.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Canonical `./script/build_and_run.sh --verify`: Passed; Debug build and process launch succeeded.
+- Strict recursive Swift-format lint and working-tree/staged whitespace checks: Passed.
+- Running application: the accessibility tree showed the device name followed by `iPhone 16 Pro`. The screenshot confirmed the name as the primary line and the model as smaller secondary text, with no corner-status annotation.
+- Release build and unit tests: Not run for this presentation-only change. No tests were added; the preceding full regression run passed 75 Swift tests.
+
+### Remaining Risks or Follow-up Work
+
+- None specific to this row presentation change. Existing capture and window acceptance items remain unchanged.
