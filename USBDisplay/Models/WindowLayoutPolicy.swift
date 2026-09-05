@@ -62,6 +62,25 @@ struct WindowChromeVisibilityState: Equatable, Sendable {
 enum WindowLayoutPolicy {
   static let minimumPreviewHeight = 320.0
   static let splitDividerWidth = 1.0
+  static let minimumPlaceholderSize = CGSize(width: 720, height: 480)
+
+  static func placeholderSize(_ proposed: CGSize, screen: CGSize) -> CGSize {
+    CGSize(
+      width: min(max(proposed.width, minimumPlaceholderSize.width), screen.width),
+      height: min(max(proposed.height, minimumPlaceholderSize.height), screen.height))
+  }
+
+  static func placeholderFrame(_ proposed: CGRect, screen: CGRect) -> CGRect {
+    let size = placeholderSize(proposed.size, screen: screen.size)
+    return CGRect(
+      x: max(screen.minX, min(proposed.minX, screen.maxX - size.width)),
+      y: max(screen.minY, min(proposed.maxY - size.height, screen.maxY - size.height)),
+      width: size.width, height: size.height)
+  }
+
+  static func placeholderSidebar(width: Double, isVisible: Bool) -> Double {
+    isVisible ? (width * 0.3).rounded() : 0
+  }
 
   static func validAspectRatio(width: Double, height: Double) -> Double? {
     guard width.isFinite, height.isFinite, width > 0, height > 0 else {
@@ -182,6 +201,14 @@ struct WindowSurfaceLayout: Equatable {
 
   var previewOnScreen: CGRect {
     preview.offsetBy(dx: frame.minX, dy: frame.minY)
+  }
+
+  static func placeholder(frame: CGRect, sidebarIsVisible: Bool, titlebar: Double) -> Self {
+    let sidebar = WindowLayoutPolicy.placeholderSidebar(
+      width: frame.width, isVisible: sidebarIsVisible)
+    return resizing(
+      frame: frame, sidebar: sidebar, titlebar: titlebar,
+      externalSidebar: sidebar, externalTitlebar: titlebar)
   }
 
   static func placing(preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect) -> Self {

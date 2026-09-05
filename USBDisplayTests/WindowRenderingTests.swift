@@ -8,6 +8,38 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct WindowRenderingTests {
+  @Test func disconnectedSwiftUIContentIgnoresOldPhoneRatio() async throws {
+    let model = AppModel()
+    // A stopped capture can retain the last measured source ratio.
+    model.updatePreviewAspectRatio(width: 402, height: 874)
+    let window = NSWindow(
+      contentRect: CGRect(x: 200, y: 100, width: 238, height: 516),
+      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    window.contentView = NSHostingView(
+      rootView: ContentView(
+        model: model, devices: [], onSelectDevice: { _ in }, onOpenDeviceInNewWindow: { _ in }))
+    window.orderFront(nil)
+    func surface(in view: NSView) -> WindowLayoutHostView? {
+      if let host = view as? WindowLayoutHostView { return host }
+      return view.subviews.lazy.compactMap { surface(in: $0) }.first
+    }
+    defer {
+      window.contentView.flatMap { surface(in: $0) }?.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let host = try #require(window.contentView.flatMap { surface(in: $0) })
+    let layout = try #require(host.surfaceLayout)
+    #expect(window.frame.width >= 720)
+    #expect(abs(layout.sidebar.width / window.frame.width - 0.3) < 0.001)
+    let preview = window.convertToScreen(host.preview.convert(host.preview.bounds, to: nil))
+    #expect(abs(preview.width / window.frame.width - 0.7) < 0.001)
+    #expect(preview.maxX == window.frame.maxX)
+    let video = try #require(host.preview.layer?.sublayers?.first as? AVCaptureVideoPreviewLayer)
+    #expect(video.videoGravity == .resizeAspect)
+  }
+
   @Test func previewLayerAndMaskFollowSizeChangesBeforeDeferredLayout() throws {
     let preview = PreviewHostView(session: AVCaptureSession())
     let fraction = 62.0 / 402

@@ -112,6 +112,7 @@ final class WindowLayoutHostView: NSView {
   private var configuration: WindowLayoutConfiguration
   private var chrome: WindowChromeVisibilityState
   private var geometry = WindowGeometryState()
+  private var placeholderFrame: CGRect?
   private(set) var surfaceLayout: WindowSurfaceLayout?
   private var lastWindowFrame: CGRect?
   private weak var observedWindow: NSWindow?
@@ -197,11 +198,14 @@ final class WindowLayoutHostView: NSView {
     window.titlebarSeparatorStyle = .none
     window.toolbar = toolbar
     measuredTitlebar = max(0, window.frame.height - window.contentLayoutRect.height)
-    geometry.rememberPreview(
-      CGRect(
-        x: window.frame.minX + sidebarWidth, y: window.frame.minY,
-        width: max(1, window.frame.width - sidebarWidth),
-        height: max(1, window.frame.height - (chrome.showsTitlebar ? measuredTitlebar : 0))))
+    placeholderFrame = WindowLayoutPolicy.placeholderFrame(window.frame, screen: screenFrame)
+    if !usesPlaceholderLayout {
+      geometry.rememberPreview(
+        CGRect(
+          x: window.frame.minX + sidebarWidth, y: window.frame.minY,
+          width: max(1, window.frame.width - sidebarWidth),
+          height: max(1, window.frame.height - (chrome.showsTitlebar ? measuredTitlebar : 0))))
+    }
     installDelegate(in: window)
     installObservers(in: window)
     mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) {
@@ -261,8 +265,8 @@ final class WindowLayoutHostView: NSView {
       cancelHide()
       chrome.updateSidebarVisibility(next.sidebarIsVisible)
     }
-    if previous.aspectRatio != next.aspectRatio, let ratio = next.aspectRatio, !fullScreen {
-      geometry.orient(aspectRatio: ratio, screen: screenFrame)
+    if previous.aspectRatio != next.aspectRatio {
+      preparePreviewGeometry()
     }
     commitChrome()
   }
@@ -293,13 +297,33 @@ final class WindowLayoutHostView: NSView {
     commitChrome()
   }
 
+  private var layoutConfiguration: WindowLayoutConfiguration {
+    isResizing ? (resizeConfiguration ?? configuration) : configuration
+  }
+  private var usesPlaceholderLayout: Bool { layoutConfiguration.aspectRatio == nil }
   private var sidebarWidth: Double {
-    WindowLayoutPolicy.sidebarContribution(
-      width: configuration.sidebarWidth, isVisible: configuration.sidebarIsVisible)
+    if usesPlaceholderLayout {
+      return WindowLayoutPolicy.placeholderSidebar(
+        width: Double(observedWindow?.frame.width ?? 0),
+        isVisible: layoutConfiguration.sidebarIsVisible)
+    }
+    return WindowLayoutPolicy.sidebarContribution(
+      width: layoutConfiguration.sidebarWidth, isVisible: layoutConfiguration.sidebarIsVisible)
   }
   private var titlebarHeight: Double { !fullScreen && chrome.showsTitlebar ? measuredTitlebar : 0 }
   private var screenFrame: CGRect {
     observedWindow?.screen?.visibleFrame ?? CGRect(x: -5000, y: -5000, width: 10000, height: 10000)
+  }
+
+  private func preparePreviewGeometry() {
+    guard let ratio = configuration.aspectRatio else { return }
+    if geometry.previewRect == nil, let frame = placeholderFrame ?? observedWindow?.frame {
+      let layout = WindowSurfaceLayout.placeholder(
+        frame: frame, sidebarIsVisible: configuration.sidebarIsVisible,
+        titlebar: chrome.showsTitlebar ? measuredTitlebar : 0)
+      geometry.rememberPreview(layout.previewOnScreen)
+    }
+    if !fullScreen { geometry.orient(aspectRatio: ratio, screen: screenFrame) }
   }
 
   private func commitChrome() {
@@ -309,6 +333,11 @@ final class WindowLayoutHostView: NSView {
       target = .resizing(
         frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
         externalSidebar: sidebarWidth, externalTitlebar: titlebarHeight)
+    } else if usesPlaceholderLayout {
+      target = .placeholder(
+        frame: WindowLayoutPolicy.placeholderFrame(
+          placeholderFrame ?? window.frame, screen: screenFrame),
+        sidebarIsVisible: configuration.sidebarIsVisible, titlebar: titlebarHeight)
     } else {
       target = geometry.layout(sidebar: sidebarWidth, titlebar: titlebarHeight, screen: screenFrame)
     }
@@ -334,7 +363,9 @@ final class WindowLayoutHostView: NSView {
     // leaves an uncovered strip until a later layout catches up.
     surfaceLayout = .resizing(
       frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
-      externalSidebar: target.externalSidebar, externalTitlebar: target.externalTitlebar)
+      externalSidebar: usesPlaceholderLayout ? sidebarWidth : target.externalSidebar,
+      externalTitlebar: target.externalTitlebar)
+    if usesPlaceholderLayout, !fullScreen { placeholderFrame = window.frame }
     layoutSurface()
     CATransaction.commit()
     lastWindowFrame = window.frame
@@ -350,6 +381,11 @@ final class WindowLayoutHostView: NSView {
     let layout: WindowSurfaceLayout
     if applyingGeometry {
       layout = current
+    } else if usesPlaceholderLayout {
+      layout = .placeholder(
+        frame: window.frame, sidebarIsVisible: layoutConfiguration.sidebarIsVisible,
+        titlebar: titlebarHeight)
+      surfaceLayout = layout
     } else {
       layout = .resizing(
         frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
@@ -364,17 +400,17 @@ final class WindowLayoutHostView: NSView {
     CATransaction.setDisableActions(true)
     let radius =
       !fullScreen && !fullScreenTransition && chrome.mode == .compact
-      ? configuration.cornerRadiusFraction : 0
+      ? layoutConfiguration.cornerRadiusFraction : 0
     preview.applyGeometry(
       frame: local(layout.preview), cornerFraction: radius,
-      fillsBounds: !fullScreen && !fullScreenTransition && configuration.aspectRatio != nil)
+      fillsBounds: !fullScreen && !fullScreenTransition && !usesPlaceholderLayout)
     status.frame = local(layout.preview)
     status.wantsLayer = true
     status.layer?.cornerRadius = preview.layer?.cornerRadius ?? 0
     status.layer?.cornerCurve = .continuous
     status.layer?.masksToBounds = true
     sidebar.frame = local(layout.sidebar)
-    sidebar.isHidden = !configuration.sidebarIsVisible
+    sidebar.isHidden = !layoutConfiguration.sidebarIsVisible
     divider.frame = local(
       CGRect(x: max(0, layout.sidebar.maxX - 1), y: 0, width: 1, height: layout.sidebar.height))
     divider.isHidden = sidebar.isHidden
@@ -393,7 +429,11 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func constrain(_ window: NSWindow, size: NSSize) -> NSSize {
-    guard !applyingGeometry, !fullScreen, !fullScreenTransition,
+    guard !applyingGeometry, !fullScreen, !fullScreenTransition else { return size }
+    if usesPlaceholderLayout {
+      return WindowLayoutPolicy.placeholderSize(size, screen: screenFrame.size)
+    }
+    guard
       let ratio = resizeRatio ?? configuration.aspectRatio, let layout = surfaceLayout
     else { return size }
     resizeProposalCount += 1
@@ -414,9 +454,12 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func updateMinimumSize() {
-    guard let window = observedWindow, let layout = surfaceLayout,
-      let ratio = configuration.aspectRatio, !fullScreen
-    else { return }
+    guard let window = observedWindow, !fullScreen else { return }
+    if usesPlaceholderLayout {
+      window.minSize = WindowLayoutPolicy.placeholderSize(.zero, screen: screenFrame.size)
+      return
+    }
+    guard let layout = surfaceLayout, let ratio = configuration.aspectRatio else { return }
     let height = min(
       WindowLayoutPolicy.minimumPreviewHeight, screenFrame.height - layout.externalTitlebar,
       (screenFrame.width - layout.externalSidebar) / ratio)
@@ -450,6 +493,7 @@ final class WindowLayoutHostView: NSView {
     observe(NSWindow.didEnterFullScreenNotification) { host in
       host.fullScreenTransition = false
       host.fullScreen = true
+      host.preparePreviewGeometry()
       host.commitChrome()
     }
     observe(NSWindow.willExitFullScreenNotification) { $0.fullScreenTransition = true }
@@ -460,9 +504,7 @@ final class WindowLayoutHostView: NSView {
       host.sidebarBeforeFullScreen = nil
       host.configuration = host.configuration.showingSidebar(visible)
       host.chrome.updateSidebarVisibility(visible)
-      if let ratio = host.configuration.aspectRatio {
-        host.geometry.orient(aspectRatio: ratio, screen: host.screenFrame)
-      }
+      host.preparePreviewGeometry()
       host.commitChrome()
       host.onSidebarChanged(visible)
     }
@@ -485,7 +527,11 @@ final class WindowLayoutHostView: NSView {
 
   private func endResize() {
     guard isResizing, let layout = surfaceLayout else { return }
-    geometry.rememberPreview(layout.previewOnScreen)
+    if usesPlaceholderLayout {
+      placeholderFrame = layout.frame
+    } else {
+      geometry.rememberPreview(layout.previewOnScreen)
+    }
     isResizing = false
     resizeRatio = nil
     let previous = resizeConfiguration
@@ -496,9 +542,7 @@ final class WindowLayoutHostView: NSView {
       || previous?.sidebarIsVisible != configuration.sidebarIsVisible
     {
       chrome.updateSidebarVisibility(configuration.sidebarIsVisible)
-      if let ratio = configuration.aspectRatio {
-        geometry.orient(aspectRatio: ratio, screen: screenFrame)
-      }
+      preparePreviewGeometry()
       commitChrome()
     }
     AppLogger.interface.debug(
@@ -507,6 +551,13 @@ final class WindowLayoutHostView: NSView {
 
   private func resized() {
     guard !applyingGeometry else { return }
+    if usesPlaceholderLayout, !fullScreen, !fullScreenTransition, let window = observedWindow {
+      placeholderFrame = WindowLayoutPolicy.placeholderFrame(window.frame, screen: screenFrame)
+      if !isResizing, placeholderFrame != window.frame {
+        commitChrome()
+        return
+      }
+    }
     layoutSurface()
     if let window = observedWindow { lastWindowFrame = window.frame }
     if let layout = surfaceLayout { onLayoutCommitted?(layout) }
@@ -517,7 +568,9 @@ final class WindowLayoutHostView: NSView {
     guard !applyingGeometry, !isResizing, !fullScreen, !fullScreenTransition,
       let window = observedWindow
     else { return }
-    if let lastWindowFrame {
+    if usesPlaceholderLayout {
+      placeholderFrame = window.frame
+    } else if let lastWindowFrame {
       geometry.move(
         by: CGSize(
           width: window.frame.minX - lastWindowFrame.minX,

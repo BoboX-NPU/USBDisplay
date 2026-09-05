@@ -6,6 +6,29 @@ import Testing
 
 struct WindowLayoutPolicyTests {
   @Test
+  func placeholderKeepsThirtySeventySplitAndFitsSmallScreens() {
+    let screen = CGRect(x: -1440, y: 25, width: 1440, height: 900)
+    for width in [238.0, 720, 980, 1200.5, 1600] {
+      let proposed = CGRect(x: screen.minX + 100, y: 700, width: width, height: 300)
+      let frame = WindowLayoutPolicy.placeholderFrame(proposed, screen: screen)
+      let layout = WindowSurfaceLayout.placeholder(
+        frame: frame, sidebarIsVisible: true, titlebar: 52)
+      #expect(screen.contains(frame))
+      #expect(frame.width >= 720)
+      #expect(frame.height >= 480)
+      #expect(abs(layout.sidebar.width - frame.width * 0.3) <= 0.5)
+      #expect(abs(layout.preview.width - frame.width * 0.7) <= 0.5)
+      #expect(layout.sidebar.maxX == layout.preview.minX)
+      #expect(layout.preview.maxX == frame.width)
+      let hidden = WindowSurfaceLayout.placeholder(
+        frame: frame, sidebarIsVisible: false, titlebar: 0)
+      #expect(hidden.preview.size == frame.size)
+    }
+    let smallScreen = CGRect(x: 100, y: 50, width: 600, height: 400)
+    #expect(WindowLayoutPolicy.placeholderFrame(.zero, screen: smallScreen) == smallScreen)
+  }
+
+  @Test
   func rejectsInvalidAspectRatios() {
     #expect(WindowLayoutPolicy.validAspectRatio(width: 0, height: 10) == nil)
     #expect(WindowLayoutPolicy.validAspectRatio(width: 10, height: 0) == nil)
@@ -312,25 +335,143 @@ struct WindowGeometryStateTests {
 @Suite(.serialized)
 @MainActor
 struct WindowLayoutIntegrationTests {
-  private func configuration(sidebar: Bool, fraction: Double = 0) -> WindowLayoutConfiguration {
+  private func configuration(
+    sidebar: Bool, fraction: Double = 0, aspectRatio: Double? = 0.5
+  ) -> WindowLayoutConfiguration {
     WindowLayoutConfiguration(
-      title: "Layout Test", aspectRatio: 0.5, sidebarWidth: 220,
+      title: "Layout Test", aspectRatio: aspectRatio, sidebarWidth: 220,
       sidebarIsVisible: sidebar, cornerRadiusFraction: fraction)
   }
 
-  private func makeWindow() -> (NSWindow, WindowLayoutHostView) {
+  private func makeWindow(aspectRatio: Double? = 0.5) -> (NSWindow, WindowLayoutHostView) {
     let screen = NSScreen.main!.visibleFrame
     let window = NSWindow(
       contentRect: CGRect(x: screen.midX - 200, y: screen.minY + 100, width: 471, height: 500),
       styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
     window.isReleasedWhenClosed = false
-    let host = WindowLayoutHostView(configuration: configuration(sidebar: true))
+    let host = WindowLayoutHostView(
+      configuration: configuration(sidebar: true, aspectRatio: aspectRatio))
     window.contentView = host
     return (window, host)
   }
 
   private func screenRect(_ host: WindowLayoutHostView) -> CGRect {
     host.window!.convertToScreen(host.preview.convert(host.preview.bounds, to: nil))
+  }
+
+  @Test func emptyWindowRepairsNarrowRestorationAndResizesWithBalancedContent() async throws {
+    let (window, host) = makeWindow(aspectRatio: nil)
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    #expect(window.frame.width >= 720)
+    #expect(window.minSize.width == WindowLayoutPolicy.minimumPlaceholderSize.width)
+    #expect(window.minSize.height >= WindowLayoutPolicy.minimumPlaceholderSize.height)
+
+    // SwiftUI restoration can arrive after the native host attaches.
+    window.setFrame(
+      CGRect(x: window.frame.minX, y: window.frame.minY, width: 238, height: 516), display: false)
+    #expect(window.frame.width >= 720)
+    NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
+    for proposal in [
+      CGSize(width: 900, height: 600), CGSize(width: 800, height: 700),
+      CGSize(width: 760, height: 500),
+    ] {
+      let accepted = try #require(window.delegate?.windowWillResize?(window, to: proposal))
+      #expect(accepted == proposal)
+      window.setFrame(CGRect(origin: window.frame.origin, size: accepted), display: false)
+      let layout = try #require(host.surfaceLayout)
+      #expect(abs(layout.sidebar.width / window.frame.width - 0.3) < 0.001)
+      #expect(abs(screenRect(host).width / window.frame.width - 0.7) < 0.001)
+    }
+    let released = window.frame
+    NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)
+    #expect(window.frame == released)
+    host.updateConfiguration(configuration(sidebar: false, aspectRatio: nil))
+    #expect(screenRect(host).size == window.frame.size)
+    host.updateConfiguration(configuration(sidebar: true, aspectRatio: nil))
+    #expect(window.frame == released)
+  }
+
+  @Test func emptyAndConnectedWindowsRetainIndependentSizes() async throws {
+    let (window, host) = makeWindow(aspectRatio: nil)
+    let (otherWindow, otherHost) = makeWindow(aspectRatio: nil)
+    defer {
+      host.prepareForRemoval()
+      otherHost.prepareForRemoval()
+      window.close()
+      otherWindow.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let empty = window.frame
+    let other = otherWindow.frame
+    host.updateConfiguration(configuration(sidebar: true))
+    let connected = window.frame
+    let preview = screenRect(host)
+    #expect(abs(preview.width / preview.height - 0.5) < 0.001)
+    #expect(window.minSize.width < 720)
+    #expect(host.surfaceLayout?.sidebar.width == 221)
+    for _ in 0..<5 {
+      host.updateConfiguration(configuration(sidebar: true, aspectRatio: nil))
+      #expect(window.frame == empty)
+      #expect(abs(screenRect(host).width / window.frame.width - 0.7) < 0.001)
+      host.updateConfiguration(configuration(sidebar: true))
+      #expect(window.frame == connected)
+      #expect(screenRect(host) == preview)
+      #expect(otherWindow.frame == other)
+    }
+  }
+
+  @Test func deviceConnectingDuringEmptyResizeWaitsForRelease() async throws {
+    let (window, host) = makeWindow(aspectRatio: nil)
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    NotificationCenter.default.post(name: NSWindow.willStartLiveResizeNotification, object: window)
+    let empty = window.frame
+    host.updateConfiguration(configuration(sidebar: true))
+    #expect(window.frame == empty)
+    let proposal = CGSize(width: 900, height: 600)
+    let accepted = try #require(window.delegate?.windowWillResize?(window, to: proposal))
+    #expect(accepted == proposal)
+    window.setFrame(CGRect(origin: empty.origin, size: accepted), display: false)
+    #expect(abs(screenRect(host).width / window.frame.width - 0.7) < 0.001)
+    NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)
+    let preview = screenRect(host)
+    #expect(abs(preview.width / preview.height - 0.5) < 0.001)
+    host.updateConfiguration(configuration(sidebar: true, aspectRatio: nil))
+    #expect(window.frame.size == proposal)
+  }
+
+  @Test func emptyFullScreenRoundTripRestoresOrdinarySizeIncludingDeviceArrival() async throws {
+    let (window, host) = makeWindow(aspectRatio: nil)
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let empty = window.frame
+    for connectDuringTransition in [false, true] {
+      NotificationCenter.default.post(
+        name: NSWindow.willEnterFullScreenNotification, object: window)
+      window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
+      if connectDuringTransition { host.updateConfiguration(configuration(sidebar: true)) }
+      NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+      NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
+      NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+      if connectDuringTransition {
+        let preview = screenRect(host)
+        #expect(abs(preview.width / preview.height - 0.5) < 0.001)
+        #expect(window.frame.height == empty.height)
+        host.updateConfiguration(configuration(sidebar: true, aspectRatio: nil))
+      }
+      #expect(window.frame == empty)
+      #expect(abs(screenRect(host).width / window.frame.width - 0.7) < 0.001)
+    }
   }
 
   @Test func everyChromeLayoutKeepsActualPreviewRectAndLayerIdentity() async throws {

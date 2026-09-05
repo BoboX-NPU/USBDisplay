@@ -757,3 +757,36 @@
 ### Remaining Risks or Follow-up Work
 
 - Confirm the single model label in the unlocked application. Existing window/capture acceptance items remain unchanged.
+
+
+## 2026-09-05 — Balance Empty Windows at a 30/70 Split
+
+### Summary
+
+- Give placeholders without an active source ratio approximately 30% of the window width for the sidebar and 70% for the content, including the divider in the sidebar allocation. Keep the split responsive during freeform empty-window resizing.
+- Apply a nominal 720-by-480-point minimum that fits the available screen, and repair late narrow window restoration synchronously. Native toolbar constraints can increase the effective minimum height. An explicitly hidden sidebar leaves the whole width to content.
+- Keep each window's empty frame separate from its preferred video geometry. Restore proportional video sizing and its existing minimum once a connected source ratio is available; restore the empty layout on disconnect. Ignore a stopped capture's retained ratio at the SwiftUI configuration boundary.
+- Freeze the active layout mode during live resizing and apply newly available source geometry after release. Initialize ordinary video geometry correctly when the device arrives during a full-screen transition.
+
+### Affected Files
+
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Full Debug regression suite: Passed 75 tests, zero failures and zero skips. Six added tests cover responsive placeholder widths, small/offset screens, narrow initial and late-restored frames, freeform resize proposals, separate empty/video sizes and windows, connection during a drag, full-screen restoration/device arrival, and real SwiftUI content with a stale capture ratio. Existing proportional-resize, chrome-stability, corner-rendering, identity, and capture tests passed.
+- Debug and Release builds, strict recursive Swift-format lint, working-tree/staged whitespace checks, and strict Debug/Release bundle signature verification: Passed. Canonical `./script/build_and_run.sh --verify`: Passed.
+- During validation, an optional CGFloat-to-Double conversion was corrected. An exact minimum-height test was updated to allow AppKit's extra native toolbar height; width remains constrained and the effective height stays at least the configured minimum.
+- Running application: Opened a new unselected window through `File > New USB Display Window`. The screenshot showed 294 of 980 points allocated to the sidebar and 686 to content. Native Zoom retained the approximate 30/70 split; Zoom restored the initial size. The connected device row showed only `iPhone 16 Pro`. No phone screenshots or temporary diagnostics were added to the repository.
+- Physical unplug/no-device startup and continuous pointer drags: Not run. The empty SwiftUI fixture has no devices or active capture, but is not a physical unplug test. The running-app check used an unselected window while the iPhone remained connected. Python catalog-generator tests were not rerun because the catalog and generator were unchanged.
+
+### Remaining Risks or Follow-up Work
+
+- Recheck physical unplug/reconnect and first-frame video timing. The earlier black preview at startup is not claimed fixed by the placeholder layout.
+- Existing continuous-pointer, WindowServer frame pacing, multi-device, monitor-edge, hardware full-screen/rotation, and older-macOS acceptance items remain as recorded in the current state.

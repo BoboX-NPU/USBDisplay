@@ -10,7 +10,7 @@ struct ContentView: View {
     WindowLayoutCoordinator(
       configuration: WindowLayoutConfiguration(
         title: selectedDevice?.name ?? "USB Display",
-        aspectRatio: model.previewAspectRatio,
+        aspectRatio: model.status.isConnected ? model.previewAspectRatio : nil,
         sidebarWidth: model.sidebarWidth,
         sidebarIsVisible: model.sidebarIsVisible,
         cornerRadiusFraction: selectedDevice.map {
