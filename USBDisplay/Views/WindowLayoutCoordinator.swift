@@ -403,14 +403,11 @@ final class WindowLayoutHostView: NSView {
     divider.layer?.transform = sidebar.layer?.transform ?? CATransform3DIdentity
     titlebar.alphaValue = fullScreen ? 0 : value.titlebar
     titlebar.layer?.transform = CATransform3DMakeTranslation(0, travel * (1 - value.titlebar), 0)
-    // Public button APIs and our own toolbar view avoid traversing native chrome.
+    // AppKit owns the toolbar item; animate only the public window buttons.
     if !fullScreen && !fullScreenTransition {
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
         window.standardWindowButton(type)?.alphaValue = value.titlebar
       }
-      toolbarDelegate.button.alphaValue = value.titlebar
-      toolbarDelegate.button.layer?.transform = CATransform3DMakeTranslation(
-        0, travel * (1 - value.titlebar), 0)
     }
     preview.applyCornerFraction(cornerFraction, retainingMask: retainsCornerMask)
     if let layer = status.layer {
@@ -618,8 +615,6 @@ final class WindowLayoutHostView: NSView {
       cancelHide()
       fullScreenTransition = true
       chromeAnimator.reset(to: desiredChrome)
-      toolbarDelegate.button.alphaValue = 1
-      toolbarDelegate.button.layer?.transform = CATransform3DIdentity
       reservedSidebar = configuration.sidebarIsVisible
       reservedTitlebar = chrome.showsTitlebar
       pendingReservationRelease = false

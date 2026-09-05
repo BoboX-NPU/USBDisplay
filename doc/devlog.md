@@ -1167,3 +1167,33 @@
 - After the final canonical launch, the UI remained connecting until AVFoundation logged startup at 21:20:43, approximately two minutes after the 21:18:44 launch. App discovery subsequently reported zero devices at 21:20:46 and one device at 21:20:55. The final UI identified an iPhone 16 Pro and displayed live portrait content with proportional window geometry; the earlier interaction acceptance used an iPad Pro (11-inch, M4).
 - Only one source was listed at a time. The observed device transition is not a controlled equal-ratio switch, hot-plug, or latency test. The cause of the initial wait was not isolated to permission, device, or system state. A brief thread sample occurred after startup resumed and did not identify the earlier blocking call. No privacy setting or cable was changed by the agent.
 - The final running app is usable, but controlled startup/first-frame timing remains an outstanding hardware investigation. Current state and the audit report include this limit; no additional pipeline change was made on speculative evidence.
+
+## 2026-09-05 — Use the Default Native Sidebar Toolbar Item
+
+### Summary
+
+- Replace the custom NSButton toolbar view with a standard image-based NSToolbarItem using its public image, target, and action properties. Remove the textured-rounded bezel and fixed 32-by-28-point size; AppKit now creates and sizes the control with its default appearance.
+- Remove app-owned opacity and layer transforms for the toolbar button. Preserve ordinary-window toolbar visibility, window-button fades, sidebar layout, and AppKit-owned full-screen behavior.
+- Keep the existing Show Sidebar / Hide Sidebar labels and tooltips. Adapt the traffic-light spacing regression to read the system-generated button's public accessibility frame instead of a custom view.
+- Implementation follows Apple's [NSToolbarItem documentation](https://developer.apple.com/documentation/appkit/nstoolbaritem); the local SDK confirms that automatically generated items return nil for their custom view.
+
+### Affected Files
+
+- `USBDisplay/Views/SidebarToolbarDelegate.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Passed 25 focused Debug tests with zero failures and zero skips across WindowChromeInteractionTests, WindowLifecycleTests, and WindowRenderingTests. Result: `/tmp/USBDisplay-NativeToolbar-Window-20260905.xcresult`. Coverage includes toolbar spacing throughout repeated chrome transitions, full-screen toolbar noninterference, lifecycle recovery, and stable preview rendering.
+- An initial test compilation used the Objective-C accessibility protocol name; corrected it to Swift's NSAccessibilityProtocol before the successful run. xcresulttool required access to its report cache; its successful summary confirmed the final counts.
+- Passed `./script/build_and_run.sh --verify`; log: `/tmp/USBDisplay-NativeToolbar-Run-20260905.log`. Strict Swift-format lint for the changed Swift files, Debug strict deep signature verification, and Git whitespace checks passed.
+- Inspected the running application and activated the system toolbar item: ordinary-window collapse and full-screen expansion updated the sidebar and accessibility labels. Entered and exited native full screen, returning to the ordinary compact window. A settled full-screen screenshot showed the sidebar overlay after expansion.
+- The UI tool reported noWindowsAvailable for ordinary-window coordinate clicks while accessibility access still worked. Menu and accessibility actions completed the interaction checks. Early full-screen screenshots were transitional and were not used as settled-layout evidence.
+
+### Remaining Risks or Follow-up Work
+
+- The button's exact shape follows the running macOS version and toolbar context; the app imposes no circular shape or dimensions. macOS 14/15 runtime appearance was not checked.
+- Release, the complete Debug suite, Python tests, and resource verification were not rerun for this toolbar-only change; the prior audit validation remains recorded above. This check used an unselected window with a discovered iPhone and did not repeat live capture or hardware acceptance.

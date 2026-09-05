@@ -146,11 +146,27 @@ struct WindowChromeInteractionTests {
     func checkPlacement() throws {
       guard window.toolbar?.isVisible == true else { return }
       window.contentView?.superview?.layoutSubtreeIfNeeded()
-      let toggle = try #require(window.toolbar?.items.first?.view)
-      let rect = toggle.convert(toggle.bounds, to: nil)
+      let item = try #require(window.toolbar?.items.first)
+      // System-generated toolbar items do not expose a custom view.
+      func findToggle(in element: any NSAccessibilityProtocol) -> (any NSAccessibilityProtocol)? {
+        if element.accessibilityRole() == .button,
+          element.accessibilityLabel() == item.label
+        {
+          return element
+        }
+        for child in element.accessibilityChildren() ?? [] {
+          if let child = child as? any NSAccessibilityProtocol, let match = findToggle(in: child) {
+            return match
+          }
+        }
+        return nil
+      }
+      let toggle = try #require(findToggle(in: window))
+      let rect = toggle.accessibilityFrame()
+      #expect(!rect.isEmpty)
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
         let button = try #require(window.standardWindowButton(type))
-        let control = button.convert(button.bounds, to: nil)
+        let control = window.convertToScreen(button.convert(button.bounds, to: nil))
         #expect(!rect.intersects(control))
         #expect(rect.minX >= control.maxX + 8)
         #expect(abs(button.alphaValue - host.chromeAnimator.presentation.titlebar) < 0.00001)

@@ -4,7 +4,6 @@ import AppKit
 final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
   nonisolated static let identifier = NSToolbarItem.Identifier("USBDisplay.SidebarToggle")
   private let item = NSToolbarItem(itemIdentifier: identifier)
-  let button = NSButton()
   let toolbar = NSToolbar(identifier: "USBDisplay.WindowToolbar")
   var toggle: (() -> Void)?
   private var sidebarIsVisible: Bool?
@@ -16,14 +15,9 @@ final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
     toolbar.displayMode = .iconOnly
     toolbar.showsBaselineSeparator = false
     toolbar.delegate = self
-    button.image = NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: nil)
-    button.bezelStyle = .texturedRounded
-    button.imagePosition = .imageOnly
-    button.frame.size = CGSize(width: 32, height: 28)
-    button.wantsLayer = true
-    button.target = self
-    button.action = #selector(toggleSidebar)
-    item.view = button
+    item.image = NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: nil)
+    item.target = self
+    item.action = #selector(toggleSidebar)
     item.isNavigational = true
   }
 
@@ -36,8 +30,6 @@ final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
     item.label = label
     item.paletteLabel = label
     item.toolTip = label
-    button.toolTip = label
-    button.setAccessibilityLabel(label)
   }
 
   nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]
