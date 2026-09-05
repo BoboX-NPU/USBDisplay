@@ -5,50 +5,19 @@ import Testing
 
 struct DisplayCornerProfileTests {
   @Test
-  func resolvesDeviceKindFromModelBeforeDisplayName() {
-    let phone = DisplayDevice(id: "phone", name: "Personal Device", productType: "iPhone17,1")
-    let tablet = DisplayDevice(id: "tablet", name: "Studio Screen", productType: "iPad16,6")
-
-    #expect(phone.kind == .iPhone)
-    #expect(tablet.kind == .iPad)
-  }
-
-  @Test
-  func fallsBackToLocalizedNameForDeviceKind() {
-    let phone = DisplayDevice(id: "phone", name: "Booo's iPhone")
-    let tablet = DisplayDevice(id: "tablet", name: "Drawing iPad")
-    let unknown = DisplayDevice(id: "unknown", name: "External Screen")
-
-    #expect(phone.kind == .iPhone)
-    #expect(tablet.kind == .iPad)
-    #expect(unknown.kind == .unknown)
-  }
-
-  @Test
-  func modernIPhoneUsesRoundedProfileInEitherOrientation() {
+  func modernIPhoneUsesRoundedProfile() {
     let phone = DisplayDevice(id: "phone", name: "Phone", productType: "iPhone17,1")
 
-    let portrait = DisplayCornerProfileResolver.automaticFraction(
-      for: phone,
-      aspectRatio: 9.0 / 19.5
-    )
-    let landscape = DisplayCornerProfileResolver.automaticFraction(
-      for: phone,
-      aspectRatio: 19.5 / 9.0
-    )
+    let portrait = DisplayCornerProfileResolver.automaticProfile(for: phone).fraction
 
     #expect(portrait == 62.0 / 402.0)
-    #expect(landscape == 62.0 / 402.0)
   }
 
   @Test
   func classicIPhoneUsesSquareProfile() {
     let phone = DisplayDevice(id: "phone", name: "Phone", productType: "iPhone10,4")
 
-    let fraction = DisplayCornerProfileResolver.automaticFraction(
-      for: phone,
-      aspectRatio: 9.0 / 16.0
-    )
+    let fraction = DisplayCornerProfileResolver.automaticProfile(for: phone).fraction
 
     #expect(fraction == 0)
   }
@@ -57,10 +26,7 @@ struct DisplayCornerProfileTests {
   func iPadUsesTabletProfile() {
     let tablet = DisplayDevice(id: "tablet", name: "Tablet", productType: "iPad16,6")
 
-    let fraction = DisplayCornerProfileResolver.automaticFraction(
-      for: tablet,
-      aspectRatio: 3.0 / 4.0
-    )
+    let fraction = DisplayCornerProfileResolver.automaticProfile(for: tablet).fraction
 
     #expect(fraction == 30.0 / 1032.0)
   }
@@ -70,10 +36,7 @@ struct DisplayCornerProfileTests {
     let unknown = DisplayDevice(id: "unknown", name: "External Screen")
 
     #expect(
-      DisplayCornerProfileResolver.automaticFraction(
-        for: unknown,
-        aspectRatio: 9.0 / 19.5
-      ) == 0
+      DisplayCornerProfileResolver.automaticProfile(for: unknown).fraction == 0
     )
   }
 
@@ -153,12 +116,10 @@ struct DisplayCornerProfileTests {
     }
   }
 
-  @Test func everyBundledProfileNormalizesInBothOrientations() {
+  @Test func everyBundledProfileHasValidNormalizedGeometry() {
     for reference in DisplayCornerProfileResolver.modelProfiles.values {
       let device = DisplayDevice(id: "fixture", name: "Renamed", productType: reference.productType)
-      let portrait = DisplayCornerProfileResolver.automaticFraction(for: device, aspectRatio: 0.5)
-      let landscape = DisplayCornerProfileResolver.automaticFraction(for: device, aspectRatio: 2)
-      #expect(portrait == landscape)
+      let portrait = DisplayCornerProfileResolver.automaticProfile(for: device).fraction
       #expect(portrait.isFinite && (0...0.2).contains(portrait))
       #expect(
         DisplayCornerProfileResolver.cornerRadius(shortSide: 300, fraction: portrait)

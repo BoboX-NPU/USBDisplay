@@ -62,15 +62,6 @@ enum CaptureErrorClassifier {
   }
 }
 
-struct RetryAttempt: Equatable, Sendable {
-  let generation: Int
-  let deviceID: String
-
-  func isValid(currentGeneration: Int, selectedDeviceID: String?) -> Bool {
-    generation == currentGeneration && deviceID == selectedDeviceID
-  }
-}
-
 enum RetryPolicy {
   static func delay(for attempt: Int, occupied: Bool) -> TimeInterval {
     if occupied {

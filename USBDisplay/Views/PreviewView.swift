@@ -7,17 +7,17 @@ final class PreviewHostView: NSView {
   private let previewLayer = AVCaptureVideoPreviewLayer()
   private let contentMask = RoundedContentMask()
   private var aspectRatioTimer: Timer?
-  private var aspectRatioFilter = StableAspectRatio()
+  private var aspectRatios = PreviewAspectRatioTracker()
   private var cornerFraction = 0.0
   private var retainsCornerMask = false
   private var applyingGeometry = false
   var isGeometryChanging = false {
-    didSet { if oldValue != isGeometryChanging { aspectRatioFilter.discardCandidate() } }
+    didSet { if oldValue != isGeometryChanging { aspectRatios.discardCandidate() } }
   }
   private(set) var displayCornerRadius: CGFloat = 0
 
   var onGeometryApplied: (() -> Void)?
-  var onAspectRatioChanged: ((Double, Double) -> Void)?
+  var onAspectRatioChanged: ((PreviewSource, Double, Double) -> Void)?
 
   init(session: AVCaptureSession) {
     super.init(frame: .zero)
@@ -138,28 +138,26 @@ final class PreviewHostView: NSView {
   func setSession(_ session: AVCaptureSession) {
     guard previewLayer.session !== session else { return }
     previewLayer.session = session
-    aspectRatioFilter = StableAspectRatio()
+    aspectRatios.reset()
+  }
+
+  func setSource(_ source: PreviewSource?) {
+    aspectRatios.setSource(source)
   }
 
   func reportAspectRatioIfAvailable() {
-    guard !isGeometryChanging, previewLayer.session?.isRunning == true, !bounds.isEmpty else {
+    guard let source = aspectRatios.source, !isGeometryChanging,
+      previewLayer.session?.isRunning == true, !bounds.isEmpty
+    else {
       return
     }
 
     let pictureRect = previewLayer.layerRectConverted(
       fromMetadataOutputRect: CGRect(x: 0, y: 0, width: 1, height: 1)
     )
-    guard
-      let ratio = WindowLayoutPolicy.validAspectRatio(
-        width: pictureRect.width,
-        height: pictureRect.height
-      )
-    else {
-      return
-    }
-
-    guard aspectRatioFilter.observe(ratio) else { return }
-    onAspectRatioChanged?(pictureRect.width, pictureRect.height)
+    guard aspectRatios.observe(source: source, width: pictureRect.width, height: pictureRect.height)
+    else { return }
+    onAspectRatioChanged?(source, pictureRect.width, pictureRect.height)
   }
 
   func prepareForRemoval() {

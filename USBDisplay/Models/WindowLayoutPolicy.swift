@@ -1,10 +1,5 @@
 import Foundation
 
-struct WindowContentSize: Equatable, Sendable {
-  let width: Double
-  let height: Double
-}
-
 enum WindowChromeMode: Equatable, Sendable {
   case sidebarVisible
   case compact
@@ -96,66 +91,6 @@ enum WindowLayoutPolicy {
     return max(width, 0) + splitDividerWidth
   }
 
-  static func contentSize(
-    previewHeight: Double,
-    aspectRatio: Double,
-    sidebarWidth: Double,
-    sidebarIsVisible: Bool
-  ) -> WindowContentSize? {
-    guard
-      validAspectRatio(width: aspectRatio, height: 1) != nil,
-      previewHeight.isFinite,
-      previewHeight > 0
-    else {
-      return nil
-    }
-
-    let sidebar = sidebarContribution(width: sidebarWidth, isVisible: sidebarIsVisible)
-    return WindowContentSize(
-      width: sidebar + previewHeight * aspectRatio,
-      height: previewHeight
-    )
-  }
-
-  static func sizePreservingHeight(
-    currentHeight: Double,
-    aspectRatio: Double,
-    sidebarWidth: Double,
-    sidebarIsVisible: Bool,
-    maximumSize: WindowContentSize
-  ) -> WindowContentSize? {
-    guard
-      maximumSize.width > 0,
-      maximumSize.height > 0,
-      let unconstrained = contentSize(
-        previewHeight: max(currentHeight, minimumPreviewHeight),
-        aspectRatio: aspectRatio,
-        sidebarWidth: sidebarWidth,
-        sidebarIsVisible: sidebarIsVisible
-      )
-    else {
-      return nil
-    }
-
-    let sidebar = sidebarContribution(width: sidebarWidth, isVisible: sidebarIsVisible)
-    let widthScale = (maximumSize.width - sidebar) / max(unconstrained.width - sidebar, 1)
-    let heightScale = maximumSize.height / unconstrained.height
-    let scale = min(1, widthScale, heightScale)
-    let fittedHeight = max(unconstrained.height * max(scale, 0), 1)
-
-    return contentSize(
-      previewHeight: fittedHeight,
-      aspectRatio: aspectRatio,
-      sidebarWidth: sidebarWidth,
-      sidebarIsVisible: sidebarIsVisible
-    )
-  }
-
-  static func shouldConstrainWindow(isFullScreen: Bool, aspectRatio: Double?) -> Bool {
-    guard !isFullScreen, let aspectRatio else { return false }
-    return validAspectRatio(width: aspectRatio, height: 1) != nil
-  }
-
 }
 
 /// Explicit child geometry. Chrome either extends the outside frame or overlays it;
@@ -181,6 +116,10 @@ struct WindowSurfaceLayout: Equatable {
   }
 
   static func placing(preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect) -> Self {
+    let scale = min(1, screen.width / preview.width, screen.height / preview.height)
+    let preview = CGRect(
+      origin: preview.origin,
+      size: CGSize(width: preview.width * scale, height: preview.height * scale))
     let externalSidebar = preview.width + sidebar <= screen.width ? sidebar : 0
     let externalTitlebar = preview.height + titlebar <= screen.height ? titlebar : 0
     var frame = CGRect(
@@ -224,13 +163,11 @@ struct WindowGeometryState: Equatable {
     previewRect = previewRect?.offsetBy(dx: delta.width, dy: delta.height)
   }
 
-  mutating func orient(aspectRatio: Double, screen: CGRect) {
+  mutating func orient(aspectRatio: Double) {
     guard var previewRect, let preferredHeight,
       WindowLayoutPolicy.validAspectRatio(width: aspectRatio, height: 1) != nil
     else { return }
-    // Only a source orientation change may fit the preview itself to the screen.
-    let height = min(preferredHeight, screen.height, screen.width / aspectRatio)
-    previewRect.size = CGSize(width: height * aspectRatio, height: height)
+    previewRect.size = CGSize(width: preferredHeight * aspectRatio, height: preferredHeight)
     self.previewRect = previewRect
   }
 

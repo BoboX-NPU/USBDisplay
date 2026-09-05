@@ -1094,3 +1094,76 @@
 
 - Implement and validate the nine findings in focused changes. No audit finding is claimed as fixed by this documentation commit.
 - Confirm capture interruption/recovery and permission-change behavior on hardware, then complete the existing multi-device, monitor, full-screen, and frame-pacing acceptance work. Temporary event/state injection is not physical acceptance.
+
+## 2026-09-05 — Fix Capture Generations and Native Window Lifecycle
+
+### Summary
+
+- Implement audit findings F1–F9 and the approved Apple-component cleanup while retaining macOS 14+, the AVFoundation/CoreMediaIO direct-preview pipeline, continuous masks, per-window capture ownership, and native full-screen toolbar behavior.
+- Make the model own selection and request identity. Tag capture snapshots with request, stream, and sequence, and reject stale or reordered delivery. Reset ratio stabilization for each video source while preserving the session and preview layer.
+- Separate a queue-confined capture state machine from its AVFoundation driver. Inject event/delay scheduling for deterministic tests. Invalidate stale startup confirmations/events/retries, restore interrupted sessions after revalidation, and re-evaluate only the active request when camera authorization completes.
+- Preserve valid non-live window resizes, including native Zoom during chrome animation. Fit the displayed video to new screen bounds separately from the preferred size; handle screen-parameter changes and defer updates during drag/full-screen transitions. Recover failed full-screen entry/exit through official forwarded delegate callbacks.
+- Use SwiftUI device-row buttons, ContentUnavailableView, and effective-appearance color refresh. Retain the connecting ProgressView and existing user guidance. Extract native toolbar, window event/delegate bridge, and hover scheduling while keeping geometry state in one host.
+- Deduplicate equal raw discovery values and retain a capture discovery session. Preserve five-second identity refresh and conservative complete-snapshot association. Remove the confirmed unused models/helpers/logger, superseded retry helper, duplicate constants, and unreachable layout branches.
+- Replace fixed USB-test completion sleeps with bounded signals and controlled query completion. Exclude tests from Analyze without enabling shipping Release testability. Replace obsolete self-only helper tests with production-path capture/window regressions, including the six original temporary reproductions.
+- Update current state and mark actual implementation, validation, and physical limits in the audit report.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplay.xcodeproj/xcshareddata/xcschemes/USB Display.xcscheme`
+- `USBDisplay/Models/CaptureFailure.swift`
+- `USBDisplay/Models/ConnectionStatus.swift`
+- `USBDisplay/Models/DisplayCornerProfile.swift`
+- `USBDisplay/Models/DisplayDevice.swift`
+- `USBDisplay/Models/ResizeSession.swift`
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Services/AVFoundationCaptureDriver.swift`
+- `USBDisplay/Services/AppModel.swift`
+- `USBDisplay/Services/CaptureCoordinator.swift`
+- `USBDisplay/Services/DeviceCatalog.swift`
+- `USBDisplay/Services/USBDeviceInfoService.swift`
+- `USBDisplay/Support/AppLogger.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/DisplayCanvasView.swift`
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplay/Views/SidebarToolbarDelegate.swift`
+- `USBDisplay/Views/SidebarView.swift`
+- `USBDisplay/Views/WindowEventBridge.swift`
+- `USBDisplay/Views/WindowHoverScheduler.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/CaptureFailureTests.swift`
+- `USBDisplayTests/CaptureStateTests.swift`
+- `USBDisplayTests/DisplayCornerProfileTests.swift`
+- `USBDisplayTests/USBDeviceInfoTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowLifecycleTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/code-audit-2026-09-05.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Final Debug suite: Passed 100 tests with zero failures and zero skips. Result: `/tmp/USBDisplay-Fixes-Final-20260905.xcresult`; counts verified through `xcresulttool get test-results summary`.
+- Earlier focused run: Passed 26 tests. Initial full run: Passed 99 tests. One more regression was added for a legitimate non-live resize during an unfinished chrome animation; its fix and the final full suite passed. Early compile errors in a generated state initializer and mutating Swift Testing assertions were corrected before the successful runs.
+- Universal Release build and Release Analyze: Passed with arm64 and x86_64 confirmed by `lipo`; no `-enable-testing` or unit-test target in the final Release compilation log. Log: `/tmp/USBDisplay-Fixes-Release-Final-20260905.log`.
+- Python catalog suite: Passed nine tests using `python3 -m unittest discover -s script -p 'test_*.py' -v`. Offline `python3 script/update_device_profiles.py --check`: Passed. No generated resources changed.
+- Strict recursive Swift-format lint, shell syntax, project/Info.plist/entitlements syntax, Git whitespace, and strict deep Debug/Release ad-hoc signature verification: Passed. Xcode emitted the expected no-AppIntents metadata-extraction notice; no unused framework was added.
+- Canonical `./script/build_and_run.sh --verify`: Passed, repeated after the final source change. Final launch log: `/tmp/USBDisplay-Fixes-Run-Final-20260905.log`.
+- Live iPad Pro (11-inch, M4): Observed changing video content with the new capture driver. A temporary unselected window displayed the native selection state; right-click opened its context menu and left it unselected, and primary click focused the existing capture window. Native sidebar controls, View-menu full-screen entry/exit, settled toolbar auto-hide, and native Zoom followed by a sidebar round trip were exercised. The temporary window was closed. The final relaunched app also displayed the connecting ProgressView before returning to capture.
+- The UI tool required fresh state around auto-hiding controls and had one transient ScreenCaptureKit screenshot error during a full-screen transition; settled state was read successfully. A right-edge drag attempt did not establish a changed size and is not counted as successful physical resize validation.
+- The six baseline defects are now tested through controlled public/internal production interfaces, not by opening private members. Both full-screen failure directions, negative/smaller-screen fitting and restoration, deferred screen changes, resize-before-screen-event ordering, and Aqua/Dark Aqua callbacks are covered. Existing continuous-alpha, stable-layer, eight-handle, animation, toolbar noninterference, and independent-window tests passed.
+
+### Remaining Risks or Follow-up Work
+
+- Only one capture source was listed. Physical equal-ratio two-device switching, forced interruption/occupied-device recovery, rotation, hot unplug/replug, external-screen removal/restoration, and TCC changes were not performed. System-wide appearance switching was not performed; its callbacks were validated in AppKit fixtures.
+- The no-device and failure components compile and preserve descriptions, but live interaction checks exercised selection/connecting and active capture without unplugging hardware or changing privacy permissions.
+- Continuous WindowServer recording, exhaustive physical edge/corner drags, repeated hover/resize interleaving, 20 physical sidebar cycles, native-resolution/latency/frame-rate benchmarks, macOS 14/15 runtime acceptance, multi-window soak, production signing, and notarization remain outstanding. Automated and endpoint checks do not prove those properties.
+- Keep ratio polling until real USB port format/rotation-event evidence supports replacing it. usbmuxd/lockdownd identity is still an isolated, unsupported-by-Apple-public-SDK protocol path. The optional permission-settings retry/relaunch behavior identified in the audit is unchanged.
+
+### Final Runtime Clarification
+
+- After the final canonical launch, the UI remained connecting until AVFoundation logged startup at 21:20:43, approximately two minutes after the 21:18:44 launch. App discovery subsequently reported zero devices at 21:20:46 and one device at 21:20:55. The final UI identified an iPhone 16 Pro and displayed live portrait content with proportional window geometry; the earlier interaction acceptance used an iPad Pro (11-inch, M4).
+- Only one source was listed at a time. The observed device transition is not a controlled equal-ratio switch, hot-plug, or latency test. The cause of the initial wait was not isolated to permission, device, or system state. A brief thread sample occurred after startup resumed and did not identify the earlier blocking call. No privacy setting or cable was changed by the agent.
+- The final running app is usable, but controlled startup/first-frame timing remains an outstanding hardware investigation. Current state and the audit report include this limit; no additional pipeline change was made on speculative evidence.

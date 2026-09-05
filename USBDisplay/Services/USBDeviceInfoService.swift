@@ -52,12 +52,14 @@ final class DeviceIdentityService {
     self.query = query
   }
 
+  @discardableResult
   func refresh(_ captures: [DisplayDevice], publish: @escaping @MainActor ([DisplayDevice]) -> Void)
+    -> Task<Void, Never>?
   {
     cancel()
     guard !captures.isEmpty else {
       publish([])
-      return
+      return nil
     }
     let currentGeneration = generation
     publish(captures.map { $0.identifying(as: nil, state: .identifying) })
@@ -75,6 +77,7 @@ final class DeviceIdentityService {
         do { try await Task.sleep(for: .seconds(5)) } catch { return }
       }
     }
+    return task
   }
 
   func cancel() {

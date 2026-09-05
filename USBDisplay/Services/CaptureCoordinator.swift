@@ -1,404 +1,290 @@
 @preconcurrency import AVFoundation
 import Foundation
 
-final class CaptureCoordinator: @unchecked Sendable {
+@MainActor
+protocol CaptureCoordinating: AnyObject {
+  var session: AVCaptureSession { get }
+  func update(request: CaptureRequest, active: Bool)
+}
+
+/// Owns the serial execution boundary; the state machine also runs synchronously in tests.
+final class CaptureCoordinator: CaptureCoordinating, @unchecked Sendable {
   typealias SnapshotHandler = @MainActor @Sendable (CaptureSnapshot) -> Void
 
-  let session = AVCaptureSession()
+  let session: AVCaptureSession
+  private let queue: DispatchQueue
+  private let state: CaptureStateMachine
 
-  private let snapshotHandler: SnapshotHandler
-  private let sessionQueue = DispatchQueue(
-    label: "com.xuemingbo.iPhoneUSBDisplay.capture-session",
-    qos: .userInitiated
-  )
-  private let notificationCenter: NotificationCenter
+  init(snapshotHandler: @escaping SnapshotHandler) {
+    let queue = DispatchQueue(
+      label: "com.xuemingbo.iPhoneUSBDisplay.capture-session", qos: .userInitiated)
+    let driver = AVFoundationCaptureDriver()
+    self.queue = queue
+    session = driver.session
+    state = CaptureStateMachine(
+      driver: driver,
+      enqueue: { queue.async(execute: $0) },
+      schedule: { delay, action in queue.asyncAfter(deadline: .now() + delay, execute: action) },
+      publish: { snapshot in Task { @MainActor in snapshotHandler(snapshot) } })
+  }
 
-  private var notificationObservers: [NSObjectProtocol] = []
-  private var currentInput: AVCaptureDeviceInput?
-  private var currentStatus: ConnectionStatus = .noDevice
-  private var selectedDeviceID: String?
-  private var lastKnownDeviceName: String?
-  private var retryWorkItem: DispatchWorkItem?
-  private var retryAttempt = 0
+  func update(request: CaptureRequest, active: Bool) {
+    queue.async { [state] in state.update(request: request, active: active) }
+  }
+}
+
+struct CaptureDeviceState: Equatable, Sendable {
+  let id: String
+  let name: String
+  var suspended = false
+  var occupied = false
+}
+
+enum CaptureAuthorization: Sendable {
+  case authorized, notDetermined, denied
+}
+
+enum CaptureEvent: Sendable {
+  case availabilityChanged(String)
+  case interrupted
+  case interruptionEnded
+  case failed(NSError)
+}
+
+/// All access, except delivery of events and authorization completion, is queue-confined.
+protocol CaptureDriving: AnyObject {
+  var isRunning: Bool { get }
+  var inputDeviceID: String? { get }
+  var authorization: CaptureAuthorization { get }
+  func device(withID id: String) -> CaptureDeviceState?
+  func requestAccess(completion: @escaping @Sendable () -> Void)
+  func observe(_ handler: @escaping @Sendable (CaptureEvent) -> Void)
+  func stopObserving()
+  func configureAndStart(deviceID: String) throws
+  func stopAndClear()
+}
+
+/// Mutable state is confined to the coordinator's queue. Delayed work is invalidated
+/// by generations, including work that has already left a scheduler's cancellation boundary.
+final class CaptureStateMachine: @unchecked Sendable {
+  typealias Action = @Sendable () -> Void
+  private let driver: any CaptureDriving
+  private let enqueue: (@escaping Action) -> Void
+  private let schedule: (TimeInterval, @escaping Action) -> Void
+  private let publishSnapshot: (CaptureSnapshot) -> Void
+  private var request = CaptureRequest(deviceID: nil)
+  private var active = false
+  private var streamID: UUID?
+  private var sequence: UInt64 = 0
+  private var eventGeneration = 0
+  private var confirmationGeneration = 0
   private var retryGeneration = 0
+  private var retryAttempt = 0
   private var permissionRequestInFlight = false
-  private var started = false
-  private var captureStartGeneration = 0
+  private var interrupted = false
+  private var lastKnownDeviceName: String?
 
   init(
-    deviceID: String? = nil,
-    notificationCenter: NotificationCenter = .default,
-    snapshotHandler: @escaping SnapshotHandler
+    driver: any CaptureDriving,
+    enqueue: @escaping (@escaping Action) -> Void,
+    schedule: @escaping (TimeInterval, @escaping Action) -> Void,
+    publish: @escaping (CaptureSnapshot) -> Void
   ) {
-    selectedDeviceID = deviceID
-    self.notificationCenter = notificationCenter
-    self.snapshotHandler = snapshotHandler
+    self.driver = driver
+    self.enqueue = enqueue
+    self.schedule = schedule
+    publishSnapshot = publish
   }
 
-  func start() {
-    sessionQueue.async { [weak self] in
-      guard let self, !self.started else { return }
-      self.started = true
-      self.installObservers()
-      self.connectSelectedDevice()
-      AppLogger.session.info("Window capture coordinator started")
+  func update(request: CaptureRequest, active: Bool) {
+    self.active = false
+    cancelRetry()
+    stopAndClear()
+    self.request = request
+    self.active = active
+    lastKnownDeviceName = nil
+    if active {
+      observeEvents()
+      connectSelectedDevice()
+    } else {
+      publish(.noDevice)
     }
   }
 
-  func stop() {
-    sessionQueue.async { [self] in
-      guard started else { return }
-      self.started = false
-      self.cancelRetry()
-      self.notificationObservers.forEach(self.notificationCenter.removeObserver)
-      self.notificationObservers.removeAll()
-      self.stopAndClearSession()
-      AppLogger.session.info("Window capture coordinator stopped")
+  private func observeEvents() {
+    eventGeneration += 1
+    let generation = eventGeneration
+    driver.observe { [weak self] event in
+      self?.enqueue { [weak self] in
+        guard let self, self.active, self.eventGeneration == generation else { return }
+        self.handle(event)
+      }
     }
   }
 
-  func setDeviceID(_ deviceID: String?) {
-    sessionQueue.async { [weak self] in
-      guard let self, deviceID != self.selectedDeviceID else { return }
-      self.cancelRetry()
-      self.selectedDeviceID = deviceID
-      self.lastKnownDeviceName = nil
-      self.connectSelectedDevice()
-    }
-  }
-
-  private func installObservers() {
-    notificationObservers.append(
-      notificationCenter.addObserver(
-        forName: AVCaptureDevice.wasConnectedNotification,
-        object: nil,
-        queue: nil
-      ) { [weak self] notification in
-        guard let device = notification.object as? AVCaptureDevice else { return }
-        self?.handleDeviceAvailabilityChange(deviceID: device.uniqueID)
+  private func handle(_ event: CaptureEvent) {
+    switch event {
+    case .availabilityChanged(let id):
+      if id == request.deviceID { connectSelectedDevice() }
+    case .interrupted:
+      confirmationGeneration += 1
+      interrupted = true
+      let device = request.deviceID.flatMap(driver.device)
+      if let device, device.occupied {
+        publish(.occupied(deviceName: device.name))
+      } else {
+        publish(.interrupted(deviceName: device?.name ?? lastKnownDeviceName))
       }
-    )
-    notificationObservers.append(
-      notificationCenter.addObserver(
-        forName: AVCaptureDevice.wasDisconnectedNotification,
-        object: nil,
-        queue: nil
-      ) { [weak self] notification in
-        guard let device = notification.object as? AVCaptureDevice else { return }
-        self?.handleDeviceAvailabilityChange(deviceID: device.uniqueID)
-      }
-    )
-    notificationObservers.append(
-      notificationCenter.addObserver(
-        forName: AVCaptureSession.runtimeErrorNotification,
-        object: session,
-        queue: nil
-      ) { [weak self] notification in
-        guard let error = notification.userInfo?[AVCaptureSessionErrorKey] as? NSError else {
-          return
-        }
-        self?.sessionQueue.async { [weak self] in
-          self?.handleRuntimeError(error)
-        }
-      }
-    )
-    notificationObservers.append(
-      notificationCenter.addObserver(
-        forName: AVCaptureSession.wasInterruptedNotification,
-        object: session,
-        queue: nil
-      ) { [weak self] _ in
-        self?.sessionQueue.async { [weak self] in
-          self?.handleInterruption()
-        }
-      }
-    )
-    notificationObservers.append(
-      notificationCenter.addObserver(
-        forName: AVCaptureSession.interruptionEndedNotification,
-        object: session,
-        queue: nil
-      ) { [weak self] _ in
-        self?.sessionQueue.async { [weak self] in
-          self?.retryAttempt = 0
-          self?.connectSelectedDevice()
-        }
-      }
-    )
-  }
-
-  private func handleDeviceAvailabilityChange(deviceID: String) {
-    sessionQueue.async { [weak self] in
-      guard let self, deviceID == self.selectedDeviceID else { return }
-      self.connectSelectedDevice()
+      scheduleRetry(occupied: device?.occupied == true)
+    case .interruptionEnded:
+      interrupted = false
+      cancelRetry()
+      connectSelectedDevice()
+    case .failed(let error):
+      handleConnectionError(error)
     }
   }
 
   private func connectSelectedDevice() {
-    guard started else { return }
-
-    guard let selectedDeviceID else {
+    guard active else { return }
+    retryGeneration += 1
+    guard let id = request.deviceID else {
       cancelRetry()
-      stopAndClearSession()
-      publish(status: .noDevice)
+      stopAndClear()
+      publish(.noDevice)
       return
     }
-
-    guard let device = MobileScreenDeviceDiscovery.device(withID: selectedDeviceID) else {
+    guard let device = driver.device(withID: id) else {
       cancelRetry()
-      stopAndClearSession()
-      publish(status: .interrupted(deviceName: lastKnownDeviceName))
+      stopAndClear()
+      publish(.interrupted(deviceName: lastKnownDeviceName))
       return
     }
-
-    lastKnownDeviceName = device.localizedName
-
-    if currentInput?.device.uniqueID == device.uniqueID, session.isRunning {
-      publish(status: currentStatus)
+    lastKnownDeviceName = device.name
+    if device.suspended || device.occupied {
+      stopAndClear()
+      publish(
+        device.occupied
+          ? .occupied(deviceName: device.name)
+          : .waitingForUnlockOrTrust(deviceName: device.name))
+      scheduleRetry(occupied: device.occupied)
       return
     }
-
-    if device.isSuspended {
-      stopAndClearSession()
-      publish(status: .waitingForUnlockOrTrust(deviceName: device.localizedName))
-      scheduleRetry(for: device, occupied: false)
-      return
-    }
-
-    if device.isInUseByAnotherApplication {
-      stopAndClearSession()
-      publish(status: .occupied(deviceName: device.localizedName))
-      scheduleRetry(for: device, occupied: true)
-      return
-    }
-
-    switch AVCaptureDevice.authorizationStatus(for: .video) {
-    case .authorized:
-      configureAndStartSession(for: device)
-
+    switch driver.authorization {
+    case .denied:
+      cancelRetry()
+      stopAndClear()
+      publish(.cameraPermissionDenied)
     case .notDetermined:
-      requestPermission(for: device)
-
-    case .denied, .restricted:
-      stopAndClearSession()
-      publish(status: .cameraPermissionDenied)
-
-    @unknown default:
-      stopAndClearSession()
-      publish(status: .cameraPermissionDenied)
-    }
-  }
-
-  private func requestPermission(for device: AVCaptureDevice) {
-    guard !permissionRequestInFlight else { return }
-    permissionRequestInFlight = true
-    publish(status: .connecting(deviceName: device.localizedName))
-
-    AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-      self?.sessionQueue.async { [weak self] in
-        guard let self else { return }
-        self.permissionRequestInFlight = false
-
-        if granted {
+      publish(.connecting(deviceName: device.name))
+      guard !permissionRequestInFlight else { return }
+      permissionRequestInFlight = true
+      driver.requestAccess { [weak self] in
+        self?.enqueue { [weak self] in
+          guard let self else { return }
+          self.permissionRequestInFlight = false
+          // Authorization is process-wide: re-evaluate only the current active request.
           self.connectSelectedDevice()
-        } else {
-          self.stopAndClearSession()
-          self.publish(status: .cameraPermissionDenied)
         }
       }
-    }
-  }
-
-  private func configureAndStartSession(for device: AVCaptureDevice) {
-    retryWorkItem?.cancel()
-    retryWorkItem = nil
-    publish(status: .connecting(deviceName: device.localizedName))
-    stopAndClearSession()
-
-    do {
-      session.beginConfiguration()
-      defer { session.commitConfiguration() }
-
-      let input = try AVCaptureDeviceInput(device: device)
-      guard session.canAddInput(input) else {
-        throw CaptureCoordinatorError.cannotAddInput
+    case .authorized:
+      if driver.inputDeviceID == id, driver.isRunning, !interrupted {
+        confirmSession(for: device)
+        return
       }
-
-      session.addInput(input)
-      currentInput = input
-      AppLogger.session.info("Using the system-negotiated mobile screen stream")
-    } catch {
-      handleConnectionError(error as NSError, device: device)
-      return
-    }
-
-    session.startRunning()
-
-    if session.isRunning {
-      AppLogger.session.info("Direct preview capture session started")
-      confirmSessionAfterStabilization(for: device)
-    } else {
-      publish(status: .failed(message: "The device screen stream did not start."))
-      scheduleRetry(for: device, occupied: false)
+      stopAndClear()
+      streamID = UUID()
+      publish(.connecting(deviceName: device.name))
+      do {
+        try driver.configureAndStart(deviceID: id)
+        if driver.isRunning {
+          confirmSession(for: device)
+        } else {
+          publish(.failed(message: "The device screen stream did not start."))
+          scheduleRetry(occupied: false)
+        }
+      } catch {
+        handleConnectionError(error as NSError)
+      }
     }
   }
 
-  private func handleConnectionError(_ error: NSError, device: AVCaptureDevice) {
-    let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError
-    let underlyingDomain = underlying?.domain ?? "none"
-    let underlyingCode = underlying?.code ?? 0
-    AppLogger.session.error(
-      "Capture connection failed domain=\(error.domain, privacy: .public) code=\(error.code) underlyingDomain=\(underlyingDomain, privacy: .public) underlyingCode=\(underlyingCode) description=\(error.localizedDescription, privacy: .public)"
-    )
-    captureStartGeneration += 1
+  private func confirmSession(for device: CaptureDeviceState) {
+    confirmationGeneration += 1
+    let generation = confirmationGeneration
+    let requestID = request.id
+    schedule(0.25) { [weak self] in
+      guard let self, self.active, !self.interrupted,
+        self.request.id == requestID, self.confirmationGeneration == generation,
+        self.driver.isRunning, self.driver.inputDeviceID == device.id
+      else { return }
+      self.cancelRetry()
+      self.publish(.connected(deviceName: device.name))
+    }
+  }
 
+  private func handleConnectionError(_ error: NSError) {
+    confirmationGeneration += 1
+    AppLogger.session.error(
+      "Capture failed domain=\(error.domain, privacy: .public) code=\(error.code) description=\(error.localizedDescription, privacy: .public)"
+    )
+    let name = lastKnownDeviceName ?? "the device"
+    stopAndClear()
     switch CaptureErrorClassifier.classify(error) {
     case .occupied:
-      publish(status: .occupied(deviceName: device.localizedName))
-      scheduleRetry(for: device, occupied: true)
+      publish(.occupied(deviceName: name))
+      scheduleRetry(occupied: true)
     case .deviceUnavailable:
-      stopAndClearSession()
-      publish(status: .deviceUnavailable(deviceName: device.localizedName))
-      scheduleRetry(for: device, occupied: false)
+      publish(.deviceUnavailable(deviceName: name))
+      scheduleRetry(occupied: false)
     case .permissionDenied:
-      publish(status: .cameraPermissionDenied)
+      cancelRetry()
+      publish(.cameraPermissionDenied)
     case .disconnected:
-      stopAndClearSession()
-      publish(status: .interrupted(deviceName: device.localizedName))
+      cancelRetry()
+      publish(.interrupted(deviceName: name))
     case .mediaServicesReset:
-      stopAndClearSession()
-      scheduleRetry(for: device, occupied: false)
+      publish(.interrupted(deviceName: name))
+      scheduleRetry(occupied: false)
     case .retryable:
-      publish(status: .failed(message: error.localizedDescription))
-      scheduleRetry(for: device, occupied: false)
+      publish(.failed(message: error.localizedDescription))
+      scheduleRetry(occupied: false)
     }
   }
 
-  private func handleRuntimeError(_ error: NSError) {
-    guard
-      let selectedDeviceID,
-      let device = MobileScreenDeviceDiscovery.device(withID: selectedDeviceID)
-    else {
-      stopAndClearSession()
-      publish(status: .interrupted(deviceName: lastKnownDeviceName))
-      return
-    }
-
-    handleConnectionError(error, device: device)
-  }
-
-  private func confirmSessionAfterStabilization(for device: AVCaptureDevice) {
-    let generation = captureStartGeneration
-    let deviceID = device.uniqueID
-
-    sessionQueue.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-      guard
-        let self,
-        generation == self.captureStartGeneration,
-        self.session.isRunning,
-        self.selectedDeviceID == deviceID,
-        self.currentInput?.device.uniqueID == deviceID
-      else {
-        return
-      }
-
-      self.cancelRetry()
-      AppLogger.session.info("Direct preview capture session is stable")
-      self.publish(status: .connected(deviceName: device.localizedName))
-    }
-  }
-
-  private func handleInterruption() {
-    guard
-      let selectedDeviceID,
-      let device = MobileScreenDeviceDiscovery.device(withID: selectedDeviceID)
-    else {
-      publish(status: .interrupted(deviceName: lastKnownDeviceName))
-      return
-    }
-
-    if device.isInUseByAnotherApplication {
-      publish(status: .occupied(deviceName: device.localizedName))
-      scheduleRetry(for: device, occupied: true)
-    } else {
-      publish(status: .interrupted(deviceName: device.localizedName))
-      scheduleRetry(for: device, occupied: false)
-    }
-  }
-
-  private func scheduleRetry(for device: AVCaptureDevice, occupied: Bool) {
-    retryWorkItem?.cancel()
-
+  private func scheduleRetry(occupied: Bool) {
+    retryGeneration += 1
     let generation = retryGeneration
-    let attempt = RetryAttempt(generation: generation, deviceID: device.uniqueID)
+    let requestID = request.id
     let delay = RetryPolicy.delay(for: retryAttempt, occupied: occupied)
     retryAttempt += 1
-
-    let workItem = DispatchWorkItem { [weak self] in
-      guard let self else { return }
-      guard
-        attempt.isValid(
-          currentGeneration: self.retryGeneration,
-          selectedDeviceID: self.selectedDeviceID
-        )
-      else {
-        return
-      }
-
-      AppLogger.session.info("Retrying this window's capture device")
+    schedule(delay) { [weak self] in
+      guard let self, self.active, self.request.id == requestID,
+        self.retryGeneration == generation
+      else { return }
       self.connectSelectedDevice()
     }
-    retryWorkItem = workItem
-    sessionQueue.asyncAfter(deadline: .now() + delay, execute: workItem)
   }
 
   private func cancelRetry() {
-    retryWorkItem?.cancel()
-    retryWorkItem = nil
     retryGeneration += 1
     retryAttempt = 0
   }
 
-  private func stopAndClearSession() {
-    captureStartGeneration += 1
-
-    if session.isRunning {
-      session.stopRunning()
-    }
-
-    guard !session.inputs.isEmpty || !session.outputs.isEmpty else {
-      currentInput = nil
-      return
-    }
-
-    session.beginConfiguration()
-    session.inputs.forEach(session.removeInput)
-    session.outputs.forEach(session.removeOutput)
-    session.commitConfiguration()
-    currentInput = nil
+  private func stopAndClear() {
+    confirmationGeneration += 1
+    eventGeneration += 1
+    driver.stopObserving()
+    driver.stopAndClear()
+    streamID = nil
+    interrupted = false
+    if active { observeEvents() }
   }
 
-  private func publish(status: ConnectionStatus) {
-    currentStatus = status
-    let snapshot = CaptureSnapshot(
-      selectedDeviceID: selectedDeviceID,
-      status: status
-    )
-    let snapshotHandler = snapshotHandler
-
-    Task { @MainActor in
-      snapshotHandler(snapshot)
-    }
-  }
-}
-
-private enum CaptureCoordinatorError: LocalizedError {
-  case cannotAddInput
-
-  var errorDescription: String? {
-    switch self {
-    case .cannotAddInput:
-      "The selected device cannot be added to the capture session."
-    }
+  private func publish(_ status: ConnectionStatus) {
+    sequence += 1
+    publishSnapshot(
+      CaptureSnapshot(
+        request: request, streamID: streamID, sequence: sequence, status: status))
   }
 }

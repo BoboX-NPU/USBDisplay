@@ -6,66 +6,60 @@ import Observation
 @Observable
 final class AppModel {
   private(set) var selectedDeviceID: String?
-  private(set) var status: ConnectionStatus = .noDevice
   private(set) var sidebarIsVisible = true
-  private(set) var previewAspectRatio: Double?
-  private(set) var sidebarWidth = 220.0
+  let sidebarWidth = 220.0
+  private var presentation: CapturePresentationState
 
-  @ObservationIgnored private var coordinator: CaptureCoordinator!
+  @ObservationIgnored private var coordinator: (any CaptureCoordinating)!
+  @ObservationIgnored private var active = false
 
-  var session: AVCaptureSession {
-    coordinator.session
-  }
+  var session: AVCaptureSession { coordinator.session }
+  var status: ConnectionStatus { presentation.status }
+  var previewAspectRatio: Double? { presentation.aspectRatio }
+  var previewSource: PreviewSource? { presentation.source }
 
-  init(deviceID: String? = nil) {
+  init(
+    deviceID: String? = nil,
+    makeCoordinator: (@escaping CaptureCoordinator.SnapshotHandler) -> any CaptureCoordinating = {
+      CaptureCoordinator(snapshotHandler: $0)
+    }
+  ) {
     selectedDeviceID = deviceID
-    coordinator = CaptureCoordinator(deviceID: deviceID) { [weak self] snapshot in
-      self?.apply(snapshot)
+    presentation = CapturePresentationState(request: CaptureRequest(deviceID: deviceID))
+    coordinator = makeCoordinator { [weak self] snapshot in
+      self?.presentation.apply(snapshot)
     }
   }
 
   func start() {
-    coordinator.start()
+    guard !active else { return }
+    active = true
+    renewRequest()
   }
 
   func stop() {
-    coordinator.stop()
+    guard active else { return }
+    active = false
+    renewRequest()
   }
 
   func setDeviceID(_ deviceID: String?) {
     guard deviceID != selectedDeviceID else { return }
     selectedDeviceID = deviceID
-    previewAspectRatio = nil
-    status = .noDevice
-    coordinator.setDeviceID(deviceID)
+    renewRequest()
+  }
+
+  private func renewRequest() {
+    let request = CaptureRequest(deviceID: selectedDeviceID)
+    presentation = CapturePresentationState(request: request)
+    coordinator.update(request: request, active: active)
   }
 
   func setSidebarVisible(_ isVisible: Bool) {
     sidebarIsVisible = isVisible
   }
 
-  func updateSidebarWidth(_ width: Double) {
-    guard width.isFinite, width > 0, abs(sidebarWidth - width) >= 0.5 else { return }
-    sidebarWidth = width
-  }
-
-  func updatePreviewAspectRatio(width: Double, height: Double) {
-    guard let ratio = WindowLayoutPolicy.validAspectRatio(width: width, height: height) else {
-      return
-    }
-
-    if let previewAspectRatio, abs(previewAspectRatio - ratio) < 0.001 {
-      return
-    }
-
-    previewAspectRatio = ratio
-    AppLogger.interface.info(
-      "Preview aspect ratio changed to \(ratio, format: .fixed(precision: 4))"
-    )
-  }
-
-  private func apply(_ snapshot: CaptureSnapshot) {
-    selectedDeviceID = snapshot.selectedDeviceID
-    status = snapshot.status
+  func updatePreviewAspectRatio(source: PreviewSource, width: Double, height: Double) {
+    presentation.updateAspectRatio(source: source, width: width, height: height)
   }
 }

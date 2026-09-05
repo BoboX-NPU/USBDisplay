@@ -102,3 +102,25 @@ struct StableAspectRatio {
     return false
   }
 }
+
+/// A stable session can carry several video sources. Each gets a fresh first sample.
+struct PreviewAspectRatioTracker {
+  private(set) var source: PreviewSource?
+  private var filter = StableAspectRatio()
+
+  mutating func setSource(_ source: PreviewSource?) {
+    guard self.source != source else { return }
+    self.source = source
+    reset()
+  }
+
+  mutating func reset() { filter = StableAspectRatio() }
+  mutating func discardCandidate() { filter.discardCandidate() }
+
+  mutating func observe(source: PreviewSource, width: Double, height: Double) -> Bool {
+    guard self.source == source,
+      let ratio = WindowLayoutPolicy.validAspectRatio(width: width, height: height)
+    else { return false }
+    return filter.observe(ratio)
+  }
+}

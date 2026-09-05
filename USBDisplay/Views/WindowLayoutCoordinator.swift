@@ -5,10 +5,11 @@ import SwiftUI
 struct WindowLayoutCoordinator: NSViewRepresentable {
   let configuration: WindowLayoutConfiguration
   let session: AVCaptureSession
+  let source: PreviewSource?
   let sidebar: AnyView
   let status: AnyView
   let statusIsVisible: Bool
-  let onAspectRatioChanged: @MainActor (Double, Double) -> Void
+  let onAspectRatioChanged: @MainActor (PreviewSource, Double, Double) -> Void
   let onSidebarChanged: (Bool) -> Void
 
   func makeNSView(context: Context) -> WindowLayoutHostView {
@@ -21,6 +22,7 @@ struct WindowLayoutCoordinator: NSViewRepresentable {
     view.onSidebarChanged = onSidebarChanged
     view.preview.onAspectRatioChanged = onAspectRatioChanged
     view.preview.setSession(session)
+    view.preview.setSource(source)
     view.updateContent(sidebar: sidebar, status: status, statusIsVisible: statusIsVisible)
     view.updateConfiguration(configuration)
   }
@@ -44,91 +46,6 @@ struct WindowLayoutConfiguration: Equatable {
   }
 }
 
-@MainActor
-private final class SidebarToolbarDelegate: NSObject, NSToolbarDelegate {
-  nonisolated static let identifier = NSToolbarItem.Identifier("USBDisplay.SidebarToggle")
-  private let item = NSToolbarItem(itemIdentifier: identifier)
-  let button = NSButton()
-  var toggle: (() -> Void)?
-  private var sidebarIsVisible: Bool?
-
-  override init() {
-    super.init()
-    button.image = NSImage(systemSymbolName: "sidebar.left", accessibilityDescription: nil)
-    button.bezelStyle = .texturedRounded
-    button.imagePosition = .imageOnly
-    button.frame.size = CGSize(width: 32, height: 28)
-    button.wantsLayer = true
-    button.target = self
-    button.action = #selector(toggleSidebar)
-    item.view = button
-    item.isNavigational = true
-  }
-
-  @objc private func toggleSidebar() { toggle?() }
-
-  func update(visible: Bool) {
-    guard sidebarIsVisible != visible else { return }
-    sidebarIsVisible = visible
-    let label = visible ? "Hide Sidebar" : "Show Sidebar"
-    item.label = label
-    item.paletteLabel = label
-    item.toolTip = label
-    button.toolTip = label
-    button.setAccessibilityLabel(label)
-  }
-
-  nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]
-  { [Self.identifier] }
-  nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]
-  { [Self.identifier] }
-  nonisolated func toolbar(
-    _ toolbar: NSToolbar, itemForItemIdentifier identifier: NSToolbarItem.Identifier,
-    willBeInsertedIntoToolbar flag: Bool
-  ) -> NSToolbarItem? {
-    MainActor.assumeIsolated { identifier == Self.identifier ? item : nil }
-  }
-}
-
-@MainActor
-final class WindowResizeDelegate: NSObject, NSWindowDelegate {
-  nonisolated(unsafe) weak var originalDelegate: (any NSWindowDelegate)?
-  var constrain: ((NSWindow, NSSize) -> NSSize)?
-
-  override func responds(to selector: Selector!) -> Bool {
-    super.responds(to: selector) || originalDelegate?.responds(to: selector) == true
-  }
-
-  override func forwardingTarget(for selector: Selector!) -> Any? {
-    if originalDelegate?.responds(to: selector) == true { return originalDelegate }
-    return super.forwardingTarget(for: selector)
-  }
-
-  func window(
-    _ window: NSWindow,
-    willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions
-  ) -> NSApplication.PresentationOptions {
-    var options =
-      originalDelegate?.window?(
-        window, willUseFullScreenPresentationOptions: proposedOptions) ?? proposedOptions
-    options.remove(.hideMenuBar)
-    options.formUnion([.fullScreen, .autoHideMenuBar, .autoHideToolbar])
-    if !options.contains(.hideDock) { options.insert(.autoHideDock) }
-    // AppKit must see the toolbar before detaching it into its auto-hide surface.
-    window.toolbar?.isVisible = true
-    for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-      window.standardWindowButton(type)?.isHidden = false
-      window.standardWindowButton(type)?.alphaValue = 1
-    }
-    return options
-  }
-
-  func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
-    let proposed = originalDelegate?.windowWillResize?(sender, to: frameSize) ?? frameSize
-    return constrain?(sender, proposed) ?? proposed
-  }
-}
-
 /// SwiftUI owns the window and value state. This container alone owns the stable
 /// preview and all child frames; safe-area and toolbar layout cannot resize them.
 @MainActor
@@ -145,24 +62,26 @@ final class WindowLayoutHostView: NSView {
   private var placeholderFrame: CGRect?
   private(set) var surfaceLayout: WindowSurfaceLayout?
   private var lastWindowFrame: CGRect?
+  private var lastSettledWindowSize: CGSize?
   private weak var observedWindow: NSWindow?
-  private var resizeDelegate: WindowResizeDelegate?
+  private let events = WindowEventBridge()
   private let toolbarDelegate = SidebarToolbarDelegate()
-  private let toolbar = NSToolbar(identifier: "USBDisplay.WindowToolbar")
+  private var toolbar: NSToolbar { toolbarDelegate.toolbar }
   private var originalToolbar: NSToolbar?
   private var originalBackground: NSColor?
   private var originalOpaque = true
   private var originalFullSize = false
   private var originalShadow = true
   private var originalMouseMoved = false
-  private var observers: [NSObjectProtocol] = []
-  private var contentLayoutObservation: NSKeyValueObservation?
-  private var mouseMonitor: Any?
   private var tracking: NSTrackingArea?
-  private var hideWork: DispatchWorkItem?
+  private let hoverScheduler: WindowHoverScheduler
   private var setupWork: DispatchWorkItem?
   private var measuredTitlebar = 0.0
   private var applyingGeometry = false
+  private var pendingScreenChange = false
+  private var lastLayoutScreen: CGRect?
+  private let screenFrameProvider: (NSWindow) -> CGRect
+  private let isFullScreen: (NSWindow) -> Bool
   private var isResizing = false
   private var resizeSession: ResizeSession?
   private var resizeProposalCount = 0
@@ -185,9 +104,17 @@ final class WindowLayoutHostView: NSView {
 
   init(
     configuration: WindowLayoutConfiguration, session: AVCaptureSession = AVCaptureSession(),
-    animatesChrome: Bool = true, animationClock: @escaping () -> TimeInterval = CACurrentMediaTime
+    animatesChrome: Bool = true, animationClock: @escaping () -> TimeInterval = CACurrentMediaTime,
+    hoverScheduler: WindowHoverScheduler = WindowHoverScheduler(),
+    screenFrame: @escaping (NSWindow) -> CGRect = {
+      $0.screen?.visibleFrame ?? CGRect(x: -5000, y: -5000, width: 10000, height: 10000)
+    },
+    isFullScreen: @escaping (NSWindow) -> Bool = { $0.styleMask.contains(.fullScreen) }
   ) {
     self.configuration = configuration
+    self.hoverScheduler = hoverScheduler
+    screenFrameProvider = screenFrame
+    self.isFullScreen = isFullScreen
     chrome = WindowChromeVisibilityState(sidebarIsVisible: configuration.sidebarIsVisible)
     reservedSidebar = configuration.sidebarIsVisible
     reservedTitlebar = configuration.sidebarIsVisible
@@ -205,15 +132,13 @@ final class WindowLayoutHostView: NSView {
     status.sizingOptions = []
     for view in [preview, status, sidebar, divider, titlebar] { addSubview(view) }
     for view in [sidebar, titlebar, divider] { view.wantsLayer = true }
-    titlebar.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
-    divider.layer?.backgroundColor = NSColor.separatorColor.cgColor
+    refreshAppearance()
     status.isHidden = true
-    toolbar.allowsUserCustomization = false
-    toolbar.autosavesConfiguration = false
-    toolbar.displayMode = .iconOnly
-    toolbar.showsBaselineSeparator = false
-    toolbar.delegate = toolbarDelegate
     toolbarDelegate.toggle = { [weak self] in self?.toggleSidebar() }
+    events.constrain = { [weak self] window, size in self?.constrain(window, size: size) ?? size }
+    events.fullScreenFailed = { [weak self] window in self?.recoverFullScreenFailure(in: window) }
+    events.onEvent = { [weak self] event in self?.handleWindowEvent(event) }
+    events.onMouse = { [weak self] event in self?.handleMouseEvent(event) }
     chromeAnimator.onUpdate = { [weak self] _ in self?.applyChromePresentation() }
     chromeAnimator.onCompletion = { [weak self] in self?.finishChromeTransition() }
   }
@@ -221,6 +146,21 @@ final class WindowLayoutHostView: NSView {
   @available(*, unavailable)
   required init?(coder: NSCoder) { nil }
   override var isOpaque: Bool { false }
+
+  override func viewDidChangeEffectiveAppearance() {
+    super.viewDidChangeEffectiveAppearance()
+    refreshAppearance()
+  }
+
+  private func refreshAppearance() {
+    effectiveAppearance.performAsCurrentDrawingAppearance {
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      titlebar.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+      divider.layer?.backgroundColor = NSColor.separatorColor.cgColor
+      CATransaction.commit()
+    }
+  }
 
   func updateContent(sidebar: AnyView, status: AnyView, statusIsVisible: Bool) {
     self.sidebar.rootView = sidebar
@@ -258,39 +198,16 @@ final class WindowLayoutHostView: NSView {
           width: max(1, window.frame.width - sidebarWidth),
           height: max(1, window.frame.height - (chrome.showsTitlebar ? measuredTitlebar : 0))))
     }
-    installDelegate(in: window)
-    installObservers(in: window)
-    mouseMonitor = NSEvent.addLocalMonitorForEvents(
-      matching: [.mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp]
-    ) {
-      [weak self] event in
-      MainActor.assumeIsolated {
-        guard let self, let window = self.observedWindow else { return }
-        if event.type == .leftMouseUp { self.resizePointer = nil }
-        if event.window === window {
-          if event.type == .leftMouseDown {
-            self.resizePointer = window.convertPoint(toScreen: event.locationInWindow)
-          } else if event.type == .mouseMoved || event.type == .leftMouseDragged {
-            self.updatePointer(event.locationInWindow)
-          }
-        } else if self.fullScreen, event.type == .mouseMoved, let eventWindow = event.window {
-          // The native auto-hide toolbar lives in a separate AppKit window.
-          self.updatePointer(
-            window.convertPoint(
-              fromScreen:
-                eventWindow.convertPoint(toScreen: event.locationInWindow)))
-        }
-      }
-      return event
-    }
+    events.attach(to: window)
+    refreshAppearance()
     if let ratio = configuration.aspectRatio {
-      geometry.orient(aspectRatio: ratio, screen: screenFrame)
+      geometry.orient(aspectRatio: ratio)
     }
     commitChrome()
     // SwiftUI finishes assigning its delegate/toolbar after attaching content.
     let setup = DispatchWorkItem { [weak self, weak window] in
       guard let self, let window, self.observedWindow === window else { return }
-      self.installDelegate(in: window)
+      self.events.installDelegate(in: window)
       if window.toolbar !== self.toolbar { window.toolbar = self.toolbar }
       self.setupWork = nil
       self.commitChrome()
@@ -313,7 +230,8 @@ final class WindowLayoutHostView: NSView {
   override func updateTrackingAreas() {
     super.updateTrackingAreas()
     if let tracking { removeTrackingArea(tracking) }
-    let height = chrome.showsTitlebar ? measuredTitlebar + 8 : 8
+    let hotZone = WindowChromeVisibilityState.compactHotZoneHeight
+    let height = chrome.showsTitlebar ? measuredTitlebar + hotZone : hotZone
     let tracking = NSTrackingArea(
       rect: fullScreen
         ? bounds
@@ -404,7 +322,7 @@ final class WindowLayoutHostView: NSView {
     return reservedTitlebar ? measuredTitlebar : 0
   }
   private var screenFrame: CGRect {
-    observedWindow?.screen?.visibleFrame ?? CGRect(x: -5000, y: -5000, width: 10000, height: 10000)
+    observedWindow.map(screenFrameProvider) ?? .zero
   }
 
   private func preparePreviewGeometry() {
@@ -415,7 +333,7 @@ final class WindowLayoutHostView: NSView {
         titlebar: chrome.showsTitlebar ? measuredTitlebar : 0)
       geometry.rememberPreview(layout.previewOnScreen)
     }
-    if !fullScreen { geometry.orient(aspectRatio: ratio, screen: screenFrame) }
+    if !fullScreen { geometry.orient(aspectRatio: ratio) }
   }
 
   private var desiredChrome: ChromePresentation {
@@ -556,6 +474,8 @@ final class WindowLayoutHostView: NSView {
     applyChromePresentation()
     CATransaction.commit()
     lastWindowFrame = window.frame
+    lastLayoutScreen = screenFrame
+    lastSettledWindowSize = window.frame.size
     applyingGeometry = false
     updateMinimumSize()
     window.invalidateShadow()
@@ -581,8 +501,8 @@ final class WindowLayoutHostView: NSView {
     } else {
       layout = .resizing(
         frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
-        externalSidebar: fullScreen ? sidebarWidth : current.externalSidebar,
-        externalTitlebar: fullScreen ? titlebarHeight : current.externalTitlebar)
+        externalSidebar: current.externalSidebar,
+        externalTitlebar: current.externalTitlebar)
       surfaceLayout = layout
     }
     // Conversion also handles any transient SwiftUI hosting-view origin change.
@@ -611,19 +531,12 @@ final class WindowLayoutHostView: NSView {
     sidebar.frame = local(layout.sidebar)
     sidebar.isHidden = !reservedSidebar
     divider.frame = local(
-      CGRect(x: max(0, layout.sidebar.maxX - 1), y: 0, width: 1, height: layout.sidebar.height))
+      CGRect(
+        x: max(0, layout.sidebar.maxX - WindowLayoutPolicy.splitDividerWidth), y: 0,
+        width: WindowLayoutPolicy.splitDividerWidth, height: layout.sidebar.height))
     divider.isHidden = sidebar.isHidden
     titlebar.frame = local(layout.titlebar)
     titlebar.isHidden = fullScreen || layout.titlebar.height == 0
-  }
-
-  private func installDelegate(in window: NSWindow) {
-    if window.delegate === resizeDelegate, resizeDelegate != nil { return }
-    let proxy = resizeDelegate ?? WindowResizeDelegate()
-    proxy.originalDelegate = window.delegate
-    proxy.constrain = { [weak self] window, size in self?.constrain(window, size: size) ?? size }
-    resizeDelegate = proxy
-    window.delegate = proxy
   }
 
   private func constrain(_ window: NSWindow, size: NSSize) -> NSSize {
@@ -661,91 +574,125 @@ final class WindowLayoutHostView: NSView {
       width: height * ratio + layout.externalSidebar, height: height + layout.externalTitlebar)
   }
 
-  private func installObservers(in window: NSWindow) {
-    // Full-screen auto-hide chrome changes the unobscured content rectangle
-    // without resizing the window. Only relayout children; never move native chrome.
-    contentLayoutObservation = window.observe(\.contentLayoutRect, options: [.new]) {
-      [weak self] _, _ in
-      MainActor.assumeIsolated {
-        guard let self, self.fullScreen, !self.fullScreenTransition, !self.applyingGeometry else {
-          return
-        }
-        guard self.reservedSidebar, let window = self.observedWindow else { return }
-        let layout = WindowSurfaceLayout.resizing(
-          frame: window.frame, sidebar: self.sidebarWidth, titlebar: self.titlebarHeight,
-          externalSidebar: 0, externalTitlebar: 0)
-        self.surfaceLayout = layout
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        self.layoutControls(layout)
-        CATransaction.commit()
-        self.onLayoutCommitted?(layout)
+  private func handleMouseEvent(_ event: NSEvent) {
+    guard let window = observedWindow else { return }
+    if event.type == .leftMouseUp { resizePointer = nil }
+    if event.window === window {
+      if event.type == .leftMouseDown {
+        resizePointer = window.convertPoint(toScreen: event.locationInWindow)
+      } else if event.type == .mouseMoved || event.type == .leftMouseDragged {
+        updatePointer(event.locationInWindow)
       }
+    } else if fullScreen, event.type == .mouseMoved, let eventWindow = event.window {
+      // The native auto-hide toolbar lives in a separate AppKit window.
+      updatePointer(
+        window.convertPoint(
+          fromScreen:
+            eventWindow.convertPoint(toScreen: event.locationInWindow)))
     }
-    func observe(
-      _ name: Notification.Name, action: @escaping @MainActor (WindowLayoutHostView) -> Void
-    ) {
-      observers.append(
-        NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) {
-          [weak self] _ in
-          MainActor.assumeIsolated { if let self { action(self) } }
-        })
+  }
+
+  private func handleWindowEvent(_ event: WindowEvent) {
+    switch event {
+    case .contentLayoutChanged:
+      guard fullScreen, !fullScreenTransition, !applyingGeometry else {
+        return
+      }
+      guard reservedSidebar, let window = observedWindow else { return }
+      let layout = WindowSurfaceLayout.resizing(
+        frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
+        externalSidebar: 0, externalTitlebar: 0)
+      surfaceLayout = layout
+      CATransaction.begin()
+      CATransaction.setDisableActions(true)
+      layoutControls(layout)
+      CATransaction.commit()
+      onLayoutCommitted?(layout)
+    case .becameKey:
+      if let window = observedWindow { events.installDelegate(in: window) }
+    case .beganResize: beginResize()
+    case .endedResize: endResize()
+    case .resized: resized()
+    case .moved: moved()
+    case .willEnterFullScreen:
+      cancelHide()
+      fullScreenTransition = true
+      chromeAnimator.reset(to: desiredChrome)
+      toolbarDelegate.button.alphaValue = 1
+      toolbarDelegate.button.layer?.transform = CATransform3DIdentity
+      reservedSidebar = configuration.sidebarIsVisible
+      reservedTitlebar = chrome.showsTitlebar
+      pendingReservationRelease = false
+      preview.isGeometryChanging = true
+      sidebarBeforeFullScreen = configuration.sidebarIsVisible
+      layoutSurface()
+    case .enteredFullScreen:
+      fullScreenTransition = false
+      pendingScreenChange = false
+      fullScreen = true
+      fullScreenSidebarVisible = false
+      reservedSidebar = false
+      preparePreviewGeometry()
+      chromeAnimator.reset(to: desiredChrome)
+      commitChrome()
+      preview.isGeometryChanging = false
+    case .willExitFullScreen:
+      fullScreenTransition = true
+      preview.isGeometryChanging = true
+      chromeAnimator.reset(to: desiredChrome)
+    case .exitedFullScreen:
+      fullScreenTransition = false
+      pendingScreenChange = false
+      fullScreen = false
+      fullScreenSidebarVisible = false
+      cancelHide()
+      let visible = sidebarBeforeFullScreen ?? configuration.sidebarIsVisible
+      sidebarBeforeFullScreen = nil
+      configuration = configuration.showingSidebar(visible)
+      chrome.updateSidebarVisibility(visible)
+      reservedSidebar = visible
+      reservedTitlebar = chrome.showsTitlebar
+      chromeAnimator.reset(to: desiredChrome)
+      preparePreviewGeometry()
+      commitChrome()
+      preview.isGeometryChanging = false
+      onSidebarChanged(visible)
+    case .screenChanged: screenChanged()
     }
-    observe(NSWindow.didBecomeKeyNotification) { host in
-      if let window = host.observedWindow { host.installDelegate(in: window) }
+  }
+
+  private func screenChanged() {
+    pendingScreenChange = true
+    guard !isResizing, !fullScreenTransition else { return }
+    pendingScreenChange = false
+    commitChrome()
+  }
+
+  private func recoverFullScreenFailure(in window: NSWindow) {
+    guard window === observedWindow else { return }
+    cancelHide()
+    fullScreenTransition = false
+    fullScreen = isFullScreen(window)
+    pendingReservationRelease = false
+    if fullScreen {
+      reservedSidebar = fullScreenSidebarVisible
+      reservedTitlebar = true
+    } else {
+      fullScreenSidebarVisible = false
+      let visible = sidebarBeforeFullScreen ?? configuration.sidebarIsVisible
+      sidebarBeforeFullScreen = nil
+      configuration = configuration.showingSidebar(visible)
+      chrome.updateSidebarVisibility(visible)
+      reservedSidebar = visible
+      reservedTitlebar = chrome.showsTitlebar
+      preparePreviewGeometry()
+      onSidebarChanged(visible)
     }
-    observe(NSWindow.willStartLiveResizeNotification) { $0.beginResize() }
-    observe(NSWindow.didEndLiveResizeNotification) { $0.endResize() }
-    observe(NSWindow.didResizeNotification) { $0.resized() }
-    observe(NSWindow.didMoveNotification) { $0.moved() }
-    observe(NSWindow.willEnterFullScreenNotification) { host in
-      host.cancelHide()
-      host.fullScreenTransition = true
-      host.chromeAnimator.reset(to: host.desiredChrome)
-      host.toolbarDelegate.button.alphaValue = 1
-      host.toolbarDelegate.button.layer?.transform = CATransform3DIdentity
-      host.reservedSidebar = host.configuration.sidebarIsVisible
-      host.reservedTitlebar = host.chrome.showsTitlebar
-      host.pendingReservationRelease = false
-      host.preview.isGeometryChanging = true
-      host.sidebarBeforeFullScreen = host.configuration.sidebarIsVisible
-      host.layoutSurface()
-    }
-    observe(NSWindow.didEnterFullScreenNotification) { host in
-      host.fullScreenTransition = false
-      host.fullScreen = true
-      host.fullScreenSidebarVisible = false
-      host.reservedSidebar = false
-      host.preparePreviewGeometry()
-      host.chromeAnimator.reset(to: host.desiredChrome)
-      host.commitChrome()
-      host.preview.isGeometryChanging = false
-    }
-    observe(NSWindow.willExitFullScreenNotification) {
-      $0.fullScreenTransition = true
-      $0.preview.isGeometryChanging = true
-      $0.chromeAnimator.reset(to: $0.desiredChrome)
-    }
-    observe(NSWindow.didExitFullScreenNotification) { host in
-      host.fullScreenTransition = false
-      host.fullScreen = false
-      host.fullScreenSidebarVisible = false
-      host.cancelHide()
-      let visible = host.sidebarBeforeFullScreen ?? host.configuration.sidebarIsVisible
-      host.sidebarBeforeFullScreen = nil
-      host.configuration = host.configuration.showingSidebar(visible)
-      host.chrome.updateSidebarVisibility(visible)
-      host.reservedSidebar = visible
-      host.reservedTitlebar = host.chrome.showsTitlebar
-      host.chromeAnimator.reset(to: host.desiredChrome)
-      host.preparePreviewGeometry()
-      host.commitChrome()
-      host.preview.isGeometryChanging = false
-      host.onSidebarChanged(visible)
-    }
-    observe(NSWindow.didChangeScreenNotification) { host in
-      if !host.isResizing { host.commitChrome() }
-    }
+    chromeAnimator.reset(to: desiredChrome)
+    pendingScreenChange = false
+    commitChrome()
+    preview.isGeometryChanging = false
+    updatePointer(window.convertPoint(fromScreen: NSEvent.mouseLocation))
   }
 
   private func beginResize() {
@@ -801,6 +748,7 @@ final class WindowLayoutHostView: NSView {
       layoutSurface()
       observedWindow?.invalidateShadow()
     }
+    if pendingScreenChange { screenChanged() }
     preview.isGeometryChanging = chromeAnimator.isRunning || fullScreenTransition
     AppLogger.interface.debug(
       "Live resize ended after \(self.resizeProposalCount) constrained proposals")
@@ -808,6 +756,11 @@ final class WindowLayoutHostView: NSView {
 
   private func resized() {
     guard !applyingGeometry else { return }
+    // Screen adaptation must never become the user's new preferred size.
+    if !fullScreen, !fullScreenTransition, lastLayoutScreen != screenFrame {
+      screenChanged()
+      if !isResizing { return }
+    }
     if usesPlaceholderLayout, !fullScreen, !fullScreenTransition, let window = observedWindow {
       placeholderFrame = WindowLayoutPolicy.placeholderFrame(window.frame, screen: screenFrame)
       if !isResizing, placeholderFrame != window.frame {
@@ -816,7 +769,17 @@ final class WindowLayoutHostView: NSView {
       }
     }
     layoutSurface()
-    if let window = observedWindow { lastWindowFrame = window.frame }
+    if !isResizing, !fullScreen, !fullScreenTransition,
+      !pendingScreenChange, let layout = surfaceLayout, let ratio = configuration.aspectRatio,
+      layout.frame.size != lastSettledWindowSize,
+      abs(layout.preview.width - layout.preview.height * ratio) <= 2
+    {
+      geometry.rememberPreview(layout.previewOnScreen)
+    }
+    if let window = observedWindow {
+      lastWindowFrame = window.frame
+      if !fullScreenTransition { lastSettledWindowSize = window.frame.size }
+    }
     if let layout = surfaceLayout { onLayoutCommitted?(layout) }
     // The resize delegate already chose the size. No delayed correction is queued.
   }
@@ -845,14 +808,16 @@ final class WindowLayoutHostView: NSView {
       let inside =
         point.x >= 0 && point.x <= window.frame.width
         && point.y >= 0 && point.y <= window.frame.height
-      if inside && point.x <= 8 {
+      let hotZone = WindowChromeVisibilityState.compactHotZoneHeight
+      if inside && point.x <= hotZone {
         cancelHide()
         if !fullScreenSidebarVisible {
           fullScreenSidebarVisible = true
           transitionChrome()
         }
       } else if inside && fullScreenSidebarVisible
-        && (point.x <= sidebarWidth + 8 || point.y >= window.frame.height - measuredTitlebar - 32)
+        && (point.x <= sidebarWidth + hotZone
+          || point.y >= window.frame.height - measuredTitlebar - 32)
       {
         cancelHide()
       } else {
@@ -860,7 +825,8 @@ final class WindowLayoutHostView: NSView {
       }
       return
     }
-    let height = chrome.showsTitlebar ? titlebarHeight + 8 : 8
+    let hotZone = WindowChromeVisibilityState.compactHotZoneHeight
+    let height = chrome.showsTitlebar ? titlebarHeight + hotZone : hotZone
     if point.y >= window.frame.height - height && point.y <= window.frame.height {
       revealTitlebar()
     } else if chrome.mode == .hoverRevealed {
@@ -869,24 +835,13 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func scheduleHide() {
+    guard !isResizing, !fullScreenTransition else { return }
     if fullScreen {
-      guard !fullScreenTransition, fullScreenSidebarVisible, hideWork == nil else { return }
-      let work = DispatchWorkItem { [weak self] in self?.hideFullScreenSidebar() }
-      hideWork = work
-      DispatchQueue.main.asyncAfter(
-        deadline: .now() + WindowChromeVisibilityState.hideDelay, execute: work)
-      return
+      guard fullScreenSidebarVisible else { return }
+      hoverScheduler.schedule { [weak self] in self?.hideFullScreenSidebar() }
+    } else if chrome.pointerExitedRevealRegion() {
+      hoverScheduler.schedule { [weak self] in self?.hideTitlebar() }
     }
-    guard !isResizing, !fullScreenTransition, chrome.pointerExitedRevealRegion(),
-      hideWork == nil
-    else { return }
-    let work = DispatchWorkItem { [weak self] in
-      self?.hideWork = nil
-      self?.hideTitlebar()
-    }
-    hideWork = work
-    DispatchQueue.main.asyncAfter(
-      deadline: .now() + WindowChromeVisibilityState.hideDelay, execute: work)
   }
 
   private func hideFullScreenSidebar() {
@@ -897,8 +852,7 @@ final class WindowLayoutHostView: NSView {
   }
 
   private func cancelHide() {
-    hideWork?.cancel()
-    hideWork = nil
+    hoverScheduler.cancel()
   }
 
   func prepareForRemoval() {
@@ -916,14 +870,8 @@ final class WindowLayoutHostView: NSView {
     preview.isGeometryChanging = false
     setupWork?.cancel()
     setupWork = nil
-    contentLayoutObservation?.invalidate()
-    contentLayoutObservation = nil
-    observers.forEach(NotificationCenter.default.removeObserver)
-    observers.removeAll()
-    if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
-    mouseMonitor = nil
+    events.detach()
     if let window = observedWindow {
-      if window.delegate === resizeDelegate { window.delegate = resizeDelegate?.originalDelegate }
       if window.toolbar === toolbar { window.toolbar = originalToolbar }
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
         window.standardWindowButton(type)?.alphaValue = 1
@@ -936,6 +884,8 @@ final class WindowLayoutHostView: NSView {
       window.acceptsMouseMovedEvents = originalMouseMoved
     }
     observedWindow = nil
-    resizeDelegate = nil
+    lastSettledWindowSize = nil
+    lastLayoutScreen = nil
+    pendingScreenChange = false
   }
 }

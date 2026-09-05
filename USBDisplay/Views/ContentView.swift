@@ -18,6 +18,7 @@ struct ContentView: View {
         } ?? 0
       ),
       session: model.session,
+      source: model.previewSource,
       sidebar: AnyView(
         SidebarView(
           devices: devices, selectedDeviceID: model.selectedDeviceID,

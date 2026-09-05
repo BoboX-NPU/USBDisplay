@@ -34,6 +34,7 @@ final class DeviceDiscoveryMonitor {
   private var discoveryObservation: NSKeyValueObservation?
   private var notificationObservers: [NSObjectProtocol] = []
   private var started = false
+  private var snapshots = DeviceDiscoverySnapshots()
 
   init(devicesHandler: @escaping DevicesHandler) {
     self.devicesHandler = devicesHandler
@@ -88,15 +89,13 @@ final class DeviceDiscoveryMonitor {
         modelID: $0.modelID
       )
     }
+    guard snapshots.accept(devices) else { return }
     for device in devices {
       AppLogger.device.debug("Capture model: \(device.modelID, privacy: .public)")
     }
-    let devicesHandler = devicesHandler
 
     AppLogger.device.info("Found \(devices.count) eligible wired Apple mobile device(s)")
-    Task { @MainActor in
-      devicesHandler(devices)
-    }
+    devicesHandler(devices)
   }
 
 }
@@ -129,12 +128,9 @@ enum MobileScreenDeviceDiscovery {
     discoverySession.devices
       .filter { CaptureDeviceFilter.isEligible(descriptor(for: $0)) }
       .sorted {
-        $0.localizedName.localizedCaseInsensitiveCompare($1.localizedName) == .orderedAscending
+        let order = $0.localizedName.localizedCaseInsensitiveCompare($1.localizedName)
+        return order == .orderedSame ? $0.uniqueID < $1.uniqueID : order == .orderedAscending
       }
-  }
-
-  static func device(withID id: String) -> AVCaptureDevice? {
-    eligibleDevices(in: makeSession()).first { $0.uniqueID == id }
   }
 
   private static func descriptor(for device: AVCaptureDevice) -> CaptureDeviceDescriptor {
@@ -172,5 +168,16 @@ enum MobileScreenDeviceDiscovery {
         "Failed to configure \(description, privacy: .public) discovery: \(status)"
       )
     }
+  }
+}
+
+/// Compare raw discovery values before starting or cancelling USB identity work.
+struct DeviceDiscoverySnapshots {
+  private var previous: [DisplayDevice]?
+
+  mutating func accept(_ devices: [DisplayDevice]) -> Bool {
+    guard previous != devices else { return false }
+    previous = devices
+    return true
   }
 }

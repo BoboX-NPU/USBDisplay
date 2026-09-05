@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import Testing
+import XCTest
 
 @testable import iPhoneUSBDisplay
 
@@ -76,28 +77,50 @@ struct USBDeviceInfoTests {
   }
 
   @Test @MainActor func disconnectCancelsAndLateIdentityCannotReachNewCapture() async throws {
-    let query = DelayedIdentityQuery()
+    let oldStarted = XCTestExpectation(description: "Old query started")
+    let newStarted = XCTestExpectation(description: "New query started")
+    let newPublished = XCTestExpectation(description: "New identity published")
+    let oldFinished = XCTestExpectation(description: "Superseded query finished")
+    let query = ControlledIdentityQuery(started: [oldStarted, newStarted])
     let service = DeviceIdentityService(query: { await query.query() })
+    defer { service.cancel() }
     var published: [DisplayDevice] = []
-    service.refresh([DisplayDevice(id: "old", name: "Old")]) { published = $0 }
-    try await Task.sleep(for: .milliseconds(20))
-    service.refresh([DisplayDevice(id: "new", name: "New")]) { published = $0 }
-    try await Task.sleep(for: .milliseconds(200))
+    let oldTask = try #require(
+      service.refresh([DisplayDevice(id: "old", name: "Old")]) {
+        published = $0
+      })
+    try await waitForSignal(oldStarted)
+    service.refresh([DisplayDevice(id: "new", name: "New")]) {
+      published = $0
+      if $0.first?.identificationState == .identified { newPublished.fulfill() }
+    }
+    try await waitForSignal(newStarted)
+    await query.finish(1, identities: [USBDeviceIdentity(name: "New", productType: "iPhone18,2")])
+    try await waitForSignal(newPublished)
+    await query.finish(0, identities: [USBDeviceIdentity(name: "Old", productType: "iPhone17,1")])
+    Task {
+      await oldTask.value
+      oldFinished.fulfill()
+    }
+    try await waitForSignal(oldFinished)
     #expect(published.first?.id == "new")
     #expect(published.first?.productType == "iPhone18,2")
     service.refresh([]) { published = $0 }
     #expect(published.isEmpty)
-    service.cancel()
   }
 
   @Test @MainActor func timeoutIsAnExplicitUnresolvedState() async throws {
     let service = DeviceIdentityService(query: { throw USBQueryError.timedOut })
+    defer { service.cancel() }
+    let published = XCTestExpectation(description: "Unresolved state published")
     var device: DisplayDevice?
-    service.refresh([DisplayDevice(id: "a", name: "Test")]) { device = $0.first }
-    try await Task.sleep(for: .milliseconds(30))
+    service.refresh([DisplayDevice(id: "a", name: "Test")]) {
+      device = $0.first
+      if device?.identificationState == .unavailable { published.fulfill() }
+    }
+    try await waitForSignal(published)
     #expect(device?.identificationState == .unavailable)
     #expect(device?.productType == nil)
-    service.cancel()
   }
 
   @Test func localProtocolReadsPartialResponsesAndOnlyAllowedKeys() async throws {
@@ -116,10 +139,13 @@ struct USBDeviceInfoTests {
       try await USBDeviceInfoClient(timeout: 0.15, socketPath: server.path).identities()
     }
     #expect(ProcessInfo.processInfo.systemUptime - start < 1)
+    let accepted = XCTestExpectation(description: "Cancellation fixture accepted query")
+    let cancellationServer = try USBFixtureServer(mode: .stall, onAccept: { accepted.fulfill() })
+    defer { cancellationServer.stop() }
     let task = Task {
-      try await USBDeviceInfoClient(timeout: 4, socketPath: server.path).identities()
+      try await USBDeviceInfoClient(timeout: 4, socketPath: cancellationServer.path).identities()
     }
-    try await Task.sleep(for: .milliseconds(30))
+    try await waitForSignal(accepted)
     let cancelledAt = ProcessInfo.processInfo.systemUptime
     task.cancel()
     await #expect(throws: USBQueryError.cancelled) { try await task.value }
@@ -135,21 +161,27 @@ struct USBDeviceInfoTests {
   }
 }
 
-private actor DelayedIdentityQuery {
-  var count = 0
+private func waitForSignal(_ expectation: XCTestExpectation) async throws {
+  let result = await XCTWaiter.fulfillment(of: [expectation], timeout: 3)
+  try #require(result == .completed)
+}
+
+private actor ControlledIdentityQuery {
+  let started: [XCTestExpectation]
+  private var continuations: [CheckedContinuation<[USBDeviceIdentity], Never>] = []
+
+  init(started: [XCTestExpectation]) { self.started = started }
+
   func query() async -> [USBDeviceIdentity] {
-    count += 1
-    let first = count == 1
-    // Intentionally ignores cancellation to verify the publication generation guard.
+    // Intentionally ignores cancellation; completion is controlled by the test.
     await withCheckedContinuation { continuation in
-      DispatchQueue.global().asyncAfter(deadline: .now() + (first ? 0.12 : 0.04)) {
-        continuation.resume()
-      }
+      continuations.append(continuation)
+      started[continuations.count - 1].fulfill()
     }
-    return [
-      USBDeviceIdentity(
-        name: first ? "Old" : "New", productType: first ? "iPhone17,1" : "iPhone18,2")
-    ]
+  }
+
+  func finish(_ index: Int, identities: [USBDeviceIdentity]) {
+    continuations[index].resume(returning: identities)
   }
 }
 
@@ -163,7 +195,7 @@ private final class USBFixtureServer: @unchecked Sendable {
   var keys: [String] { lock.withLock { recordedKeys } }
   private let descriptor: Int32
 
-  init(mode: Mode) throws {
+  init(mode: Mode, onAccept: @escaping @Sendable () -> Void = {}) throws {
     descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
     var address = sockaddr_un()
     address.sun_family = sa_family_t(AF_UNIX)
@@ -179,12 +211,12 @@ private final class USBFixtureServer: @unchecked Sendable {
       Darwin.close(descriptor)
       throw USBQueryError.unavailable
     }
-    DispatchQueue.global().async { [self] in run(mode) }
+    DispatchQueue.global().async { [self] in run(mode, onAccept: onAccept) }
   }
 
   func stop() { lock.withLock { stopped = true } }
 
-  private func run(_ mode: Mode) {
+  private func run(_ mode: Mode, onAccept: @Sendable () -> Void) {
     defer {
       Darwin.close(descriptor)
       unlink(path)
@@ -194,6 +226,7 @@ private final class USBFixtureServer: @unchecked Sendable {
       guard poll(&ready, 1, 50) > 0 else { continue }
       let client = accept(descriptor, nil, nil)
       guard client >= 0 else { continue }
+      onAccept()
       var noSignal: Int32 = 1
       setsockopt(client, SOL_SOCKET, SO_NOSIGPIPE, &noSignal, socklen_t(MemoryLayout<Int32>.size))
       if mode == .disconnect {

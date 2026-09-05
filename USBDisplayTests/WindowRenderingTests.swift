@@ -9,9 +9,23 @@ import Testing
 @MainActor
 struct WindowRenderingTests {
   @Test func disconnectedSwiftUIContentIgnoresOldPhoneRatio() async throws {
-    let model = AppModel()
-    // A stopped capture can retain the last measured source ratio.
-    model.updatePreviewAspectRatio(width: 402, height: 874)
+    let capture = FakeCaptureCoordinator()
+    let model = AppModel(
+      deviceID: "phone",
+      makeCoordinator: {
+        capture.handler = $0
+        return capture
+      })
+    model.start()
+    let request = try #require(capture.requests.last?.0)
+    let source = PreviewSource(requestID: request.id, streamID: UUID())
+    capture.handler?(
+      CaptureSnapshot(
+        request: request, streamID: source.streamID, sequence: 1,
+        status: .connected(deviceName: "Phone")))
+    model.updatePreviewAspectRatio(source: source, width: 402, height: 874)
+    model.stop()
+    model.updatePreviewAspectRatio(source: source, width: 402, height: 874)
     let window = NSWindow(
       contentRect: CGRect(x: 200, y: 100, width: 238, height: 516),
       styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)

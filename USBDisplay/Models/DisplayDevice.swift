@@ -6,7 +6,6 @@ struct DisplayDevice: Identifiable, Equatable, Sendable {
   let modelID: String
   let productType: String?
   let identificationState: DeviceIdentificationState
-  let kind: DisplayDeviceKind
 
   init(
     id: String, name: String, modelID: String = "", productType: String? = nil,
@@ -17,7 +16,6 @@ struct DisplayDevice: Identifiable, Equatable, Sendable {
     self.modelID = modelID
     self.productType = productType
     self.identificationState = identificationState
-    kind = DisplayDeviceKind.resolve(modelID: productType ?? modelID, name: name)
   }
 
   func identifying(as productType: String?, state: DeviceIdentificationState) -> DisplayDevice {
@@ -32,23 +30,6 @@ struct DisplayDevice: Identifiable, Equatable, Sendable {
 
 enum DeviceIdentificationState: Equatable, Sendable {
   case identifying, identified, ambiguous, unavailable
-}
-
-enum DisplayDeviceKind: String, Equatable, Sendable {
-  case iPhone
-  case iPad
-  case unknown
-
-  static func resolve(modelID: String, name: String) -> DisplayDeviceKind {
-    let identity = "\(modelID) \(name)".lowercased()
-    if identity.contains("iphone") {
-      return .iPhone
-    }
-    if identity.contains("ipad") {
-      return .iPad
-    }
-    return .unknown
-  }
 }
 
 struct CaptureDeviceDescriptor: Equatable, Sendable {

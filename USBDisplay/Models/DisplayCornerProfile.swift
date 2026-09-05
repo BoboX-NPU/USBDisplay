@@ -27,17 +27,6 @@ enum DisplayCornerProfileResolver {
     )
   }
 
-  static func automaticFraction(for device: DisplayDevice, aspectRatio: Double?) -> Double {
-    automaticProfile(for: device).fraction
-  }
-
-  static func normalizedLongAspect(_ aspectRatio: Double?) -> Double? {
-    guard let aspectRatio,
-      let validRatio = WindowLayoutPolicy.validAspectRatio(width: aspectRatio, height: 1)
-    else { return nil }
-    return max(validRatio, 1 / validRatio)
-  }
-
   static func clampedFraction(_ fraction: Double) -> Double {
     guard fraction.isFinite else { return 0 }
     return min(max(fraction, 0), maximumFraction)

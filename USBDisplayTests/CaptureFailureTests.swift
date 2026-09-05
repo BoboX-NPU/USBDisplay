@@ -53,15 +53,6 @@ struct CaptureFailureTests {
   }
 
   @Test
-  func retryAttemptIsCancelledByGenerationOrSelectionChange() {
-    let attempt = RetryAttempt(generation: 4, deviceID: "selected")
-
-    #expect(attempt.isValid(currentGeneration: 4, selectedDeviceID: "selected"))
-    #expect(!attempt.isValid(currentGeneration: 5, selectedDeviceID: "selected"))
-    #expect(!attempt.isValid(currentGeneration: 4, selectedDeviceID: "different"))
-  }
-
-  @Test
   func retryDelayIsBounded() {
     #expect(RetryPolicy.delay(for: 0, occupied: false) == 0.5)
     #expect(RetryPolicy.delay(for: 99, occupied: false) == 5)

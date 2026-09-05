@@ -67,7 +67,51 @@ enum ConnectionStatus: Equatable, Sendable {
   }
 }
 
+struct CaptureRequest: Equatable, Sendable {
+  let id = UUID()
+  let deviceID: String?
+}
+
+struct PreviewSource: Equatable, Sendable {
+  let requestID: UUID
+  let streamID: UUID
+}
+
 struct CaptureSnapshot: Equatable, Sendable {
-  let selectedDeviceID: String?
+  let request: CaptureRequest
+  let streamID: UUID?
+  let sequence: UInt64
   let status: ConnectionStatus
+}
+
+/// Validates delivery independently of task scheduling order on the main actor.
+struct CapturePresentationState {
+  private(set) var request: CaptureRequest
+  private(set) var status: ConnectionStatus = .noDevice
+  private(set) var aspectRatio: Double?
+  private var streamID: UUID?
+  private var lastSequence: UInt64 = 0
+
+  init(request: CaptureRequest) { self.request = request }
+
+  var source: PreviewSource? {
+    guard status.isConnected, let streamID else { return nil }
+    return PreviewSource(requestID: request.id, streamID: streamID)
+  }
+
+  mutating func apply(_ snapshot: CaptureSnapshot) {
+    guard snapshot.request == request, snapshot.sequence > lastSequence else { return }
+    lastSequence = snapshot.sequence
+    if streamID != snapshot.streamID { aspectRatio = nil }
+    streamID = snapshot.streamID
+    status = snapshot.status
+  }
+
+  mutating func updateAspectRatio(source: PreviewSource, width: Double, height: Double) {
+    guard self.source == source,
+      let ratio = WindowLayoutPolicy.validAspectRatio(width: width, height: height)
+    else { return }
+    if let aspectRatio, abs(aspectRatio - ratio) < 0.001 { return }
+    aspectRatio = ratio
+  }
 }
