@@ -919,3 +919,28 @@
 ### Remaining Risks or Follow-up Work
 
 - Verify macOS 14/15 native toolbar behavior when hardware is available. Previously documented continuous-resize and frame-pacing acceptance items remain outstanding.
+
+## 2026-09-05 — Hide the Full-Screen Toolbar
+
+### Summary
+
+- Show the native toolbar and traffic lights only when ordinary-window titlebar space is reserved. Full screen no longer forces the toolbar visible.
+- Preserve the existing ordinary-window control animation and full-screen geometry restoration.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Canonical Debug build and launch (`./script/build_and_run.sh --verify`): Passed after running outside the execution sandbox, which initially prevented Swift macro execution.
+- Connected iPhone runtime screenshot: Full-screen video and black backing reach the top edge; the white toolbar and native window buttons are absent. The existing visible sidebar remains visible.
+- Initial test filters used a folder name instead of the target/suite names; these attempts are not counted as regression coverage.
+
+- Full Debug regression suite: 88 passed, 1 failed. `USBDeviceInfoTests/timeoutIsAnExplicitUnresolvedState()` failed; this unchanged USB timeout test is outside the toolbar code path. Window chrome, layout, rendering, and full-screen restoration tests passed. Whitespace checks passed.
+
+### Remaining Risks or Follow-up Work
+
+- The computer-use session did not reliably complete the requested exit action, so ordinary-window toolbar restoration was not independently confirmed visually in this run. Existing restoration logic is unchanged. Older macOS and continuous transition validation remain outstanding.

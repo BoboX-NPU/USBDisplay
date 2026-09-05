@@ -480,7 +480,7 @@ final class WindowLayoutHostView: NSView {
     // rectangular window behind the rounded picture.
     window.hasShadow = !reservedSidebar && !reservedTitlebar && !fullScreen ? false : originalShadow
     toolbarDelegate.update(visible: configuration.sidebarIsVisible)
-    let showsToolbar = reservedTitlebar || fullScreen
+    let showsToolbar = reservedTitlebar && !fullScreen
     let isRevealingToolbar = showsToolbar && !toolbar.isVisible
     // AppKit measures navigational items when the toolbar becomes visible.
     // Restore the traffic lights and their measurement opacity first; the
