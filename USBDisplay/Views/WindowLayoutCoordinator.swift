@@ -403,12 +403,6 @@ final class WindowLayoutHostView: NSView {
     divider.layer?.transform = sidebar.layer?.transform ?? CATransform3DIdentity
     titlebar.alphaValue = fullScreen ? 0 : value.titlebar
     titlebar.layer?.transform = CATransform3DMakeTranslation(0, travel * (1 - value.titlebar), 0)
-    // AppKit owns the toolbar item; animate only the public window buttons.
-    if !fullScreen && !fullScreenTransition {
-      for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-        window.standardWindowButton(type)?.alphaValue = value.titlebar
-      }
-    }
     preview.applyCornerFraction(cornerFraction, retainingMask: retainsCornerMask)
     if let layer = status.layer {
       statusMask.apply(
@@ -449,10 +443,10 @@ final class WindowLayoutHostView: NSView {
     // Ordinary-window compact controls still use the app's existing reveal behavior.
     if !fullScreen {
       let showsToolbar = reservedTitlebar
-      let isRevealingToolbar = showsToolbar && !toolbar.isVisible
+      // Deferred native toolbar layout must always measure visible window buttons.
+      // Fading them to zero can make AppKit place the sidebar item over them.
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
         window.standardWindowButton(type)?.isHidden = !showsToolbar
-        if isRevealingToolbar { window.standardWindowButton(type)?.alphaValue = 1 }
       }
       if toolbar.isVisible != showsToolbar { toolbar.isVisible = showsToolbar }
     }
@@ -869,7 +863,6 @@ final class WindowLayoutHostView: NSView {
     if let window = observedWindow {
       if window.toolbar === toolbar { window.toolbar = originalToolbar }
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
-        window.standardWindowButton(type)?.alphaValue = 1
         window.standardWindowButton(type)?.isHidden = false
       }
       window.isOpaque = originalOpaque

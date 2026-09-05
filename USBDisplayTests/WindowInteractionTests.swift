@@ -169,7 +169,7 @@ struct WindowChromeInteractionTests {
         let control = window.convertToScreen(button.convert(button.bounds, to: nil))
         #expect(!rect.intersects(control))
         #expect(rect.minX >= control.maxX + 8)
-        #expect(abs(button.alphaValue - host.chromeAnimator.presentation.titlebar) < 0.00001)
+        #expect(button.alphaValue == 1)
       }
     }
     func checkAnimation() throws {

@@ -1197,3 +1197,31 @@
 
 - The button's exact shape follows the running macOS version and toolbar context; the app imposes no circular shape or dimensions. macOS 14/15 runtime appearance was not checked.
 - Release, the complete Debug suite, Python tests, and resource verification were not rerun for this toolbar-only change; the prior audit validation remains recorded above. This check used an unselected window with a discovered iPhone and did not repeat live capture or hardware acceptance.
+
+## 2026-09-05 — Fix Sidebar Toggle Overlap During Toolbar Reveal
+
+### Summary
+
+- Reproduce the reported overlap between the standard sidebar item and native window buttons after compact-mode reveal. Making the window buttons briefly opaque before showing the toolbar was insufficient: the app restored zero opacity before AppKit's deferred layout measured them.
+- Remove app-owned window-button opacity changes, including cleanup writes. Ordinary compact mode still hides/unhides the buttons before changing toolbar visibility. Keep the standard toolbar item's default appearance and dimensions, app-owned background/sidebar animation, and native full-screen handling.
+- Extend the real SwiftUI window regression with three compact/reveal cycles sampled across deferred layout without forcing a layout pass. Retain the separate synchronous spacing fixture and require native window buttons to retain their default opacity.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Before the fix, the rendering suite passed five tests and failed the extended real-window regression. Its accessibility rectangles confirmed that the sidebar item intersected the native controls. Result: `/tmp/USBDisplay-ToolbarOverlap-Reproduce-20260905.xcresult`.
+- After the fix, all 25 selected window interaction, lifecycle, and rendering tests passed with zero failures and zero skips. Result: `/tmp/USBDisplay-ToolbarOverlap-Fixed-20260905.xcresult`; counts confirmed through xcresulttool. An initial method-only filter selected zero tests and was not treated as a passing reproduction.
+- Passed `./script/build_and_run.sh --verify`, strict Swift-format lint for changed Swift files, Debug strict deep signature verification, and Git whitespace checks. Launch log: `/tmp/USBDisplay-ToolbarOverlap-Run-20260905.log`.
+- Reproduced the visible overlap in a temporary empty window. Final interaction in the repaired build confirmed compact-mode reveal places the sidebar item to the right of the native window-control area, and its action expands the sidebar. Closed the temporary window and observed the selected iPhone preview again.
+- UI automation initially encountered timeouts and ambiguous app resolution because three copies were running from Xcode DerivedData, the canonical `.build/Xcode` directory, and `.build/Audit`. Closed the stale copies, including stopping Xcode's retained debug session after normal termination did not release it. Verified that only the canonical process remained before accepting the final UI evidence.
+
+### Remaining Risks or Follow-up Work
+
+- Release, unrelated test suites, macOS 14/15 runtime appearance, and exhaustive physical resizing/full-screen cycles were not repeated for this focused fix. Prior hardware and performance limits remain unchanged.

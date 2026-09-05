@@ -127,7 +127,7 @@ struct WindowRenderingTests {
     surface.onLayoutCommitted = nil
   }
 
-  @Test func swiftUISceneKeepsCompactWindowFocusable() async throws {
+  @Test func swiftUISceneKeepsCompactWindowFocusableAndToolbarSeparated() async throws {
     try await Task.sleep(for: .milliseconds(200))
     func surface(in view: NSView) -> WindowLayoutHostView? {
       if let host = view as? WindowLayoutHostView { return host }
@@ -153,11 +153,42 @@ struct WindowRenderingTests {
     #expect(!window.hasShadow)
     #expect(window.canBecomeKey)
     #expect(window.canBecomeMain)
-    host.revealTitlebar()
-    #expect(window.styleMask.contains(.titled))
-    #expect(window.standardWindowButton(.closeButton)?.isHidden == false)
-    #expect(window.standardWindowButton(.zoomButton)?.isHidden == false)
-    host.hideTitlebar()
+    window.makeKeyAndOrderFront(nil)
+    for _ in 0..<3 {
+      host.revealTitlebar()
+      #expect(window.styleMask.contains(.titled))
+      #expect(window.standardWindowButton(.closeButton)?.isHidden == false)
+      #expect(window.standardWindowButton(.zoomButton)?.isHidden == false)
+      for _ in 0..<6 {
+        // Allow AppKit's deferred toolbar layout during and after the fade.
+        // Forcing layout here can hide the real scene's overlap regression.
+        try await Task.sleep(for: .milliseconds(40))
+        let item = try #require(window.toolbar?.items.first)
+        func findToggle(in element: any NSAccessibilityProtocol) -> (any NSAccessibilityProtocol)? {
+          if element.accessibilityRole() == .button, element.accessibilityLabel() == item.label {
+            return element
+          }
+          for child in element.accessibilityChildren() ?? [] {
+            if let child = child as? any NSAccessibilityProtocol, let match = findToggle(in: child)
+            {
+              return match
+            }
+          }
+          return nil
+        }
+        let toggle = try #require(findToggle(in: window))
+        let rect = toggle.accessibilityFrame()
+        #expect(!rect.isEmpty)
+        for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+          let button = try #require(window.standardWindowButton(type))
+          let control = window.convertToScreen(button.convert(button.bounds, to: nil))
+          #expect(!rect.intersects(control))
+          #expect(rect.minX >= control.maxX)
+        }
+      }
+      host.hideTitlebar()
+      try await Task.sleep(for: .milliseconds(250))
+    }
   }
 
   @Test func composedHostingSurfaceHasTransparentCornersAndCurrentDynamicFrame() async throws {
