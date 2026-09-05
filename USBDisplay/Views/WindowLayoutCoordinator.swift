@@ -330,6 +330,11 @@ final class WindowLayoutHostView: NSView {
     surfaceLayout = target
     // No run-loop yield, intermediate outer frame, or forced display is allowed here.
     if !fullScreen, window.frame != target.frame { window.setFrame(target.frame, display: false) }
+    // AppKit quantizes the requested frame. Using the fractional request here
+    // leaves an uncovered strip until a later layout catches up.
+    surfaceLayout = .resizing(
+      frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
+      externalSidebar: target.externalSidebar, externalTitlebar: target.externalTitlebar)
     layoutSurface()
     CATransaction.commit()
     lastWindowFrame = window.frame
@@ -337,7 +342,7 @@ final class WindowLayoutHostView: NSView {
     updateMinimumSize()
     window.invalidateShadow()
     updateTrackingAreas()
-    onLayoutCommitted?(target)
+    if let layout = surfaceLayout { onLayoutCommitted?(layout) }
   }
 
   private func layoutSurface() {
@@ -360,7 +365,9 @@ final class WindowLayoutHostView: NSView {
     let radius =
       !fullScreen && !fullScreenTransition && chrome.mode == .compact
       ? configuration.cornerRadiusFraction : 0
-    preview.applyGeometry(frame: local(layout.preview), cornerFraction: radius)
+    preview.applyGeometry(
+      frame: local(layout.preview), cornerFraction: radius,
+      fillsBounds: !fullScreen && !fullScreenTransition && configuration.aspectRatio != nil)
     status.frame = local(layout.preview)
     status.wantsLayer = true
     status.layer?.cornerRadius = preview.layer?.cornerRadius ?? 0

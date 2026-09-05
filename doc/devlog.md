@@ -696,3 +696,37 @@
 - Validate reference geometry on additional physical iPhone/iPad models. The 164 identifiers represent metadata coverage; unavailable devices and older-device capture compatibility were not tested physically.
 - Review future upstream conflicts against traceable evidence. Six excluded BezelKit identifiers remain explicitly listed in the generated audit; new rounded groups need an Apple geometry anchor before inclusion.
 - Restore or investigate visible live capture, then complete the previously outstanding white-line/rectangular-outline, frame-continuity, pointer-drag, hover, screen-edge, full-screen, and multiple-device acceptance checks. This data-catalog change does not claim to resolve those appearance or playback checks.
+
+## 2026-09-05 — Cover Rounded Window Frames Without Edge Gaps
+
+### Summary
+
+- Rebase every chrome commit on the actual NSWindow frame after AppKit accepts it. A live diagnostic found a 237.336384-point preview request inside a 238-point window; retaining the request left an uncovered right strip, including when only the titlebar was visible.
+- Keep ordinary, source-proportional video in aspect-fill mode so frame quantization does not introduce thin black letterboxing. This can crop the small rounding remainder at the opposite edges; it does not stretch the image. Full screen, full-screen transitions, and unknown source geometry continue to show the complete aspect-fit image.
+- Synchronize preview bounds, continuous-corner radius, and backing scale immediately on frame/bounds changes. Disable implicit actions and avoid reassigning unchanged geometry/gravity. Retain the preview instance, capture session, native window style, toolbar behavior, and existing model catalog.
+- Extend rendered-edge coverage to every chrome state using fractional iPhone geometry. Add immediate-commit and deferred-layout regression checks rather than relying only on a later forced layout.
+
+### Affected Files
+
+- `USBDisplay/Views/PreviewView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Before the fix, the new immediate-commit test failed with a requested width of 237.33638443935928 versus an accepted window width of 238. The previous bitmap test still passed after a forced layout, confirming why it had missed this gap. Temporary geometry diagnostics were removed from the final implementation.
+- Final full Debug regression suite: Passed 69 tests, zero failures and zero skips. New checks cover 20 sidebar/titlebar cycles with 80 immediately observed commits, 40 direct preview resizes plus a bounds change before deferred layout, synchronized video/mask geometry without implicit animations, and ordinary/full-screen gravity selection. Existing window, routing, capture, identity, and catalog regressions passed.
+- Dynamic AppKit rendering: Passed fractional iPhone aspect-ratio proposals in compact, sidebar-expanded, and titlebar-only states, including all four outermost straight-edge pixels and corner transparency over light/dark backgrounds. These are synthetic bitmap checks, not physical pointer or WindowServer frame-pacing checks.
+- Debug and Release builds, strict recursive Swift-format lint, whitespace checks, and strict Debug/Release signature verification: Passed. Canonical `./script/build_and_run.sh --verify`: Passed. An initial CGFloat/Double compile mismatch was corrected; one exact floating-point radius assertion was changed to a subpixel tolerance after a roughly 4e-15 difference.
+- Running iPhone 16 Pro: The pre-fix titlebar-only white line was observed. After rebuilding, native Zoom recovered visible video from an initially narrow black preview. Expanded and compact live snapshots reached the straight edges without the prior uncovered strip, and a further native Zoom size change retained border-free compact edges. These observations are endpoint checks, not a continuous drag pass.
+- Pointer/hover automation: Not run to acceptance. Compact edge-drag and subsequent coordinate-hover attempts repeatedly returned computer-use error `-10005: noWindowsAvailable`; no usable resize proposals were recorded. The process remained alive, and accessibility menus and screenshots continued working. Reacquiring the app, raising/centering the window, and resetting the automation session did not restore coordinate operations. The final titlebar-only physical check therefore remains incomplete despite passing synthetic coverage.
+- No device screenshots, personal phone content, or temporary diagnostics were added to the repository.
+
+### Remaining Risks or Follow-up Work
+
+- Perform physical continuous drags from all eight edges/corners in compact mode, including quick reversals, and verify no black strips during or after resizing. Native Zoom and delegate proposals are not substitutes for this check.
+- Recheck the final build with only the hovered titlebar visible and the sidebar closed, against light and dark backgrounds. Record actual WindowServer frames if any white line or flash remains.
+- Investigate the initially narrow restored window and delayed/black preview observed after relaunch. Native Zoom recovered playback during this run; startup behavior was not changed or claimed fixed.
+- Existing multi-device, rotation, monitor-edge, full-screen hardware, older macOS, and performance acceptance work remains as recorded in the current project state.

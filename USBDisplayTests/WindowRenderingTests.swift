@@ -1,3 +1,4 @@
+import AVFoundation
 import AppKit
 import SwiftUI
 import Testing
@@ -7,6 +8,72 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct WindowRenderingTests {
+  @Test func previewLayerAndMaskFollowSizeChangesBeforeDeferredLayout() throws {
+    let preview = PreviewHostView(session: AVCaptureSession())
+    let fraction = 62.0 / 402
+    preview.applyGeometry(
+      frame: CGRect(x: 0, y: 0, width: 238, height: 516),
+      cornerFraction: fraction, fillsBounds: true)
+    let video = try #require(preview.layer?.sublayers?.first as? AVCaptureVideoPreviewLayer)
+    for step in 0..<40 {
+      let height = 400 + Double(step) * 3.25
+      preview.setFrameSize(CGSize(width: ceil(height * 402 / 874), height: height))
+      #expect(video.frame == preview.bounds)
+      #expect(
+        abs((preview.layer?.cornerRadius ?? 0) - preview.bounds.width * CGFloat(fraction))
+          < 0.000001)
+      #expect(video.animationKeys()?.isEmpty ?? true)
+      #expect(preview.layer?.animationKeys()?.isEmpty ?? true)
+    }
+    preview.setBoundsSize(CGSize(width: 200, height: 435))
+    #expect(video.frame == preview.bounds)
+    #expect(abs((preview.layer?.cornerRadius ?? 0) - CGFloat(200 * fraction)) < 0.000001)
+    #expect(video.videoGravity == .resizeAspectFill)
+    preview.applyGeometry(
+      frame: CGRect(x: 0, y: 0, width: 1000, height: 800),
+      cornerFraction: 0, fillsBounds: false)
+    #expect(video.videoGravity == .resizeAspect)
+    #expect(preview.layer?.cornerRadius == 0)
+  }
+
+  @Test func fractionalPhoneGeometryCoversTheCommittedWindowImmediately() async throws {
+    let window = NSWindow(
+      contentRect: CGRect(x: 500, y: 200, width: 459, height: 568),
+      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    let config = WindowLayoutConfiguration(
+      title: "Fractional phone geometry", aspectRatio: 402.0 / 874,
+      sidebarWidth: 220, sidebarIsVisible: true, cornerRadiusFraction: 62.0 / 402)
+    let surface = WindowLayoutHostView(configuration: config)
+    window.contentView = NSHostingView(
+      rootView: RenderingFixture(surface: surface).ignoresSafeArea())
+    window.orderFront(nil)
+    defer {
+      surface.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    var samples = 0
+    surface.onLayoutCommitted = { layout in
+      samples += 1
+      // Do not force another layout: the first committed frame must cover the
+      // window AppKit actually accepted, including its size quantization.
+      #expect(layout.frame == window.frame)
+      let rect = surface.preview.convert(surface.preview.bounds, to: nil)
+      #expect(abs(rect.maxX - window.frame.width) < 0.000001)
+      #expect(abs(rect.minY) < 0.000001)
+      #expect(abs(rect.maxY - (window.frame.height - layout.externalTitlebar)) < 0.000001)
+    }
+    for _ in 0..<20 {
+      surface.updateConfiguration(config.showingSidebar(false))
+      surface.revealTitlebar()
+      surface.hideTitlebar()
+      surface.updateConfiguration(config)
+    }
+    #expect(samples == 80)
+    surface.onLayoutCommitted = nil
+  }
+
   @Test func swiftUISceneKeepsCompactWindowFocusable() async throws {
     try await Task.sleep(for: .milliseconds(200))
     func surface(in view: NSView) -> WindowLayoutHostView? {
@@ -45,7 +112,7 @@ struct WindowRenderingTests {
       styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
     window.isReleasedWhenClosed = false
     let config = WindowLayoutConfiguration(
-      title: "Synthetic rendering test", aspectRatio: 0.5,
+      title: "Synthetic rendering test", aspectRatio: 402.0 / 874,
       sidebarWidth: 220, sidebarIsVisible: false, cornerRadiusFraction: 62.0 / 402)
     let surface = WindowLayoutHostView(configuration: config)
     let hosting = NSHostingView(rootView: RenderingFixture(surface: surface).ignoresSafeArea())
@@ -81,8 +148,8 @@ struct WindowRenderingTests {
         window.delegate?.windowWillResize?(
           window,
           to: CGSize(
-            width: 240 + Double(step) + current.externalSidebar,
-            height: 480 + Double(2 * step) + current.externalTitlebar)))
+            width: 240.25 + Double(step) + current.externalSidebar,
+            height: 480.25 + Double(2 * step) + current.externalTitlebar)))
       window.setFrame(CGRect(origin: window.frame.origin, size: size), display: false)
       NotificationCenter.default.post(name: NSWindow.didEndLiveResizeNotification, object: window)
       hosting.layoutSubtreeIfNeeded()
@@ -114,8 +181,9 @@ struct WindowRenderingTests {
         CGPoint(x: previewRect.maxX - 3, y: previewRect.midY),
         CGPoint(x: previewRect.midX, y: previewRect.minY + 3),
       ]
-      if compact {
-        // Include the outermost pixel: inset samples miss a one-pixel white rim.
+      do {
+        // Include every chrome state and fractional phone geometry: an inset
+        // sample or an exactly divisible 1:2 ratio misses a one-pixel rim.
         let halfPixel = 0.5 / scale
         samplePoints += [
           CGPoint(x: previewRect.minX + halfPixel, y: previewRect.midY),

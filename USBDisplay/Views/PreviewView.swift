@@ -6,6 +6,7 @@ final class PreviewHostView: NSView {
   private let previewLayer = AVCaptureVideoPreviewLayer()
   private var aspectRatioTimer: Timer?
   private var lastReportedAspectRatio: Double?
+  private var cornerFraction = 0.0
 
   var onGeometryApplied: (() -> Void)?
   var onAspectRatioChanged: ((Double, Double) -> Void)?
@@ -36,27 +37,58 @@ final class PreviewHostView: NSView {
 
   override func layout() {
     super.layout()
-    CATransaction.begin()
-    CATransaction.setDisableActions(true)
-    previewLayer.frame = bounds
-    CATransaction.commit()
+    synchronizeGeometry()
   }
 
-  func applyGeometry(frame: CGRect, cornerFraction: Double) {
+  override func setFrameSize(_ newSize: NSSize) {
+    super.setFrameSize(newSize)
+    synchronizeGeometry()
+  }
+
+  override func setBoundsSize(_ newSize: NSSize) {
+    super.setBoundsSize(newSize)
+    synchronizeGeometry()
+  }
+
+  override func viewDidChangeBackingProperties() {
+    super.viewDidChangeBackingProperties()
+    synchronizeGeometry()
+  }
+
+  func applyGeometry(frame: CGRect, cornerFraction: Double, fillsBounds: Bool) {
     CATransaction.begin()
     CATransaction.setDisableActions(true)
+    self.cornerFraction = cornerFraction
+    // The ordinary window follows the source ratio, but AppKit's frame rounding
+    // can leave subpoint letterboxing. Fill that rounding remainder; full screen
+    // and unknown source geometry keep the complete aspect-fit picture.
+    let gravity: AVLayerVideoGravity = fillsBounds ? .resizeAspectFill : .resizeAspect
+    if previewLayer.videoGravity != gravity { previewLayer.videoGravity = gravity }
     if self.frame != frame { self.frame = frame }
-    previewLayer.frame = bounds
-    layer?.cornerRadius = DisplayCornerProfileResolver.cornerRadius(
-      shortSide: min(bounds.width, bounds.height), fraction: cornerFraction)
+    synchronizeGeometry()
     CATransaction.commit()
     onGeometryApplied?()
+  }
+
+  private func synchronizeGeometry() {
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    let scale = window?.backingScaleFactor ?? 1
+    if layer?.contentsScale != scale { layer?.contentsScale = scale }
+    if previewLayer.contentsScale != scale { previewLayer.contentsScale = scale }
+    if previewLayer.frame != bounds { previewLayer.frame = bounds }
+    let radius = CGFloat(
+      DisplayCornerProfileResolver.cornerRadius(
+        shortSide: min(bounds.width, bounds.height), fraction: cornerFraction))
+    if layer?.cornerRadius != radius { layer?.cornerRadius = radius }
+    CATransaction.commit()
   }
 
   override var isOpaque: Bool { false }
 
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
+    synchronizeGeometry()
 
     aspectRatioTimer?.invalidate()
     aspectRatioTimer = nil
