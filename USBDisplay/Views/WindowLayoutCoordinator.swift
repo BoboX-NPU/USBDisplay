@@ -176,6 +176,8 @@ final class WindowLayoutHostView: NSView {
   private var fullScreen = false
   private var sidebarBeforeFullScreen: Bool?
   private var fullScreenSidebarVisible = false
+  private var fullScreenToolbarVisible = false
+  private var toolbarHideWork: DispatchWorkItem?
   var onSidebarChanged: (Bool) -> Void = { _ in }
   // Tests observe every committed presentation, including synchronous chrome changes.
   var onLayoutCommitted: ((WindowSurfaceLayout) -> Void)?
@@ -324,7 +326,13 @@ final class WindowLayoutHostView: NSView {
     if fullScreen { updatePointer(event.locationInWindow) } else { revealTitlebar() }
   }
   override func mouseMoved(with event: NSEvent) { updatePointer(event.locationInWindow) }
-  override func mouseExited(with event: NSEvent) { scheduleHide() }
+  override func mouseExited(with event: NSEvent) {
+    if fullScreen, let window = observedWindow {
+      updatePointer(window.convertPoint(fromScreen: NSEvent.mouseLocation))
+    } else {
+      scheduleHide()
+    }
+  }
 
   func updateConfiguration(_ next: WindowLayoutConfiguration) {
     let previous = configuration
@@ -526,7 +534,7 @@ final class WindowLayoutHostView: NSView {
     window.hasShadow = !reservedSidebar && !reservedTitlebar && !fullScreen ? false : originalShadow
     toolbarDelegate.update(
       visible: fullScreen ? fullScreenSidebarVisible : configuration.sidebarIsVisible)
-    let showsToolbar = reservedTitlebar || fullScreen
+    let showsToolbar = fullScreen ? fullScreenToolbarVisible : reservedTitlebar
     let isRevealingToolbar = showsToolbar && !toolbar.isVisible
     // AppKit measures navigational items when the toolbar becomes visible.
     // Restore the traffic lights and their measurement opacity first; the
@@ -682,6 +690,7 @@ final class WindowLayoutHostView: NSView {
     observe(NSWindow.didMoveNotification) { $0.moved() }
     observe(NSWindow.willEnterFullScreenNotification) { host in
       host.cancelHide()
+      host.cancelToolbarHide()
       host.chromeAnimator.reset(to: host.desiredChrome)
       host.reservedSidebar = host.configuration.sidebarIsVisible
       host.reservedTitlebar = host.chrome.showsTitlebar
@@ -695,6 +704,7 @@ final class WindowLayoutHostView: NSView {
       host.fullScreenTransition = false
       host.fullScreen = true
       host.fullScreenSidebarVisible = false
+      host.fullScreenToolbarVisible = false
       host.reservedSidebar = false
       host.preparePreviewGeometry()
       host.chromeAnimator.reset(to: host.desiredChrome)
@@ -710,6 +720,8 @@ final class WindowLayoutHostView: NSView {
       host.fullScreenTransition = false
       host.fullScreen = false
       host.fullScreenSidebarVisible = false
+      host.fullScreenToolbarVisible = false
+      host.cancelToolbarHide()
       host.cancelHide()
       let visible = host.sidebarBeforeFullScreen ?? host.configuration.sidebarIsVisible
       host.sidebarBeforeFullScreen = nil
@@ -825,6 +837,16 @@ final class WindowLayoutHostView: NSView {
       let inside =
         point.x >= 0 && point.x <= window.frame.width
         && point.y >= 0 && point.y <= window.frame.height
+      let topRegion = fullScreenToolbarVisible ? max(measuredTitlebar, titlebarHeight) + 8 : 8
+      if inside && point.y >= window.frame.height - topRegion {
+        cancelToolbarHide()
+        if !fullScreenToolbarVisible {
+          fullScreenToolbarVisible = true
+          commitChrome()
+        }
+      } else {
+        scheduleToolbarHide()
+      }
       if inside && point.x <= 8 {
         cancelHide()
         if !fullScreenSidebarVisible {
@@ -869,6 +891,25 @@ final class WindowLayoutHostView: NSView {
       deadline: .now() + WindowChromeVisibilityState.hideDelay, execute: work)
   }
 
+  private func scheduleToolbarHide() {
+    guard fullScreenToolbarVisible, toolbarHideWork == nil else { return }
+    let work = DispatchWorkItem { [weak self] in
+      guard let self else { return }
+      self.toolbarHideWork = nil
+      guard self.fullScreen, !self.fullScreenTransition else { return }
+      self.fullScreenToolbarVisible = false
+      self.commitChrome()
+    }
+    toolbarHideWork = work
+    DispatchQueue.main.asyncAfter(
+      deadline: .now() + WindowChromeVisibilityState.hideDelay, execute: work)
+  }
+
+  private func cancelToolbarHide() {
+    toolbarHideWork?.cancel()
+    toolbarHideWork = nil
+  }
+
   private func hideFullScreenSidebar() {
     cancelHide()
     guard fullScreen, !fullScreenTransition else { return }
@@ -888,6 +929,7 @@ final class WindowLayoutHostView: NSView {
 
   private func detach() {
     cancelHide()
+    cancelToolbarHide()
     chromeAnimator.reset(to: chromeAnimator.target)
     resizeSession = nil
     resizeConfiguration = nil

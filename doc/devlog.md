@@ -1000,3 +1000,31 @@
 ### Remaining Risks or Follow-up Work
 
 - Pure-hover toolbar hiding and the resulting physical return to a zero sidebar inset were not conclusively reproduced with computer use; zero-inset restoration is covered by the KVO integration fixture. Older macOS and continuous transition acceptance remain outstanding.
+
+
+## 2026-09-05 — Explicitly Auto-Hide the Full-Screen Toolbar
+
+### Summary
+
+- Fix full-screen layout commits forcing the native toolbar visible regardless of pointer position. Add a separate toolbar hover state and cancellable half-second hide delay.
+- Reveal the toolbar in the topmost 8 points, retain it within its measured control area, and hide it after leaving. Left-edge sidebar changes do not reveal the toolbar. Cancel pending work on full-screen lifecycle changes and detach.
+- Preserve native menu-bar presentation, sidebar inset observation, and full-screen video geometry.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- All 10 window chrome interaction tests: Passed. The full-screen regression now checks initial toolbar hiding, top-edge reveal, delayed hiding after pointer departure, and repeated sidebar reveals that leave the toolbar hidden. Existing inset and geometry assertions passed.
+- Canonical Debug build/launch, strict Swift-format lint, and Git whitespace checks: Passed.
+- Connected-iPhone runtime: An initial visible top strip was followed by a screenshot with the complete preview reaching the top and no toolbar or white strip. The accessibility tree likewise contained no toolbar controls.
+- Scripted drag attempts returned `noWindowsAvailable`, including after refreshing the app connection. These failed tool actions are not counted as successful physical pointer gestures; the observed hidden endpoint is separate evidence.
+- Release build and full regression suite: Not run. The earlier unrelated USB timeout failure remains unverified.
+
+### Remaining Risks or Follow-up Work
+
+- Complete an uninterrupted physical top-edge hover round trip and older-macOS acceptance. Pointer transitions are covered by the integration fixture, while the tool-limited live check confirms the hidden endpoint only.
