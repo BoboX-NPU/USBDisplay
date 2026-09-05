@@ -944,3 +944,32 @@
 ### Remaining Risks or Follow-up Work
 
 - The computer-use session did not reliably complete the requested exit action, so ordinary-window toolbar restoration was not independently confirmed visually in this run. Existing restoration logic is unchanged. Older macOS and continuous transition validation remain outstanding.
+
+
+## 2026-09-05 — Restore Full-Screen Edge Controls
+
+### Summary
+
+- Replace permanent toolbar hiding with AppKit's `autoHideToolbar` and `autoHideMenuBar` presentation options, preserving forwarded delegate options and valid Dock combinations. Prepare native controls before AppKit detaches the toolbar.
+- Start full screen with a temporary hidden sidebar, independent of ordinary-window preferences. Reveal it at the leftmost 8 points or with the native toolbar toggle; keep it available while the pointer is in the sidebar or top control region, and hide it 0.5 seconds after leaving.
+- Animate the sidebar over the complete aspect-fit preview without shifting or resizing video. Restore the pre-full-screen sidebar on exit. Observe local pointer events in both the content and detached native toolbar windows.
+
+### Affected Files
+
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Canonical Debug build and launch: Passed.
+- Focused `WindowChromeInteractionTests`: All 10 tests passed in both runners, 20 successful executions. The added test covers valid full-screen presentation options, three left-edge reveal/delayed-hide cycles, unchanged video bounds, the sidebar toggle, and restored ordinary controls and geometry.
+- Strict Swift-format lint on changed Swift files and Git whitespace checks: Passed.
+- Connected iPhone: Native full-screen entry completed; the toolbar was observed hidden after pointer movement. A pointer gesture to the left edge revealed the sidebar; movement away and the hide delay removed it. Video remained centered at the same size. Activating the accessible toolbar toggle collapsed the sidebar.
+- The computer-use tool provides click and drag actions but no pure-hover action. Top-edge attempts did not conclusively establish a complete physical top-hover reveal cycle. No screenshots of phone content were stored in the repository.
+- Full regression suite and Release build: Not run for this change. The previous unchanged USB query timeout test failure remains unverified.
+
+### Remaining Risks or Follow-up Work
+
+- Confirm pure top-edge hover/reveal and physical exit restoration, especially on macOS 14/15. The native auto-hide contract and presentation options are covered by Apple's API documentation and regression assertions; they do not replace physical hover acceptance.

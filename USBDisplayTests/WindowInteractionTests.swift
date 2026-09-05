@@ -363,6 +363,49 @@ struct WindowChromeInteractionTests {
     #expect(previewRect(host).width == video.height)
   }
 
+  @Test func fullScreenEdgeSidebarOverlaysVideoAndRestoresOrdinaryControls() async throws {
+    let (window, host) = makeWindow()
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let ordinary = previewRect(host)
+    let delegate = try #require(window.delegate as? WindowResizeDelegate)
+    let options = delegate.window(
+      window, willUseFullScreenPresentationOptions: [.fullScreen, .hideMenuBar, .hideDock])
+    #expect(options.contains([.fullScreen, .autoHideMenuBar, .autoHideToolbar, .hideDock]))
+    #expect(!options.contains(.hideMenuBar))
+    #expect(!options.contains(.autoHideDock))
+    NotificationCenter.default.post(name: NSWindow.willEnterFullScreenNotification, object: window)
+    window.setFrame(NSScreen.main!.frame, display: false)
+    NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+    let video = previewRect(host)
+    #expect(host.surfaceLayout?.sidebar.width == 0)
+    for _ in 0..<3 {
+      host.updatePointer(CGPoint(x: 1, y: window.frame.height / 2))
+      finish(host)
+      #expect(host.surfaceLayout!.sidebar.width > 0)
+      #expect(previewRect(host) == video)
+      host.updatePointer(CGPoint(x: window.frame.width / 2, y: window.frame.height / 2))
+      try await Task.sleep(for: .milliseconds(650))
+      finish(host)
+      #expect(host.surfaceLayout?.sidebar.width == 0)
+      #expect(previewRect(host) == video)
+    }
+    host.toggleSidebar()
+    finish(host)
+    #expect(host.surfaceLayout!.sidebar.width > 0)
+    host.toggleSidebar()
+    finish(host)
+    #expect(host.surfaceLayout?.sidebar.width == 0)
+    NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
+    NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+    #expect(window.toolbar?.isVisible == true)
+    #expect(host.surfaceLayout!.sidebar.width > 0)
+    #expect(previewRect(host) == ordinary)
+  }
+
   @Test func fullScreenCancelsOldAnimationCallbacksAndRestoresOrdinaryVideo() async throws {
     let (window, host) = makeWindow()
     defer {
