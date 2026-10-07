@@ -1249,3 +1249,28 @@
 ### Remaining Risks or Follow-up Work
 
 - This is a generated design concept. Production icon sizing, alpha-edge cleanup, small-size validation, and application integration have not been performed.
+
+## 2026-10-07 — Revise the Icon Concept to Use a MacBook
+
+### Summary
+
+- Add a new icon concept with a MacBook and iPhone, using the user's supplied pictograms for the laptop notch, slim base, phone silhouette, Dynamic Island, and home indicator.
+- Preserve the blue tile and USB-C connection, with the cable entering the MacBook from the side. Retain the earlier concept as a separate file and save the final generation prompt.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-macbook-iphone-v3.png`
+- `doc/design/usb-display-icon-macbook-iphone-v3-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually inspected the selected image for the laptop base, screen notch, iPhone silhouette, and single cable connecting both devices.
+- Two preliminary image edits retained an unwanted transparent patch beneath the laptop. A fresh generation removed that visible interior defect; only the selected final image was added to the repository.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels and has an alpha channel.
+- Build and tests: Not run; application code and resources used by the build were not changed.
+
+### Remaining Risks or Follow-up Work
+
+- Production icon sizing, residual alpha-edge cleanup, small-size validation, and application integration remain pending.
