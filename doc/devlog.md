@@ -1377,3 +1377,27 @@
 ### Remaining Risks or Follow-up Work
 
 - Exact pixel placement and layered source geometry remain unresolved. Production sizing, application icon masking, small-size validation, and application integration remain pending.
+
+## 2026-10-07 — Restore the Dynamic Island and Home Indicators
+
+### Summary
+
+- Restore the iPhone Dynamic Island and the bottom home indicators on both devices at the user's request.
+- Retain the flat overlapping iPad and iPhone composition without a blue separation seam, and save the new PNG and exact imagegen edit prompt.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-ipad-iphone-v8.png`
+- `doc/design/usb-display-icon-ipad-iphone-v8-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually verified one pill at the top of the iPhone screen, one home indicator in each screen, and the retained foreground-phone overlap.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels and has no alpha channel.
+- Build and tests: Not run; this change affects design material only. Exact pixel placement was not revalidated.
+
+### Remaining Risks or Follow-up Work
+
+- Exact placement, layered source geometry, production sizing, application icon masking, small-size validation, and application integration remain pending.
