@@ -1350,3 +1350,30 @@
 ### Remaining Risks or Follow-up Work
 
 - Production sizing, application icon masking, small-size validation, and application integration remain pending.
+
+## 2026-10-07 — Remove Screen Marks and the Overlap Separation Seam
+
+### Summary
+
+- Remove the iPhone Dynamic Island and both home indicators, leaving blank screens.
+- Remove the artificial blue separation seam so the foreground phone visually occludes the iPad without carving a gap in its visible outline.
+- Attempt the requested 3–5-pixel move to the lower right. Retain the closest generated result and document its measured placement rather than claiming exact translation.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-ipad-iphone-v7.png`
+- `doc/design/usb-display-icon-ipad-iphone-v7-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually inspected blank screens and removal of the blue gap. The output is flattened raster artwork; it does not provide an independently editable complete iPad layer.
+- A read-only Pillow measurement using `R < 60`, `G < 85`, and `B < 110` found v6 dark bounds `(193, 181, 1061, 1025)` and selected v7 bounds `(197, 187, 1057, 1034)`. The top-left anchor shifted right 4 pixels and down 6 pixels, with slight changes to overall dimensions.
+- A further generative correction moved the group upward too far and was not selected. The exact 3–5-pixel rigid movement remains unfulfilled.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels with no alpha channel.
+- Build and tests: Not run; this change affects design material only.
+
+### Remaining Risks or Follow-up Work
+
+- Exact pixel placement and layered source geometry remain unresolved. Production sizing, application icon masking, small-size validation, and application integration remain pending.

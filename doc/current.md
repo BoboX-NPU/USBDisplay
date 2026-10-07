@@ -8,7 +8,7 @@ Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only clie
 
 ## Design Assets
 
-A [blue overlapping iPad and iPhone icon concept](design/usb-display-icon-ipad-iphone-v6.png) is available as an opaque 1254-by-1254 PNG. Both devices use flat, front-facing portrait silhouettes, with the iPhone slightly overlapping the iPad's lower-right side. A narrow blue boundary separates their outlines; the composition contains no cables, plugs, Mac, or perspective view. Its [edit prompt](design/usb-display-icon-ipad-iphone-v6-prompt.md) is retained for revision. It is a design concept and has not been installed as the application icon; production sizing, application icon masking, and small-size validation remain pending.
+A [blue overlapping iPad and iPhone icon concept](design/usb-display-icon-ipad-iphone-v7.png) is available as an opaque 1254-by-1254 PNG. Both devices have blank screens and flat, front-facing portrait silhouettes. The iPhone visually occludes the iPad's lower-right side without a blue separation seam. Its [edit prompts and placement measurements](design/usb-display-icon-ipad-iphone-v7-prompt.md) are retained. The measured top-left anchor moved 4 pixels right and 6 pixels down from v6; the requested 3–5-pixel rigid translation was not achieved exactly. Exact placement, production sizing, application icon masking, small-size validation, and application integration remain pending. The source is flattened raster artwork rather than layered geometry.
 
 ## Current Capabilities
 
