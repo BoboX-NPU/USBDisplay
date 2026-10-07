@@ -1274,3 +1274,29 @@
 ### Remaining Risks or Follow-up Work
 
 - Production icon sizing, residual alpha-edge cleanup, small-size validation, and application integration remain pending.
+
+## 2026-10-07 — Correct Icon Cable Placement and Transparent-Edge Artifacts
+
+### Summary
+
+- Add a fresh MacBook and iPhone concept with the laptop's right chassis wall visible, placing the USB-C connector near the hinge and retaining the iPhone's bottom-center connection.
+- Simplify the generated laptop by removing individual keyboard keys, metallic detail, and phone side buttons. Keep the blue, navy, pale-blue, and white design direction.
+- Use an opaque blue square to remove the earlier transparent-edge speckling. Preserve previous concepts and save both generation prompts.
+- Correction to the preceding entry: v3 did not clearly depict a chassis-side port; its front-facing base endpoint made the cable placement ambiguous. Its alpha-edge artifacts remained visible and were reported by the user.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-macbook-iphone-v4.png`
+- `doc/design/usb-display-icon-macbook-iphone-v4-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually inspected the final source for a connector on the laptop's visible side wall, the iPhone bottom-center connection, a continuous cable, and absence of the previous exterior colored speckles.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels and has no alpha channel.
+- Build and tests: Not run; the change adds design material only and does not change application code or the build configuration.
+
+### Remaining Risks or Follow-up Work
+
+- This remains a generated raster concept. Production sizing, application icon masking, small-size validation, and application integration remain pending.
