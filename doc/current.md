@@ -6,6 +6,10 @@ USB Display is a native macOS 14+ SwiftUI application for displaying a USB-conne
 
 Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only client of the local usbmuxd/lockdownd protocols identifies product models. No companion app, Xcode installation, private Apple framework, recording, audio capture, remote transmission, or mobile input control is required.
 
+## Design Assets
+
+A [blue Mac and iPhone USB-C icon concept](design/usb-display-icon-mac-iphone-v2.png) is available as a 1254-by-1254 PNG with alpha. Its [generation prompt](design/usb-display-icon-mac-iphone-v2-prompt.md) is retained for revision. It is a design concept and has not been installed as the application icon; production sizing, alpha-edge cleanup, and small-size validation remain pending.
+
 ## Current Capabilities
 
 - Enables wired CoreMediaIO screen sources and disables wireless discovery. Accepts eligible external muxed Apple devices even when their public transport type is `Other`.

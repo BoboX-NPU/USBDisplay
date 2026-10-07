@@ -1225,3 +1225,27 @@
 ### Remaining Risks or Follow-up Work
 
 - Release, unrelated test suites, macOS 14/15 runtime appearance, and exhaustive physical resizing/full-screen cycles were not repeated for this focused fix. Prior hardware and performance limits remain unchanged.
+
+## 2026-10-07 — Add a Mac and iPhone USB-C Icon Concept
+
+### Summary
+
+- Generate a blue rounded-square icon concept showing a Mac display and an iPhone joined by a white USB-C cable, following the requested revision to the initial single-phone concept.
+- Save the generated PNG and exact built-in imagegen prompt for further design work. The application icon and build configuration are unchanged.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-mac-iphone-v2.png`
+- `doc/design/usb-display-icon-mac-iphone-v2-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually inspected the generated concept: the Mac and iPhone are distinct, and one cable joins both devices below their screens.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels and has an alpha channel.
+- Build and tests: Not run; this change adds design material only.
+
+### Remaining Risks or Follow-up Work
+
+- This is a generated design concept. Production icon sizing, alpha-edge cleanup, small-size validation, and application integration have not been performed.
