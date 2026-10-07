@@ -1401,3 +1401,28 @@
 ### Remaining Risks or Follow-up Work
 
 - Exact placement, layered source geometry, production sizing, application icon masking, small-size validation, and application integration remain pending.
+
+## 2026-10-07 — Reconstruct the Device Icon as Editable SVG
+
+### Summary
+
+- Reconstruct the v8 design as native SVG geometry with eight rounded or square rectangles and three solid fills, preserving its device arrangement, Dynamic Island, and both home indicators.
+- Keep complete iPad and iPhone groups in back-to-front paint order. Add stable element IDs and a shared translation transform for exact future positioning. The current conversion follows v8 without another offset.
+- Preserve the original PNG and save a separate PNG preview rendered from the SVG. The SVG contains no embedded raster content, scripts, or external references.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-ipad-iphone-v8.svg`
+- `doc/design/usb-display-icon-ipad-iphone-v8-vector-preview.png`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Parsed the SVG as XML and checked its 1254-by-1254 viewBox, unique IDs, eight vector rectangles, complete iPad frame, and iPad-before-iPhone group order. Confirmed there are no image elements, scripts, or external resource references.
+- Rendered a 1254-by-1254 PNG through macOS Quick Look and visually inspected the overlap, smooth outlines, three screen indicators, and flat fills. The first Quick Look attempt failed because of its sandbox initialization; the retry with the approved permission completed successfully.
+- Build and application tests: Not run; this change only adds design assets and documentation.
+
+### Remaining Risks or Follow-up Work
+
+- The SVG is a geometric reconstruction with uniform fills, not a pixel-identical trace of the generated PNG's texture. Production icon sizes and masking, small-size review, and application integration remain pending.

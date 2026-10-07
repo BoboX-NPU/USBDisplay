@@ -8,7 +8,7 @@ Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only clie
 
 ## Design Assets
 
-A [blue overlapping iPad and iPhone icon concept](design/usb-display-icon-ipad-iphone-v8.png) is available as an opaque 1254-by-1254 PNG. Both devices use flat, front-facing portrait silhouettes and bottom home indicators; the iPhone also has a Dynamic Island pill. The iPhone visually occludes the iPad's lower-right side without a blue separation seam. Its [edit prompt](design/usb-display-icon-ipad-iphone-v8-prompt.md) is retained. Exact placement, production sizing, application icon masking, small-size validation, and application integration remain pending. The source is flattened raster artwork rather than layered geometry.
+An editable [blue overlapping iPad and iPhone SVG](design/usb-display-icon-ipad-iphone-v8.svg) reconstructs the [v8 PNG concept](design/usb-display-icon-ipad-iphone-v8.png) with eight native vector rectangles and three solid colors in a 1254-by-1254 viewBox. The complete iPad group is painted behind the complete iPhone group, creating normal opaque overlap. Both home indicators and the iPhone Dynamic Island are retained. The shared `devices` transform supports exact movement, and individual shapes have stable IDs for editing. The initial SVG preserves the v8 composition rather than applying another positional offset. It contains no embedded raster image, scripts, or external resources. A [rendered PNG preview](design/usb-display-icon-ipad-iphone-v8-vector-preview.png) is available. Production sizing, application icon masking, small-size validation, and application integration remain pending.
 
 ## Current Capabilities
 

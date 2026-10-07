@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1254" height="1254" viewBox="0 0 1254 1254"
+     role="img" aria-labelledby="title description">
+  <title id="title">Overlapping iPad and iPhone icon</title>
+  <desc id="description">A flat iPhone in front of a complete iPad on a blue background. Both devices have home indicators, and the iPhone has a Dynamic Island.</desc>
+
+  <rect id="background" width="1254" height="1254" fill="#0199FE"/>
+
+  <!-- Move both complete devices together by changing this translation. -->
+  <g id="devices" transform="translate(0 0)">
+    <!-- The entire iPad remains intact behind the foreground iPhone. -->
+    <g id="ipad">
+      <rect id="ipad-frame" x="196" y="186" width="618" height="817"
+            rx="80" fill="#091A2B"/>
+      <rect id="ipad-screen" x="245" y="237" width="520" height="717"
+            rx="35" fill="#C9E9FB"/>
+      <rect id="ipad-home-indicator" x="411" y="921" width="155" height="15"
+            rx="7.5" fill="#091A2B"/>
+    </g>
+
+    <!-- Painting the phone last creates normal, opaque overlap. -->
+    <g id="iphone">
+      <rect id="iphone-frame" x="714" y="405" width="344" height="630"
+            rx="67" fill="#091A2B"/>
+      <rect id="iphone-screen" x="758" y="448" width="258" height="543"
+            rx="35" fill="#C9E9FB"/>
+      <rect id="iphone-dynamic-island" x="846" y="462" width="86" height="28"
+            rx="14" fill="#091A2B"/>
+      <rect id="iphone-home-indicator" x="843" y="963" width="87" height="11"
+            rx="5.5" fill="#091A2B"/>
+    </g>
+  </g>
+</svg>
