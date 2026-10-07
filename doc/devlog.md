@@ -1426,3 +1426,36 @@
 ### Remaining Risks or Follow-up Work
 
 - The SVG is a geometric reconstruction with uniform fills, not a pixel-identical trace of the generated PNG's texture. Production icon sizes and masking, small-size review, and application integration remain pending.
+
+## 2026-10-07 — Use the Approved Device Artwork as the Application Icon
+
+### Summary
+
+- Add `Assets.xcassets` and a complete macOS `AppIcon.appiconset`, generated directly from the approved v8 SVG without changing its device artwork.
+- Add a native AppKit export script that renders ten sRGB PNG variants from 16 through 1024 pixels, with 1x and 2x slots for each macOS point size. The script requires no third-party image library.
+- Include the asset catalog in the app target's resource phase and select AppIcon for both Debug and Release. Xcode supplies the generated bundle icon metadata; the source Info.plist needs no manual icon key.
+- Follow Apple's [asset catalog configuration guidance](https://developer.apple.com/documentation/xcode/configuring-your-app-icon) and [app icon shape guidance](https://developer.apple.com/design/human-interface-guidelines/app-icons). Read the installed Xcode 27 documentation and the macOS build/run skill; no matching icon-specific Apple-exported skill was available.
+
+### Affected Files
+
+- `USBDisplay/Resources/Assets.xcassets/Contents.json`
+- `USBDisplay/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json`
+- All ten PNG files in `USBDisplay/Resources/Assets.xcassets/AppIcon.appiconset/`
+- `script/generate_app_icon.swift`
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Passed `./script/build_and_run.sh --verify`; the new Debug app built, relaunched, and passed the process-running check. Log: `/tmp/USBDisplay-AppIcon-20261007.log`.
+- Passed the Release build using the same project, scheme, and `.build/Xcode` derived data. Log: `/tmp/USBDisplay-AppIcon-Release-20261007.log`. These builds emitted the expected no-AppIntents metadata-extraction warning and no icon compiler warnings.
+- Verified Debug and Release Info.plist values for `CFBundleIconName` and `CFBundleIconFile`, along with the generated `AppIcon.icns` and `Assets.car` files. Both bundles passed `codesign --verify --deep --strict`.
+- Checked all ten catalog entries against their actual PNG dimensions and confirmed fully opaque source pixels. A second export produced byte-identical assets on this toolchain. Swift-format strict lint, project plist validation, and Git whitespace checks passed.
+- Visually inspected the rendered artwork and the actual Debug application's small header icon and large preview in Finder's information window on macOS 27.0.1. The system displayed the approved device pair with its rounded icon presentation.
+- Direct Dock inspection timed out, so visual verification used Finder instead. An initial sandboxed process-list read was unavailable; the approved canonical build/run script completed its own process check successfully.
+- Application unit tests: Not run; this change only adds icon resources, export tooling, and target resource configuration. Live capture functionality was not revalidated.
+
+### Remaining Risks or Follow-up Work
+
+- Icon presentation on macOS 14/15 and distribution/App Store acceptance were not tested. Production signing and notarization remain outside this task. Native SVG rasterization is tied to the installed macOS AppKit implementation; regenerated files should be reviewed after toolchain changes.
