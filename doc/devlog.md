@@ -1300,3 +1300,28 @@
 ### Remaining Risks or Follow-up Work
 
 - This remains a generated raster concept. Production sizing, application icon masking, small-size validation, and application integration remain pending.
+
+## 2026-10-07 — Use Flat iPad and iPhone Silhouettes with Separate Cables
+
+### Summary
+
+- Replace the current design direction with front-facing iPad and iPhone pictograms, following the user's request to remove the Mac and all perspective geometry.
+- Show one independent white USB-C cable entering the bottom center of each device. Keep the tablet upright, the blue background opaque, and the earlier concepts in separate files.
+- Save the selected PNG and its exact built-in imagegen prompt.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-ipad-iphone-v5.png`
+- `doc/design/usb-display-icon-ipad-iphone-v5-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually inspected the generated source: a larger iPad and smaller iPhone face directly forward, with two separate bottom-connected cables and no Mac or angled device surfaces.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels and has no alpha channel.
+- Build and tests: Not run; application code, build resources, and configuration are unchanged.
+
+### Remaining Risks or Follow-up Work
+
+- Production sizing, application icon masking, small-size validation, and application integration remain pending for this raster concept.

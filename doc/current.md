@@ -8,7 +8,7 @@ Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only clie
 
 ## Design Assets
 
-A [blue MacBook and iPhone USB-C icon concept](design/usb-display-icon-macbook-iphone-v4.png) is available as an opaque 1254-by-1254 PNG. An angled MacBook base exposes the right chassis wall and side USB-C connector; the cable joins it to the iPhone's bottom-center connector. The full blue square has no alpha channel, avoiding the earlier transparent-edge artifacts. Its [generation and refinement prompts](design/usb-display-icon-macbook-iphone-v4-prompt.md) are retained for revision. It is a design concept and has not been installed as the application icon; production sizing, application icon masking, and small-size validation remain pending.
+A [blue iPad and iPhone USB-C icon concept](design/usb-display-icon-ipad-iphone-v5.png) is available as an opaque 1254-by-1254 PNG. Both devices use flat, front-facing portrait silhouettes, with one independent cable plugged into the bottom center of each device. The composition contains no Mac or perspective view. Its [generation prompt](design/usb-display-icon-ipad-iphone-v5-prompt.md) is retained for revision. It is a design concept and has not been installed as the application icon; production sizing, application icon masking, and small-size validation remain pending.
 
 ## Current Capabilities
 
