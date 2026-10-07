@@ -1325,3 +1325,28 @@
 ### Remaining Risks or Follow-up Work
 
 - Production sizing, application icon masking, small-size validation, and application integration remain pending for this raster concept.
+
+## 2026-10-07 — Overlap the iPad and iPhone and Remove Cables
+
+### Summary
+
+- Remove both cables and plug housings from the icon concept at the user's request.
+- Position the iPhone in front of the iPad's lower-right side with a small overlap and narrow blue separation boundary. Keep the device silhouettes flat and front-facing.
+- Save the new PNG and exact imagegen edit prompt while retaining earlier versions.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-ipad-iphone-v6.png`
+- `doc/design/usb-display-icon-ipad-iphone-v6-prompt.md`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Visually inspected the output for the requested overlap, clearly separated device silhouettes, and removal of both cables and plugs.
+- Confirmed with `sips` that the saved PNG is 1254 by 1254 pixels and has no alpha channel.
+- Build and tests: Not run; this change affects design material only.
+
+### Remaining Risks or Follow-up Work
+
+- Production sizing, application icon masking, small-size validation, and application integration remain pending.
