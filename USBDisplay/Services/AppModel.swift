@@ -7,7 +7,7 @@ import Observation
 final class AppModel {
   private(set) var selectedDeviceID: String?
   private(set) var sidebarIsVisible = true
-  let sidebarWidth = 220.0
+  private(set) var sidebarWidth: Double?
   private var presentation: CapturePresentationState
 
   @ObservationIgnored private var coordinator: (any CaptureCoordinating)!
@@ -57,6 +57,10 @@ final class AppModel {
 
   func setSidebarVisible(_ isVisible: Bool) {
     sidebarIsVisible = isVisible
+  }
+
+  func setSidebarWidth(_ width: Double) {
+    sidebarWidth = width
   }
 
   func updatePreviewAspectRatio(source: PreviewSource, width: Double, height: Double) {

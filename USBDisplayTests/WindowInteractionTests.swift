@@ -105,7 +105,7 @@ struct ResizeSessionTests {
 struct WindowChromeInteractionTests {
   private func configuration(sidebar: Bool, ratio: Double? = 0.5) -> WindowLayoutConfiguration {
     WindowLayoutConfiguration(
-      title: "Animated fixture", aspectRatio: ratio, sidebarWidth: 220,
+      title: "Animated fixture", aspectRatio: ratio, sidebarWidth: nil,
       sidebarIsVisible: sidebar, cornerRadiusFraction: 62.0 / 402)
   }
 
@@ -140,7 +140,7 @@ struct WindowChromeInteractionTests {
       window.close()
     }
     // Match the real SwiftUI scene; the default fixture uses expanded chrome.
-    window.toolbarStyle = .unifiedCompact
+    window.toolbarStyle = .unified
     window.orderFront(nil)
     try await Task.sleep(for: .milliseconds(100))
     func checkPlacement() throws {
@@ -322,7 +322,7 @@ struct WindowChromeInteractionTests {
     #expect(previewRect(host) == rect)
     finish(host)
     host.hideTitlebar()
-    #expect(window.frame != compact)
+    #expect(window.frame == compact)
     finish(host)
     #expect(window.frame == compact)
     #expect(otherWindow.frame == otherFrame)
@@ -346,6 +346,68 @@ struct WindowChromeInteractionTests {
     host.updateConfiguration(configuration(sidebar: true, ratio: nil))
     finish(host)
     #expect(abs((host.surfaceLayout?.sidebar.width ?? 0) / window.frame.width - 0.3) < 0.001)
+  }
+
+  @Test func nativeDividerResizesSidebarWithoutScalingVideoAndRetainsWidth() async throws {
+    let (window, host) = makeWindow()
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let split = try #require(host.subviews.compactMap { $0 as? SidebarSplitView }.first)
+    let before = previewRect(host)
+    let leadingEdge = window.frame.minX
+    let layer = host.preview.layer?.sublayers?.first
+    var width: Double?
+    host.onSidebarWidthChanged = { width = $0 }
+    split.beginResize()
+    for proposed in [230.0, 250, 270, 240] {
+      split.setPosition(proposed, ofDividerAt: 0)
+      #expect(
+        abs((host.surfaceLayout?.sidebar.width ?? 0) - proposed - split.dividerThickness) < 0.000001
+      )
+      #expect(previewRect(host).size == before.size)
+      #expect(window.frame.minX == leadingEdge)
+      #expect(
+        abs(previewRect(host).minX - leadingEdge - proposed - split.dividerThickness) < 0.000001)
+      #expect(host.preview.layer?.sublayers?.first === layer)
+    }
+    split.endResize()
+    #expect(width == 240)
+    host.toggleSidebar()
+    finish(host)
+    host.toggleSidebar()
+    finish(host)
+    #expect(host.surfaceLayout?.sidebar.width == 241)
+  }
+
+  @Test func emptyDividerRemembersUserWidthAndFullScreenDividerLeavesVideoFixed() async throws {
+    let (window, host) = makeWindow(ratio: nil)
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let split = try #require(host.subviews.compactMap { $0 as? SidebarSplitView }.first)
+    let frame = window.frame
+    split.setPosition(280, ofDividerAt: 0)
+    #expect(host.surfaceLayout?.sidebar.width == 281)
+    #expect(window.frame == frame)
+    host.toggleSidebar()
+    finish(host)
+    host.toggleSidebar()
+    finish(host)
+    #expect(host.surfaceLayout?.sidebar.width == 281)
+    NotificationCenter.default.post(name: NSWindow.willEnterFullScreenNotification, object: window)
+    window.setFrame(NSScreen.main!.frame, display: false)
+    NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+    host.toggleSidebar()
+    finish(host)
+    let video = previewRect(host)
+    split.setPosition(320, ofDividerAt: 0)
+    #expect(host.surfaceLayout?.sidebar.width == 321)
+    #expect(previewRect(host) == video)
   }
 
   @Test func sourceChangesDuringDragWaitForReleaseAndRetainUserHeight() async throws {

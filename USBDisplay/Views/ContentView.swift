@@ -27,7 +27,8 @@ struct ContentView: View {
       status: AnyView(DisplayCanvasView(model: model, hasAvailableDevices: !devices.isEmpty)),
       statusIsVisible: !model.status.isConnected,
       onAspectRatioChanged: model.updatePreviewAspectRatio,
-      onSidebarChanged: model.setSidebarVisible
+      onSidebarChanged: model.setSidebarVisible,
+      onSidebarWidthChanged: model.setSidebarWidth
     )
     .ignoresSafeArea()
   }

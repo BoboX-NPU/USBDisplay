@@ -191,6 +191,40 @@ struct WindowRenderingTests {
     }
   }
 
+  @Test func hoverKeepsWindowAndVideoFixedThroughDeferredNativeLayout() async throws {
+    let screen = try #require(NSScreen.main).visibleFrame
+    let window = NSWindow(
+      contentRect: CGRect(x: screen.midX, y: screen.minY + 50, width: 240, height: 480),
+      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    let config = WindowLayoutConfiguration(
+      title: "Hover stability", aspectRatio: 0.5, sidebarWidth: nil,
+      sidebarIsVisible: false, cornerRadiusFraction: 0.1)
+    let host = WindowLayoutHostView(configuration: config)
+    window.contentView = NSHostingView(rootView: RenderingFixture(surface: host).ignoresSafeArea())
+    window.orderFront(nil)
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    window.setFrameOrigin(CGPoint(x: screen.midX, y: screen.maxY - window.frame.height))
+    let frame = window.frame
+    let video = window.convertToScreen(host.preview.convert(host.preview.bounds, to: nil))
+    for _ in 0..<2 {
+      for visible in [true, false] {
+        if visible { host.revealTitlebar() } else { host.hideTitlebar() }
+        for _ in 0..<6 {
+          try await Task.sleep(for: .milliseconds(40))
+          #expect(window.frame == frame)
+          #expect(
+            window.convertToScreen(host.preview.convert(host.preview.bounds, to: nil)) == video)
+          #expect(host.surfaceLayout?.externalTitlebar == 0)
+        }
+      }
+    }
+  }
+
   @Test func composedHostingSurfaceHasTransparentCornersAndCurrentDynamicFrame() async throws {
     let window = NSWindow(
       contentRect: CGRect(x: 500, y: 200, width: 240, height: 480),
@@ -285,8 +319,11 @@ struct WindowRenderingTests {
           CGPoint(x: previewRect.minX + halfPixel, y: previewRect.midY),
           CGPoint(x: previewRect.maxX - halfPixel, y: previewRect.midY),
           CGPoint(x: previewRect.midX, y: previewRect.minY + halfPixel),
-          CGPoint(x: previewRect.midX, y: previewRect.maxY - halfPixel),
         ]
+        // Hover controls intentionally cover the top edge without moving video.
+        if current.titlebar.height == 0 || current.externalTitlebar > 0 {
+          samplePoints.append(CGPoint(x: previewRect.midX, y: previewRect.maxY - halfPixel))
+        }
       }
       for point in samplePoints {
         let x = Int(point.x * scale)

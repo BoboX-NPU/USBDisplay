@@ -1459,3 +1459,46 @@
 ### Remaining Risks or Follow-up Work
 
 - Icon presentation on macOS 14/15 and distribution/App Store acceptance were not tested. Production signing and notarization remain outside this task. Native SVG rasterization is tied to the installed macOS AppKit implementation; regenerated files should be reviewed after toolchain changes.
+
+
+## 2026-11-11 — Stabilize Hover Controls and Add Native Sidebar Resizing
+
+### Summary
+
+- Change the ordinary connected window's transient hover toolbar to an overlay. Revealing and hiding it no longer reserves titlebar space or changes the window/video rectangles, including when the window touches the top screen edge. The overlay temporarily covers the top of the video while controls are visible.
+- Use the standard-height unified toolbar instead of unified compact. Keep the existing system-generated image item, with no custom circular background, button size, or bezel. The running application now presents the sidebar button as a circle on the current macOS version.
+- Replace the decorative sidebar separator with an AppKit `NSSplitView`, retaining native divider drawing, hit testing, cursor feedback, accessibility positioning, and gesture recognition. Keep the persistent video outside the split view; its transparent trailing pane passes input through.
+- Store the user's sidebar width per window. Untouched placeholder windows keep their 30/70 split; untouched connected windows retain a 220-point sidebar. User widths normally range from 160 to 480 points and are constrained by available space. Connected divider changes retain video size and the left window edge; placeholder changes retain window size; full-screen changes retain the full video rectangle.
+- Suspend hover and source-geometry publication during a divider gesture, and retain the selected width across sidebar hide/show. Distinguish native divider changes from ordinary split-view layout notifications to avoid feedback into window geometry.
+- Consult the installed Xcode 27.2 AppKit/HIG documentation and the Apple-native-design/macOS window-management, AppKit interop, and build/run skills. The relevant public APIs are [unified toolbar style](https://developer.apple.com/documentation/appkit/nswindow/toolbarstyle-swift.enum/unified) and [NSSplitView](https://developer.apple.com/documentation/appkit/nssplitview). The exported Apple app-resizability skill targets UIKit and was not applied to this macOS fix.
+
+### Affected Files
+
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Services/AppModel.swift`
+- `USBDisplay/Views/ContentView.swift`
+- `USBDisplay/Views/SidebarSplitView.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowLifecycleTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- All 104 Debug tests in 14 suites passed on Xcode 27.2. Log: `/tmp/USBDisplay-toolbar-tests-3.log`. New regressions cover native divider positioning, retained width, unchanged video size/layer identity, full-screen overlays, and window/video screen coordinates through deferred hover layout at the top screen edge.
+- Initial runs exposed split-layout notification feedback and a zero-size initial pane layout; both were corrected. Updated the pixel-edge rendering check to account for the intentionally covered top edge during hover. Final test logs contain no split-layout inconsistency or disabled-gesture-recognizer warnings.
+- `./script/build_and_run.sh --verify` passed, relaunching the canonical Debug bundle. Log: `/tmp/USBDisplay-toolbar-run.log`. Strict Swift-format lint on changed Swift files, project plist validation, strict deep Debug signature verification, and Git whitespace checks passed.
+- Native desktop inspection with the dedicated Terra ultra agent confirmed a live iPad feed without a permission prompt, a round sidebar button, and successful sidebar toggle actions. Accessibility adjustments changed the divider from 220 to 300 and 180 points, with corresponding window widths and the same video-region width, then restored 220 points.
+- Hidden/revealed toolbar screenshots both measured 1460 by 1006 pixels. The iPad content changed during inspection, preventing a controlled comparison of fixed video markers. Desktop-tool mouse drags did not produce a reliable endpoint; these attempts are not counted as successful physical drag validation.
+- Release build and older macOS runtime checks: Not run.
+
+### Remaining Risks or Follow-up Work
+
+- Verify continuous physical mouse drags on the sidebar divider, including screen-edge limits and full screen. The native accessibility tree reports the splitter as disabled but settable; its value-setting path works, while direct pointer behavior could not be established with the desktop tool.
+- WindowServer frame-by-frame smoothness and pixel-level stability of a stationary physical video source remain unverified. Automated geometry and synthetic rendering checks do not establish those properties.
+- macOS 14/15 appearance and interaction behavior remain unverified. Sidebar widths are remembered only for the lifetime of each window.

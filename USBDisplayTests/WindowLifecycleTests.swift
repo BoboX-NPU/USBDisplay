@@ -190,13 +190,13 @@ struct WindowLifecycleTests {
     }
     window.contentView = host
     let titlebar = try #require(host.subviews.last)
-    let divider = host.subviews[host.subviews.count - 2]
+    let split = try #require(host.subviews.compactMap { $0 as? NSSplitView }.first)
     for name in [NSAppearance.Name.aqua, .darkAqua, .aqua] {
       window.appearance = NSAppearance(named: name)
       host.viewDidChangeEffectiveAppearance()
       host.effectiveAppearance.performAsCurrentDrawingAppearance {
         #expect(titlebar.layer?.backgroundColor == NSColor.windowBackgroundColor.cgColor)
-        #expect(divider.layer?.backgroundColor == NSColor.separatorColor.cgColor)
+        #expect(split.dividerStyle == .thin)
       }
     }
   }

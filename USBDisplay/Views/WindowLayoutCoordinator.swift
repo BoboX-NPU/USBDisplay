@@ -11,6 +11,7 @@ struct WindowLayoutCoordinator: NSViewRepresentable {
   let statusIsVisible: Bool
   let onAspectRatioChanged: @MainActor (PreviewSource, Double, Double) -> Void
   let onSidebarChanged: (Bool) -> Void
+  let onSidebarWidthChanged: (Double) -> Void
 
   func makeNSView(context: Context) -> WindowLayoutHostView {
     let view = WindowLayoutHostView(configuration: configuration, session: session)
@@ -20,6 +21,7 @@ struct WindowLayoutCoordinator: NSViewRepresentable {
 
   func updateNSView(_ view: WindowLayoutHostView, context: Context) {
     view.onSidebarChanged = onSidebarChanged
+    view.onSidebarWidthChanged = onSidebarWidthChanged
     view.preview.onAspectRatioChanged = onAspectRatioChanged
     view.preview.setSession(session)
     view.preview.setSource(source)
@@ -35,7 +37,7 @@ struct WindowLayoutCoordinator: NSViewRepresentable {
 struct WindowLayoutConfiguration: Equatable {
   let title: String
   let aspectRatio: Double?
-  let sidebarWidth: Double
+  let sidebarWidth: Double?
   let sidebarIsVisible: Bool
   let cornerRadiusFraction: Double
 
@@ -43,6 +45,12 @@ struct WindowLayoutConfiguration: Equatable {
     Self(
       title: title, aspectRatio: aspectRatio, sidebarWidth: sidebarWidth,
       sidebarIsVisible: visible, cornerRadiusFraction: cornerRadiusFraction)
+  }
+
+  func resizingSidebar(to width: Double) -> Self {
+    Self(
+      title: title, aspectRatio: aspectRatio, sidebarWidth: width,
+      sidebarIsVisible: sidebarIsVisible, cornerRadiusFraction: cornerRadiusFraction)
   }
 }
 
@@ -55,7 +63,10 @@ final class WindowLayoutHostView: NSView {
   private let status = NSHostingView(rootView: AnyView(EmptyView()))
   private let statusMask = RoundedContentMask()
   private let titlebar = NSView()
-  private let divider = NSView()
+  private let sidebarSplit = SidebarSplitView()
+  private var sidebarResizeLayout: WindowSurfaceLayout?
+  private var sidebarResizeConfiguration: WindowLayoutConfiguration?
+  private var sidebarResizeGeometry: WindowGeometryState?
   private var configuration: WindowLayoutConfiguration
   private var chrome: WindowChromeVisibilityState
   private var geometry = WindowGeometryState()
@@ -68,6 +79,7 @@ final class WindowLayoutHostView: NSView {
   private let toolbarDelegate = SidebarToolbarDelegate()
   private var toolbar: NSToolbar { toolbarDelegate.toolbar }
   private var originalToolbar: NSToolbar?
+  private var originalToolbarStyle: NSWindow.ToolbarStyle = .automatic
   private var originalBackground: NSColor?
   private var originalOpaque = true
   private var originalFullSize = false
@@ -99,6 +111,7 @@ final class WindowLayoutHostView: NSView {
   private var sidebarBeforeFullScreen: Bool?
   private var fullScreenSidebarVisible = false
   var onSidebarChanged: (Bool) -> Void = { _ in }
+  var onSidebarWidthChanged: (Double) -> Void = { _ in }
   // Tests observe every committed presentation, including synchronous chrome changes.
   var onLayoutCommitted: ((WindowSurfaceLayout) -> Void)?
 
@@ -130,11 +143,16 @@ final class WindowLayoutHostView: NSView {
     autoresizingMask = [.width, .height]
     sidebar.sizingOptions = []
     status.sizingOptions = []
-    for view in [preview, status, sidebar, divider, titlebar] { addSubview(view) }
-    for view in [sidebar, titlebar, divider] { view.wantsLayer = true }
+    sidebarSplit.addArrangedSubview(sidebar)
+    sidebarSplit.addArrangedSubview(SplitPassthroughView())
+    for view in [preview, status, sidebarSplit, titlebar] { addSubview(view) }
+    for view in [sidebarSplit, titlebar] { view.wantsLayer = true }
     refreshAppearance()
     status.isHidden = true
     toolbarDelegate.toggle = { [weak self] in self?.toggleSidebar() }
+    sidebarSplit.onBeginResize = { [weak self] in self?.beginSidebarResize() }
+    sidebarSplit.onWidthChanged = { [weak self] width in self?.resizeSidebar(to: width) }
+    sidebarSplit.onEndResize = { [weak self] in self?.endSidebarResize() }
     events.constrain = { [weak self] window, size in self?.constrain(window, size: size) ?? size }
     events.fullScreenFailed = { [weak self] window in self?.recoverFullScreenFailure(in: window) }
     events.onEvent = { [weak self] event in self?.handleWindowEvent(event) }
@@ -157,7 +175,6 @@ final class WindowLayoutHostView: NSView {
       CATransaction.begin()
       CATransaction.setDisableActions(true)
       titlebar.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
-      divider.layer?.backgroundColor = NSColor.separatorColor.cgColor
       CATransaction.commit()
     }
   }
@@ -175,6 +192,7 @@ final class WindowLayoutHostView: NSView {
     guard let window else { return }
     observedWindow = window
     originalToolbar = window.toolbar
+    originalToolbarStyle = window.toolbarStyle
     originalBackground = window.backgroundColor
     originalOpaque = window.isOpaque
     originalFullSize = window.styleMask.contains(.fullSizeContentView)
@@ -188,6 +206,7 @@ final class WindowLayoutHostView: NSView {
     window.titlebarAppearsTransparent = true
     window.titleVisibility = .hidden
     window.titlebarSeparatorStyle = .none
+    window.toolbarStyle = .unified
     window.toolbar = toolbar
     measuredTitlebar = max(0, window.frame.height - window.contentLayoutRect.height)
     placeholderFrame = WindowLayoutPolicy.placeholderFrame(window.frame, screen: screenFrame)
@@ -258,7 +277,9 @@ final class WindowLayoutHostView: NSView {
     let previous = configuration
     configuration = next
     observedWindow?.title = next.title
-    guard previous != next, !isResizing, !fullScreenTransition else { return }
+    guard previous != next, !isResizing, !fullScreenTransition, sidebarResizeLayout == nil else {
+      return
+    }
     if previous.sidebarIsVisible != next.sidebarIsVisible {
       cancelHide()
       chrome.updateSidebarVisibility(next.sidebarIsVisible)
@@ -302,18 +323,78 @@ final class WindowLayoutHostView: NSView {
   }
 
   private var layoutConfiguration: WindowLayoutConfiguration {
-    isResizing ? (resizeConfiguration ?? configuration) : configuration
+    sidebarResizeConfiguration
+      ?? (isResizing ? (resizeConfiguration ?? configuration) : configuration)
+  }
+
+  private func beginSidebarResize() {
+    guard !isResizing, !fullScreenTransition else { return }
+    cancelHide()
+    if chromeAnimator.isRunning {
+      chromeAnimator.reset(to: desiredChrome)
+      finishChromeTransition()
+    }
+    sidebarResizeLayout = surfaceLayout
+    sidebarResizeConfiguration = configuration
+    sidebarResizeGeometry = geometry
+    preview.isGeometryChanging = true
+  }
+
+  private func resizeSidebar(to proposedWidth: Double) {
+    guard proposedWidth.isFinite, !isResizing, !fullScreenTransition,
+      let current = surfaceLayout
+    else { return }
+    let start = sidebarResizeLayout ?? current
+    let maximum: Double
+    if !fullScreen, !usesPlaceholderLayout, start.externalSidebar > 0 {
+      maximum =
+        screenFrame.maxX - start.frame.minX - start.preview.width - sidebarSplit.dividerThickness
+    } else {
+      maximum =
+        start.frame.width - WindowLayoutPolicy.minimumSidebarWidth - sidebarSplit.dividerThickness
+    }
+    let width = min(
+      max(proposedWidth, min(WindowLayoutPolicy.minimumSidebarWidth, maximum)),
+      min(WindowLayoutPolicy.maximumSidebarWidth, maximum))
+    if !fullScreen, !usesPlaceholderLayout, start.externalSidebar > 0 {
+      if let initial = sidebarResizeGeometry { geometry = initial }
+      geometry.move(
+        by: CGSize(width: width + sidebarSplit.dividerThickness - start.sidebar.width, height: 0))
+    }
+    configuration = configuration.resizingSidebar(to: width)
+    sidebarResizeConfiguration = sidebarResizeConfiguration?.resizingSidebar(to: width)
+    commitChrome()
+    if sidebarResizeLayout == nil { onSidebarWidthChanged(width) }
+  }
+
+  private func endSidebarResize() {
+    let previous = sidebarResizeConfiguration
+    if let width = previous?.sidebarWidth {
+      configuration = configuration.resizingSidebar(to: width)
+    }
+    sidebarResizeLayout = nil
+    sidebarResizeConfiguration = nil
+    sidebarResizeGeometry = nil
+    if previous?.aspectRatio != configuration.aspectRatio { preparePreviewGeometry() }
+    chrome.updateSidebarVisibility(configuration.sidebarIsVisible)
+    transitionChrome()
+    preview.isGeometryChanging = chromeAnimator.isRunning || fullScreenTransition
+    if let width = configuration.sidebarWidth { onSidebarWidthChanged(width) }
+    if pendingScreenChange { screenChanged() }
   }
   private var usesPlaceholderLayout: Bool { layoutConfiguration.aspectRatio == nil }
   private var sidebarWidth: Double {
     if usesPlaceholderLayout {
-      return WindowLayoutPolicy.placeholderSidebar(
-        width: Double(observedWindow?.frame.width ?? 0),
-        isVisible: true)
+      let width = Double(observedWindow?.frame.width ?? 0)
+      let preferred =
+        layoutConfiguration.sidebarWidth.map { $0 + sidebarSplit.dividerThickness }
+        ?? WindowLayoutPolicy.placeholderSidebar(width: width, isVisible: true)
+      return min(preferred, max(0, width - WindowLayoutPolicy.minimumSidebarWidth))
         * (isResizing ? resizePlaceholderSidebar : chromeAnimator.presentation.sidebar)
     }
     return WindowLayoutPolicy.sidebarContribution(
-      width: layoutConfiguration.sidebarWidth, isVisible: reservedSidebar)
+      width: layoutConfiguration.sidebarWidth ?? WindowLayoutPolicy.defaultSidebarWidth,
+      isVisible: reservedSidebar)
   }
   private var titlebarHeight: Double {
     if fullScreen, let window = observedWindow {
@@ -397,10 +478,9 @@ final class WindowLayoutHostView: NSView {
     CATransaction.setDisableActions(true)
     let value = chromeAnimator.presentation
     let travel = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.0 : 8.0
-    sidebar.alphaValue = value.sidebar
-    divider.alphaValue = value.sidebar
-    sidebar.layer?.transform = CATransform3DMakeTranslation(-travel * (1 - value.sidebar), 0, 0)
-    divider.layer?.transform = sidebar.layer?.transform ?? CATransform3DIdentity
+    sidebarSplit.alphaValue = value.sidebar
+    sidebarSplit.layer?.transform = CATransform3DMakeTranslation(
+      -travel * (1 - value.sidebar), 0, 0)
     titlebar.alphaValue = fullScreen ? 0 : value.titlebar
     titlebar.layer?.transform = CATransform3DMakeTranslation(0, travel * (1 - value.titlebar), 0)
     preview.applyCornerFraction(cornerFraction, retainingMask: retainsCornerMask)
@@ -426,7 +506,9 @@ final class WindowLayoutHostView: NSView {
         sidebar: sidebarWidth, titlebar: titlebarHeight,
         externalSidebar: sidebarWidth, externalTitlebar: titlebarHeight)
     } else {
-      target = geometry.layout(sidebar: sidebarWidth, titlebar: titlebarHeight, screen: screenFrame)
+      target = geometry.layout(
+        sidebar: sidebarWidth, titlebar: titlebarHeight, screen: screenFrame,
+        overlaysTitlebar: !reservedSidebar)
     }
     guard let target else { return }
     applyingGeometry = true
@@ -519,13 +601,10 @@ final class WindowLayoutHostView: NSView {
   private func layoutControls(_ layout: WindowSurfaceLayout) {
     let origin = convert(CGPoint.zero, from: nil)
     func local(_ rect: CGRect) -> CGRect { rect.offsetBy(dx: origin.x, dy: origin.y) }
-    sidebar.frame = local(layout.sidebar)
-    sidebar.isHidden = !reservedSidebar
-    divider.frame = local(
-      CGRect(
-        x: max(0, layout.sidebar.maxX - WindowLayoutPolicy.splitDividerWidth), y: 0,
-        width: WindowLayoutPolicy.splitDividerWidth, height: layout.sidebar.height))
-    divider.isHidden = sidebar.isHidden
+    sidebarSplit.applyGeometry(
+      frame: local(CGRect(x: 0, y: 0, width: layout.frame.width, height: layout.sidebar.height)),
+      sidebarWidth: max(0, layout.sidebar.width - sidebarSplit.dividerThickness))
+    sidebarSplit.isHidden = !reservedSidebar
     titlebar.frame = local(layout.titlebar)
     titlebar.isHidden = fullScreen || layout.titlebar.height == 0
   }
@@ -567,10 +646,17 @@ final class WindowLayoutHostView: NSView {
 
   private func handleMouseEvent(_ event: NSEvent) {
     guard let window = observedWindow else { return }
-    if event.type == .leftMouseUp { resizePointer = nil }
+    if event.type == .leftMouseUp {
+      resizePointer = nil
+      sidebarSplit.endResize()
+    }
     if event.window === window {
       if event.type == .leftMouseDown {
         resizePointer = window.convertPoint(toScreen: event.locationInWindow)
+        if sidebarSplit.containsDivider(at: sidebarSplit.convert(event.locationInWindow, from: nil))
+        {
+          sidebarSplit.beginResize()
+        }
       } else if event.type == .mouseMoved || event.type == .leftMouseDragged {
         updatePointer(event.locationInWindow)
       }
@@ -652,7 +738,7 @@ final class WindowLayoutHostView: NSView {
 
   private func screenChanged() {
     pendingScreenChange = true
-    guard !isResizing, !fullScreenTransition else { return }
+    guard !isResizing, !fullScreenTransition, sidebarResizeLayout == nil else { return }
     pendingScreenChange = false
     commitChrome()
   }
@@ -791,7 +877,7 @@ final class WindowLayoutHostView: NSView {
 
   func updatePointer(_ point: CGPoint) {
     guard let window = observedWindow, !isResizing, !window.inLiveResize,
-      !fullScreenTransition
+      !fullScreenTransition, sidebarResizeLayout == nil
     else { return }
     if fullScreen {
       let inside =
@@ -854,6 +940,9 @@ final class WindowLayoutHostView: NSView {
     chromeAnimator.reset(to: chromeAnimator.target)
     resizeSession = nil
     resizeConfiguration = nil
+    sidebarResizeLayout = nil
+    sidebarResizeConfiguration = nil
+    sidebarResizeGeometry = nil
     isResizing = false
     pendingReservationRelease = false
     preview.isGeometryChanging = false
@@ -862,6 +951,7 @@ final class WindowLayoutHostView: NSView {
     events.detach()
     if let window = observedWindow {
       if window.toolbar === toolbar { window.toolbar = originalToolbar }
+      window.toolbarStyle = originalToolbarStyle
       for type in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
         window.standardWindowButton(type)?.isHidden = false
       }

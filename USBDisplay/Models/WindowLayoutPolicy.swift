@@ -58,6 +58,9 @@ enum WindowLayoutPolicy {
   static let minimumPreviewHeight = 320.0
   static let splitDividerWidth = 1.0
   static let minimumPlaceholderSize = CGSize(width: 720, height: 480)
+  static let defaultSidebarWidth = 220.0
+  static let minimumSidebarWidth = 160.0
+  static let maximumSidebarWidth = 480.0
 
   static func placeholderSize(_ proposed: CGSize, screen: CGSize) -> CGSize {
     CGSize(
@@ -115,13 +118,17 @@ struct WindowSurfaceLayout: Equatable {
       externalSidebar: sidebar, externalTitlebar: titlebar)
   }
 
-  static func placing(preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect) -> Self {
+  static func placing(
+    preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect,
+    overlaysTitlebar: Bool = false
+  ) -> Self {
     let scale = min(1, screen.width / preview.width, screen.height / preview.height)
     let preview = CGRect(
       origin: preview.origin,
       size: CGSize(width: preview.width * scale, height: preview.height * scale))
     let externalSidebar = preview.width + sidebar <= screen.width ? sidebar : 0
-    let externalTitlebar = preview.height + titlebar <= screen.height ? titlebar : 0
+    let externalTitlebar =
+      !overlaysTitlebar && preview.height + titlebar <= screen.height ? titlebar : 0
     var frame = CGRect(
       x: preview.minX - externalSidebar, y: preview.minY,
       width: preview.width + externalSidebar, height: preview.height + externalTitlebar)
@@ -171,8 +178,12 @@ struct WindowGeometryState: Equatable {
     self.previewRect = previewRect
   }
 
-  func layout(sidebar: Double, titlebar: Double, screen: CGRect) -> WindowSurfaceLayout? {
+  func layout(
+    sidebar: Double, titlebar: Double, screen: CGRect, overlaysTitlebar: Bool = false
+  ) -> WindowSurfaceLayout? {
     guard let previewRect else { return nil }
-    return .placing(preview: previewRect, sidebar: sidebar, titlebar: titlebar, screen: screen)
+    return .placing(
+      preview: previewRect, sidebar: sidebar, titlebar: titlebar, screen: screen,
+      overlaysTitlebar: overlaysTitlebar)
   }
 }

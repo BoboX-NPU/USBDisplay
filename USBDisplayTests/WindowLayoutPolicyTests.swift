@@ -189,6 +189,23 @@ struct WindowGeometryStateTests {
     }
   }
 
+  @Test func hoverToolbarOverlaysWithoutMovingPreviewAtEveryScreenEdge() {
+    for origin in [
+      screen.origin, CGPoint(x: screen.maxX - 300, y: screen.maxY - 600),
+      CGPoint(x: screen.midX, y: screen.midY - 300),
+    ] {
+      let preview = CGRect(origin: origin, size: CGSize(width: 300, height: 600))
+      let compact = WindowSurfaceLayout.placing(
+        preview: preview, sidebar: 0, titlebar: 0, screen: screen, overlaysTitlebar: true)
+      let revealed = WindowSurfaceLayout.placing(
+        preview: preview, sidebar: 0, titlebar: 52, screen: screen, overlaysTitlebar: true)
+      #expect(revealed.frame == compact.frame)
+      #expect(revealed.previewOnScreen == preview)
+      #expect(revealed.externalTitlebar == 0)
+      #expect(revealed.titlebar.height == 52)
+    }
+  }
+
   @Test func rotationRetainsPreferredHeightAndWindowsRemainIndependent() throws {
     var phone = WindowGeometryState()
     phone.rememberPreview(CGRect(x: 300, y: 100, width: 300, height: 600))
@@ -214,7 +231,7 @@ struct WindowLayoutIntegrationTests {
     sidebar: Bool, fraction: Double = 0, aspectRatio: Double? = 0.5
   ) -> WindowLayoutConfiguration {
     WindowLayoutConfiguration(
-      title: "Layout Test", aspectRatio: aspectRatio, sidebarWidth: 220,
+      title: "Layout Test", aspectRatio: aspectRatio, sidebarWidth: nil,
       sidebarIsVisible: sidebar, cornerRadiusFraction: fraction)
   }
 
