@@ -118,17 +118,13 @@ struct WindowSurfaceLayout: Equatable {
       externalSidebar: sidebar, externalTitlebar: titlebar)
   }
 
-  static func placing(
-    preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect,
-    overlaysTitlebar: Bool = false
-  ) -> Self {
+  static func placing(preview: CGRect, sidebar: Double, titlebar: Double, screen: CGRect) -> Self {
     let scale = min(1, screen.width / preview.width, screen.height / preview.height)
     let preview = CGRect(
       origin: preview.origin,
       size: CGSize(width: preview.width * scale, height: preview.height * scale))
     let externalSidebar = preview.width + sidebar <= screen.width ? sidebar : 0
-    let externalTitlebar =
-      !overlaysTitlebar && preview.height + titlebar <= screen.height ? titlebar : 0
+    let externalTitlebar = preview.height + titlebar <= screen.height ? titlebar : 0
     var frame = CGRect(
       x: preview.minX - externalSidebar, y: preview.minY,
       width: preview.width + externalSidebar, height: preview.height + externalTitlebar)
@@ -178,12 +174,8 @@ struct WindowGeometryState: Equatable {
     self.previewRect = previewRect
   }
 
-  func layout(
-    sidebar: Double, titlebar: Double, screen: CGRect, overlaysTitlebar: Bool = false
-  ) -> WindowSurfaceLayout? {
+  func layout(sidebar: Double, titlebar: Double, screen: CGRect) -> WindowSurfaceLayout? {
     guard let previewRect else { return nil }
-    return .placing(
-      preview: previewRect, sidebar: sidebar, titlebar: titlebar, screen: screen,
-      overlaysTitlebar: overlaysTitlebar)
+    return .placing(preview: previewRect, sidebar: sidebar, titlebar: titlebar, screen: screen)
   }
 }

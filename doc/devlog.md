@@ -1502,3 +1502,38 @@
 - Verify continuous physical mouse drags on the sidebar divider, including screen-edge limits and full screen. The native accessibility tree reports the splitter as disabled but settable; its value-setting path works, while direct pointer behavior could not be established with the desktop tool.
 - WindowServer frame-by-frame smoothness and pixel-level stability of a stationary physical video source remain unverified. Automated geometry and synthetic rendering checks do not establish those properties.
 - macOS 14/15 appearance and interaction behavior remain unverified. Sidebar widths are remembered only for the lifetime of each window.
+
+
+## 2026-11-11 — Restore Upward Toolbar Reveal and Correct Native Height Measurement
+
+### Summary
+
+- Correct the preceding entry's design decision: the user requires hover controls to expand above the existing video, preserving the original interaction. Remove the unconditional ordinary-hover overlay and its now-unused policy parameter. Keep native circular toolbar styling and sidebar resizing.
+- Restore outside titlebar reservation for ordinary connected windows. With enough room above the video, the window grows upward and the video keeps its screen position and size. Preserve the existing screen-fitting and full-screen policies.
+- Fix a separately reproduced native-height defect: the host could cache a 32-point title-only measurement before AppKit laid out the 52-point unified toolbar. The resulting 20-point shortfall covered the video edge. Complete native layout and read `contentLayoutRect` inside the existing nonanimated transaction before calculating the target geometry.
+- Replace the overlay regression expectations with upward expansion, no titlebar/video overlap, and stable video coordinates through deferred native layout. Restore the synthetic top-edge pixel assertions instead of excluding the covered edge.
+
+### Affected Files
+
+- `USBDisplay/Models/WindowLayoutPolicy.swift`
+- `USBDisplay/Views/WindowLayoutCoordinator.swift`
+- `USBDisplayTests/WindowInteractionTests.swift`
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- All 104 Debug tests in 14 suites passed after the native-height correction. Log: `/tmp/USBDisplay-upward-toolbar-tests-3.log`.
+- The restored top-edge rendering assertion failed before the fix. A focused diagnostic recorded a 32-point reservation versus a 52-point actual toolbar and gray toolbar pixels at the video edge. The full pixel assertion passes after the fix. Log: `/tmp/USBDisplay-upward-render-diagnostic.log`. Temporary diagnostic prints were removed.
+- The deferred-layout test verifies an unchanged video screen rectangle, unchanged window origin/width, and increased window height equal to the reserved native titlebar height throughout repeated reveal/hide cycles. Floating-point sum comparisons use a subpixel tolerance; video rectangle comparisons remain exact.
+- `./script/build_and_run.sh --verify`, strict Swift-format lint on changed Swift files, strict deep Debug signature verification, and Git whitespace checks passed. Relaunch log: `/tmp/USBDisplay-upward-toolbar-run-final.log`.
+- Final native inspection retained the round sidebar button, but the connected device preview was black. Hidden/revealed screenshots both measured 1460 by 1006 pixels, so this run did not demonstrate upward expansion or noncoverage of a usable physical video source. A process check confirmed one running canonical Debug app. No claim of physical-feed acceptance is made from this run.
+- Release build and older macOS runtime checks: Not run.
+
+### Remaining Risks or Follow-up Work
+
+- WindowServer frame-by-frame smoothness of a physical video feed remains unverified. The corrected height mismatch is reproduced and fixed, but it does not prove the cause of every previously reported visual jump.
+- Existing screen-edge fitting can translate a preview when there is insufficient space above it; full screen and windows taller than the available screen retain their prior overlay fallback. This correction restores the original behavior rather than introducing a new edge policy.
+- The previous entry's continuous physical sidebar-drag and older macOS validation limitations remain outstanding.

@@ -189,19 +189,21 @@ struct WindowGeometryStateTests {
     }
   }
 
-  @Test func hoverToolbarOverlaysWithoutMovingPreviewAtEveryScreenEdge() {
+  @Test func hoverToolbarExpandsAbovePreviewWithoutCoveringIt() {
     for origin in [
-      screen.origin, CGPoint(x: screen.maxX - 300, y: screen.maxY - 600),
+      screen.origin, CGPoint(x: screen.maxX - 300, y: screen.maxY - 600 - 52),
       CGPoint(x: screen.midX, y: screen.midY - 300),
     ] {
       let preview = CGRect(origin: origin, size: CGSize(width: 300, height: 600))
       let compact = WindowSurfaceLayout.placing(
-        preview: preview, sidebar: 0, titlebar: 0, screen: screen, overlaysTitlebar: true)
+        preview: preview, sidebar: 0, titlebar: 0, screen: screen)
       let revealed = WindowSurfaceLayout.placing(
-        preview: preview, sidebar: 0, titlebar: 52, screen: screen, overlaysTitlebar: true)
-      #expect(revealed.frame == compact.frame)
+        preview: preview, sidebar: 0, titlebar: 52, screen: screen)
+      #expect(revealed.frame.origin == compact.frame.origin)
+      #expect(revealed.frame.height == compact.frame.height + 52)
       #expect(revealed.previewOnScreen == preview)
-      #expect(revealed.externalTitlebar == 0)
+      #expect(revealed.externalTitlebar == 52)
+      #expect(revealed.titlebar.minY == revealed.preview.maxY)
       #expect(revealed.titlebar.height == 52)
     }
   }

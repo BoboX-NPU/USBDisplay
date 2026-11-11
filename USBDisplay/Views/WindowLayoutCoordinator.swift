@@ -494,23 +494,6 @@ final class WindowLayoutHostView: NSView {
 
   private func commitChrome() {
     guard let window = observedWindow, !isResizing, !fullScreenTransition else { return }
-    let target: WindowSurfaceLayout?
-    if fullScreen {
-      target = .resizing(
-        frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
-        externalSidebar: 0, externalTitlebar: 0)
-    } else if usesPlaceholderLayout {
-      target = .resizing(
-        frame: WindowLayoutPolicy.placeholderFrame(
-          placeholderFrame ?? window.frame, screen: screenFrame),
-        sidebar: sidebarWidth, titlebar: titlebarHeight,
-        externalSidebar: sidebarWidth, externalTitlebar: titlebarHeight)
-    } else {
-      target = geometry.layout(
-        sidebar: sidebarWidth, titlebar: titlebarHeight, screen: screenFrame,
-        overlaysTitlebar: !reservedSidebar)
-    }
-    guard let target else { return }
     applyingGeometry = true
     CATransaction.begin()
     CATransaction.setDisableActions(true)
@@ -531,6 +514,32 @@ final class WindowLayoutHostView: NSView {
         window.standardWindowButton(type)?.isHidden = !showsToolbar
       }
       if toolbar.isVisible != showsToolbar { toolbar.isVisible = showsToolbar }
+      if showsToolbar {
+        // AppKit can initially report the title-only height (32 points) before
+        // laying out a unified toolbar (52 points). Resolve native layout before
+        // reserving space, so revealing controls never covers the video edge.
+        window.contentView?.superview?.layoutSubtreeIfNeeded()
+        measuredTitlebar = max(0, window.frame.height - window.contentLayoutRect.maxY)
+      }
+    }
+    let target: WindowSurfaceLayout?
+    if fullScreen {
+      target = .resizing(
+        frame: window.frame, sidebar: sidebarWidth, titlebar: titlebarHeight,
+        externalSidebar: 0, externalTitlebar: 0)
+    } else if usesPlaceholderLayout {
+      target = .resizing(
+        frame: WindowLayoutPolicy.placeholderFrame(
+          placeholderFrame ?? window.frame, screen: screenFrame),
+        sidebar: sidebarWidth, titlebar: titlebarHeight,
+        externalSidebar: sidebarWidth, externalTitlebar: titlebarHeight)
+    } else {
+      target = geometry.layout(sidebar: sidebarWidth, titlebar: titlebarHeight, screen: screenFrame)
+    }
+    guard let target else {
+      CATransaction.commit()
+      applyingGeometry = false
+      return
     }
     surfaceLayout = target
     // No run-loop yield, intermediate outer frame, or forced display is allowed here.
