@@ -20,6 +20,14 @@ final class SidebarSplitView: NSSplitView, NSSplitViewDelegate {
   @available(*, unavailable)
   required init?(coder: NSCoder) { nil }
 
+  override func drawDivider(in rect: NSRect) {
+    // Native thin dividers can be translucent or clear. Our window has no
+    // opaque backing, so give only the divider a base before AppKit draws it.
+    NSColor.windowBackgroundColor.setFill()
+    rect.fill()
+    super.drawDivider(in: rect)
+  }
+
   func beginResize() {
     guard !isTrackingDivider else { return }
     isTrackingDivider = true

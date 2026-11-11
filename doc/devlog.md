@@ -1537,3 +1537,31 @@
 - WindowServer frame-by-frame smoothness of a physical video feed remains unverified. The corrected height mismatch is reproduced and fixed, but it does not prove the cause of every previously reported visual jump.
 - Existing screen-edge fitting can translate a preview when there is insufficient space above it; full screen and windows taller than the available screen retain their prior overlay fallback. This correction restores the original behavior rather than introducing a new edge policy.
 - The previous entry's continuous physical sidebar-drag and older macOS validation limitations remain outstanding.
+
+
+## 2026-11-11 — Close the Transparent Sidebar Divider Seam
+
+### Summary
+
+- Fix the thin see-through line between the sidebar and preview. The native split divider rendered with alpha around 0.102 on the transparent host, exposing content behind the window.
+- Draw an opaque `windowBackgroundColor` base only inside `NSSplitView`'s divider rectangle, then let AppKit draw its normal divider above it. Keep the trailing video pane transparent, native divider hit testing and dragging, sidebar width, and upward toolbar reveal unchanged.
+- Add a composed-window pixel regression that samples the seam at three heights, three sidebar widths (including fractional widths), and both light and dark appearances.
+
+### Affected Files
+
+- `USBDisplay/Views/SidebarSplitView.swift`
+- `USBDisplayTests/WindowRenderingTests.swift`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Before the fix, the new seam regression failed all 36 sampled opacity checks; the existing seven rendering tests passed. Log: `/tmp/USBDisplay-sidebar-seam-before-2.log`.
+- After the fix, all eight rendering tests passed, including the seam, top video edge, transparent compact corners, deferred native toolbar layout, and persistent preview rendering. Log: `/tmp/USBDisplay-sidebar-seam-after.log`.
+- `./script/build_and_run.sh --verify`, strict Swift-format lint on both changed Swift files, strict deep Debug signature verification, and Git whitespace checks passed. Relaunch log: `/tmp/USBDisplay-sidebar-seam-run.log`.
+- Dedicated native desktop inspection showed a narrow dark separator with no obvious underlying page leak and retained the circular sidebar button. The preview was black during that check, so pixel opacity is established by the rendering regression rather than that screenshot alone.
+- Full application test suite and Release build: Not run for this drawing-only fix.
+
+### Remaining Risks or Follow-up Work
+
+- Older macOS appearance and a contrasting-desktop/live-video visual comparison remain unverified. The existing sidebar fade animation is preserved; opacity checks cover the settled visible separator.

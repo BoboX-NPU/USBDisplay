@@ -8,6 +8,55 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct WindowRenderingTests {
+  @Test func sidebarDividerDoesNotExposeTheDesktop() async throws {
+    let window = NSWindow(
+      contentRect: CGRect(x: 350, y: 150, width: 500, height: 450),
+      styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+    window.isReleasedWhenClosed = false
+    let config = WindowLayoutConfiguration(
+      title: "Sidebar seam", aspectRatio: 0.5, sidebarWidth: 220,
+      sidebarIsVisible: true, cornerRadiusFraction: 0)
+    let host = WindowLayoutHostView(configuration: config, animatesChrome: false)
+    host.updateContent(
+      sidebar: AnyView(
+        SidebarView(
+          devices: [], selectedDeviceID: nil,
+          onSelectDevice: { _ in }, onOpenDeviceInNewWindow: { _ in })),
+      status: AnyView(EmptyView()), statusIsVisible: false)
+    window.contentView = NSHostingView(rootView: RenderingFixture(surface: host).ignoresSafeArea())
+    window.orderFront(nil)
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    try await Task.sleep(for: .milliseconds(100))
+    let split = try #require(host.subviews.compactMap { $0 as? SidebarSplitView }.first)
+    for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+      window.appearance = NSAppearance(named: appearance)
+      for width in [180.0, 220.5, 300.25] {
+        split.setPosition(width, ofDividerAt: 0)
+        window.contentView?.superview?.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(30))
+        let frameView = try #require(window.contentView?.superview)
+        let bitmap = try #require(frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds))
+        frameView.cacheDisplay(in: frameView.bounds, to: bitmap)
+        let leading = try #require(split.subviews.first)
+        let divider = frameView.convert(
+          CGRect(
+            x: leading.frame.maxX, y: 0, width: split.dividerThickness, height: split.bounds.height),
+          from: split)
+        let scale = Double(bitmap.pixelsWide) / frameView.bounds.width
+        for x in Int(ceil(divider.minX * scale))..<Int(ceil(divider.maxX * scale)) {
+          for fraction in [0.1, 0.5, 0.9] {
+            let y = bitmap.pixelsHigh - 1 - Int((divider.minY + divider.height * fraction) * scale)
+            let pixel = try #require(bitmap.colorAt(x: x, y: y))
+            #expect(pixel.alphaComponent > 0.98)
+          }
+        }
+      }
+    }
+  }
+
   @Test func disconnectedSwiftUIContentIgnoresOldPhoneRatio() async throws {
     let capture = FakeCaptureCoordinator()
     let model = AppModel(
