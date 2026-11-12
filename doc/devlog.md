@@ -1565,3 +1565,35 @@
 ### Remaining Risks or Follow-up Work
 
 - Older macOS appearance and a contrasting-desktop/live-video visual comparison remain unverified. The existing sidebar fade animation is preserved; opacity checks cover the settled visible separator.
+
+
+## 2026-11-12 — Package a Universal Local Release
+
+### Summary
+
+- Add `script/package_local_release.sh` to build version 0.3.0 (build 3) in Release mode for both Apple Silicon and Intel, then create a compressed read-only DMG and a ZIP app archive. Each run uses a new ignored output directory without replacing an earlier package.
+- Include an Applications shortcut and local-installation notes in the DMG. Save SHA-256 checksums, signature metadata, and entitlements beside the packages. Verify the app after mounting the DMG and extracting the ZIP; detach the image and clean task staging directories.
+- Preserve the local ad-hoc signing workflow and hardened runtime. Disable Xcode's injected base entitlements for this packaging command after inspection found an unwanted `get-task-allow` debugging entitlement. The final app has only the camera/video-capture entitlement.
+- Final packages are `.build/Distribution/USBDisplay-0.3.0-build3-local.Gm0yLr/USBDisplay-0.3.0-build3-local.dmg` and `.build/Distribution/USBDisplay-0.3.0-build3-local.Gm0yLr/USBDisplay-0.3.0-build3-local.zip`. Remove the preliminary package generated during this task before the debugging-entitlement correction. Application sources remain at the preceding `c1a30ba` baseline.
+
+### Affected Files
+
+- `script/package_local_release.sh`
+- `doc/current.md`
+- `doc/devlog.md`
+- Ignored `.build/Distribution/USBDisplay-0.3.0-build3-local.Gm0yLr/` package artifacts
+
+### Validation
+
+- Universal Release build passed on Xcode 27.2. The executable contains `x86_64` and `arm64`, declares minimum macOS 14.0, and includes the app icon. Runtime dependencies resolve to Apple system libraries/frameworks. No test bundles are embedded.
+- The complete packaging script passed after correcting its architecture check to inspect `lipo -archs`. Log: `/tmp/USBDisplay-package-local-release-final.log`. The selected toolchain's multi-architecture `-verify_arch` invocation failed during initial attempts; no successful package is claimed from those attempts.
+- Strict deep signature checks passed for the source app, mounted DMG copy, and extracted ZIP copy. DMG image checksums, both exported SHA-256 sums, shell syntax, and Git whitespace checks passed.
+- The final DMG is 850669 bytes; the ZIP is 756165 bytes. The final entitlement dictionary contains only `com.apple.security.device.camera = true`. The app is ad-hoc signed with hardened runtime and no TeamIdentifier.
+- The final Gatekeeper execution assessment returned `rejected` with exit status 3, consistent with the lack of Developer ID signing/notarization. This is not a trusted public-distribution artifact.
+- The host emitted deprecation notices for `hdiutil attach/detach`; both operations succeeded. The script retains those commands for compatibility with older supported macOS development hosts.
+- Application tests, packaged-Release launch, physical-device capture, and installation into Applications: Not run; this task changes packaging tooling and leaves the existing running app untouched.
+
+### Remaining Risks or Follow-up Work
+
+- Developer ID signing, notarization, and Gatekeeper acceptance are required before treating the package as a public release. No credentials were requested, no app was uploaded, and no public release was published.
+- Test the packaged Release on physical devices and older supported macOS versions, including an Intel Mac, before distribution. Existing preview-startup, continuous-drag, and frame-pacing limitations remain.
