@@ -10,15 +10,15 @@ USB Display 是一款原生 macOS 应用，可以通过 USB 将 iPhone 或 iPad 
 
 ### 下载
 
-**[下载 v1.0.2 macOS 通用版 — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.2/USBDisplay-1.0.2-macOS-universal.dmg)**
+**[下载 v1.0.3 macOS 通用版 — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.dmg)**
 
-[ZIP 下载](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.2/USBDisplay-1.0.2-macOS-universal.zip) · [SHA-256 校验文件](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.2/SHA256SUMS.txt) · [发布说明与历史版本](https://github.com/BoboX-NPU/USBDisplay/releases)
+[ZIP 下载](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.zip) · [SHA-256 校验文件](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/SHA256SUMS.txt) · [发布说明与历史版本](https://github.com/BoboX-NPU/USBDisplay/releases)
 
 打开 DMG 后，将左侧的 USB Display 拖到右侧的 Applications 即可安装。
 
 需要 **macOS 14 或更新版本**和支持数据传输的 USB 线。同一安装包包含 Apple Silicon 和 Intel 两种架构。使用预编译应用不需要安装 Xcode。
 
-**签名状态：** v1.0.2 安装包内的应用已使用 **Developer ID 签名并通过 Apple 公证**，附带离线公证票据，且通过了 Gatekeeper 检查。首次打开仍可能显示正常的互联网下载确认与“相机”权限提示。详见[安装说明](doc/installation.md)。旧版 macOS 和 Intel 设备的实机验证尚不完整；最低系统要求不代表所有配置均已测试。
+**签名状态：** v1.0.3 安装包内的应用已使用 **Developer ID 签名并通过 Apple 公证**，附带离线公证票据，且通过了 Gatekeeper 检查。首次打开仍可能显示正常的互联网下载确认与“相机”权限提示。详见[安装说明](doc/installation.md)。旧版 macOS 和 Intel 设备的实机验证尚不完整；最低系统要求不代表所有配置均已测试。
 
 ### 功能
 
@@ -95,15 +95,15 @@ A native macOS app for displaying a USB-connected iPhone or iPad in a resizable 
 
 ### Download
 
-**[Download v1.0.2 for macOS — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.2/USBDisplay-1.0.2-macOS-universal.dmg)**
+**[Download v1.0.3 for macOS — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.dmg)**
 
-[ZIP download](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.2/USBDisplay-1.0.2-macOS-universal.zip) · [Checksums](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.2/SHA256SUMS.txt) · [Release notes and all versions](https://github.com/BoboX-NPU/USBDisplay/releases)
+[ZIP download](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.zip) · [Checksums](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/SHA256SUMS.txt) · [Release notes and all versions](https://github.com/BoboX-NPU/USBDisplay/releases)
 
 Open the DMG and drag USB Display on the left onto Applications on the right.
 
 Requires **macOS 14 or later** and a USB data cable. The same download includes Apple Silicon and Intel executables. Xcode is only needed to build from source.
 
-**Signing status:** the app in v1.0.2 is **Developer ID signed and notarized by Apple**, includes a stapled ticket for offline verification, and passes Gatekeeper checks. Normal first-launch download confirmation and Camera permission prompts can still appear. See the [installation guide](doc/installation.md). Older macOS and Intel runtime coverage is still incomplete; the minimum deployment target is not a claim that every configuration has been physically tested.
+**Signing status:** the app in v1.0.3 is **Developer ID signed and notarized by Apple**, includes a stapled ticket for offline verification, and passes Gatekeeper checks. Normal first-launch download confirmation and Camera permission prompts can still appear. See the [installation guide](doc/installation.md). Older macOS and Intel runtime coverage is still incomplete; the minimum deployment target is not a claim that every configuration has been physically tested.
 
 ### What it does
 

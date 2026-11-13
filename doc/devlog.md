@@ -1972,3 +1972,32 @@
 
 - The revised artwork is a local preview awaiting the maintainer's visual feedback. Public 1.0.2 downloads still contain their original released artwork.
 - Native Finder filenames/bars remain system-owned, and older-OS/appearance coverage remains unverified. Existing app-runtime and test-instability follow-ups are unchanged.
+
+
+## 2026-11-13 — Prepare the Approved Minimal Installer as 1.0.3
+
+### Summary
+
+- Accept the maintainer-approved pure-white, flat circular-arc installer and English USB connection footer for publication. Preserve the exact approved background and icon-layout file hashes.
+- Set version 1.0.3 (build 7), create a universal Release archive, and sign/notarize through the existing authenticated Xcode Developer ID workflow. Application and test sources remain unchanged.
+- Package the signed/stapled app in `.build/Distribution/USBDisplay-1.0.3-macOS-universal.fr2GIE/`. Update both README language sections to the new DMG, ZIP, and checksum URLs, and add versioned release notes without replacing older releases.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`, `README.md`, and `CHANGELOG.md`
+- `doc/current.md`, `doc/design/dmg-installer.md`, `doc/releases.md`, `doc/releases/v1.0.3.md`, and `doc/devlog.md`
+- Ignored 1.0.3 release packages and temporary archive/validation files
+- Linear QUE-24 assertion evidence
+
+### Validation
+
+- Universal Release archive, Developer ID upload, notarized export, and packaging passed. Source, mounted-DMG, and extracted-ZIP apps passed strict code signatures, stapled-ticket validation, and Gatekeeper (`accepted / Notarized Developer ID`). Version/build is 1.0.3/7, minimum macOS is 14.0, and the only entitlement is camera access. Hardened runtime and the expected Developer ID authority are present.
+- Both packaged TIFF image representations match the approved standard/Retina PNGs pixel for pixel. The approved background and layout source files are unchanged. The disk root contains only the app and the correct Applications shortcut as visible items.
+- ZIP CRC/content, DMG integrity, package SHA-256, project/shell syntax, and Git whitespace checks passed. DMG SHA-256: `9871b3257cd89c6c1e8a2505e4ea37db7d5a8df6e857ece39d3cbde18181b2c0`. ZIP SHA-256: `18ad4b1abfff016cb35a509dbda428f0b9a80ef7b161f1de5ee4ed073f3309bd`.
+- Full Debug result: 103 passed, two known full-screen integration failures. The isolated window suite passed all 11 tests. A temporary diagnostic wrapper captured xcresult assertion summaries before normal cleanup: both failures preserve size but change window origins from `(1917,-346)` to `(792,47)` and `(2138,-346)` to `(1288,47)`. Record this on QUE-24 for investigation of display-context/screen-fitting fixture assumptions; the cause is not claimed fixed or conclusively isolated.
+- All nine catalog tests and offline resource verification passed. Test build directories were removed. No new native GUI, physical capture, or older-OS/Intel runtime acceptance was run; the approved preview's visual checks remain applicable to unchanged artwork/layout.
+
+### Remaining Risks or Follow-up Work
+
+- Publish and verify the actual 1.0.3 downloads and README links, then clean this task's temporary archive/tooling/logs.
+- The two full-screen integration failures and existing runtime/compatibility/performance follow-ups remain open. The app is notarized; no separate DMG-container notarization is claimed.

@@ -4,11 +4,17 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 ## Unreleased
 
+No additional changes scheduled. See the [roadmap](doc/roadmap.md) for follow-up work.
+
+## 1.0.3 — 2026-11-13
+
 ### Improvements
 
-- Simplify the installer artwork to a pure-white canvas, one flat circular-arc arrow, and concise English USB connection guidance. Remove the previous heading, explanatory copy, circles, and divider.
+- Use the approved minimal installer: a pure-white canvas, one flat circular-arc arrow, and the English footer "Connect your iPhone or iPad via USB."
+- Use a compact layout with clear spacing around the native app and Applications icons.
+- Update both README language sections to the new downloads while preserving existing releases.
 
-This installer revision is currently a local visual preview; published 1.0.2 downloads remain unchanged. See the [roadmap](doc/roadmap.md) for other unscheduled follow-up work.
+The app remains Developer ID signed and notarized. Capture/window behavior is unchanged; existing runtime validation and intermittent full-screen test follow-ups remain open.
 
 ## 1.0.2 — 2026-11-13
 

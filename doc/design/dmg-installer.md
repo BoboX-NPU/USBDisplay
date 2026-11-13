@@ -1,6 +1,6 @@
 # DMG installer design
 
-The current working artwork follows the maintainer's revised request: a plain white background, one flat gray circular-arc arrow from the app to Applications, and the English footer `Connect your iPhone or iPad via USB.`. Native app/folder icons and filenames remain Finder-owned. The published 1.0.2 installer retains its previous artwork; this revision is a local preview until reviewed.
+The 1.0.3 installer follows the maintainer-approved design: a plain white background, one flat gray circular-arc arrow from the app to Applications, and the English footer `Connect your iPhone or iPad via USB.`. Native app/folder icons and filenames remain Finder-owned. The published 1.0.2 installer retains its previous artwork; the approved revision ships in 1.0.3.
 
 ## Composition
 
@@ -30,7 +30,7 @@ rm -rf "$DMG_ART_CACHE"
 
 ## Signing and validation boundary
 
-Installer artwork and Finder metadata stay outside the signed app. Do not apply `SetFile` or extension-hiding FinderInfo to the app after signing; the earlier attempt failed strict signature checks. The local preview reuses the already notarized 1.0.2 app without changing any app file contents or publishing replacement release assets.
+Installer artwork and Finder metadata stay outside the signed app. Do not apply `SetFile` or extension-hiding FinderInfo to the app after signing; the earlier attempt failed strict signature checks. The approved preview reused the already notarized 1.0.2 app. Release 1.0.3 is rebuilt and notarized with its own version/build metadata; the approved artwork and layout are unchanged.
 
 Final native Finder inspection confirmed the flat circular arc, two icons, pure-white background, fully visible English footer, and no extra background headings or frames. The exact final preview was opened and left frontmost for the maintainer. Image dimensions/DPI and white-background samples are checked separately. Strict signature, stapled-ticket, and Gatekeeper checks apply to the app inside the preview. This artwork change does not modify app behavior or resolve the existing full-screen test instability.
 
