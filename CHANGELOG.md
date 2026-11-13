@@ -6,6 +6,20 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 No changes scheduled yet. See the [roadmap](doc/roadmap.md) for unscheduled follow-up work.
 
+## 1.0.1 — 2026-11-13
+
+### Bug fixes
+
+- Replace the initial release's ad-hoc distribution signature with Developer ID signing and Apple notarization. Both downloads contain the stapled app, which passes Gatekeeper checks.
+
+### Improvements
+
+- Provide matching Simplified Chinese and English README sections with language navigation and updated installation guidance.
+- Add a packaging mode that accepts an already notarized app and verifies Developer ID identity, the stapled ticket, and Gatekeeper acceptance before and after packaging.
+- Document the Xcode account-based archive, notarization, export, and validation workflow without storing credentials in the repository.
+
+Application capture/window behavior is unchanged. Normal first-launch confirmation and Camera permission prompts still apply. Version 1.0.0 tags and downloads remain available without replacement.
+
 ## 1.0.0 — 2026-11-13
 
 First public source and binary release.

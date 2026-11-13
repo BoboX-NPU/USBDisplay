@@ -1,6 +1,6 @@
 # iPhoneUSBDisplay Project Collaboration Guidelines
 
-All Markdown files in this project must be written in English. Every Git commit title and body must also be written in English. Filenames, code identifiers, commands, and technical terms should retain their original spelling.
+Project Markdown documentation must be written in English, except `README.md`, which the maintainer explicitly requested in both Simplified Chinese and English. Keep both README language sections aligned. Every Git commit title and body must be written in English. Filenames, code identifiers, commands, and technical terms should retain their original spelling.
 
 ## Before Starting a Task
 

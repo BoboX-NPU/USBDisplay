@@ -1812,3 +1812,39 @@
 
 - Downloads remain ad-hoc signed and not notarized; publishing does not change Gatekeeper trust. Signing and the existing runtime/interaction/performance limits remain tracked in Linear.
 - No new feature work, hosted CI, automatic updater, or issue synchronization was introduced. The maintainer will define the next release separately.
+
+
+## 2026-11-13 — Sign and Notarize the 1.0.1 Distribution App
+
+### Summary
+
+- Prepare version 1.0.1 (build 5) for the distribution-trust correction while preserving the published 1.0.0 source tag and downloads. Application capture/window source code is unchanged.
+- After explicit user confirmation for Developer ID credential creation, inspect Xcode's paid-team account and attempt certificate creation once. Xcode did not show a new certificate or error, so no repeated manual issuance/revocation was attempted. Use Xcode's automatic Developer ID export with the existing authenticated account; upload succeeded, and notarized export returned a Developer ID-signed app with a stapled Apple ticket.
+- The signing authority is `Developer ID Application: mingbo xue (9PSN33WBG7)`, certificate SHA-1 `CFBE77C410EBBDBC13DD2C63892651A6B0EFA160`. The local identity inventory still lists only the existing development/distribution identities; no claim is made that a new Developer ID private key was installed locally. No app-specific password or private API key was supplied, committed, or exported.
+- Add `--notarized-app` packaging for a pre-verified signed/stapled app. Preserve the existing local ad-hoc modes. Validate trust before output creation and on the mounted-DMG/extracted-ZIP copies, without rebuilding or changing the supplied app.
+- Provide matching Simplified Chinese and English README sections and bilingual package installation notes. Record the user's explicit README exception to the project's English-only Markdown convention. Update installation, changelog, release, and notarization documentation.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`, `script/package_local_release.sh`
+- `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, and `CHANGELOG.md`
+- `doc/installation.md`, `doc/notarization.md`, `doc/releases.md`, and `doc/releases/v1.0.1.md`
+- `doc/current.md` and `doc/devlog.md`
+- Ignored artifacts in `.build/Distribution/USBDisplay-1.0.1-macOS-universal.GzgBxe/`
+
+### Validation
+
+- The universal Release archive built on Xcode 27.2. Automatic `developer-id` export with `destination=upload` and team `9PSN33WBG7` succeeded; `-exportNotarizedApp` succeeded. Xcode distribution identifier: `684ADD00-E29D-426B-8515-83316CC0BEAE`. This is an Xcode distribution identifier, not asserted to be the notarytool submission ID.
+- The exported app reports Developer ID authority, a secure timestamp, hardened runtime, the expected team, version 1.0.1/build 5, and both CPU architectures. The sole entitlement is `com.apple.security.device.camera`.
+- Strict signature and stapled-ticket checks passed on the exported app, mounted-DMG app, and extracted-ZIP app. All three Gatekeeper checks returned `accepted` and `source=Notarized Developer ID`.
+- An extracted temporary app with a download quarantine marker passed strict signatures, ticket validation, Gatekeeper, and `syspolicy_check distribution` (all exit 0). App metadata, executable, icon resources, MIT license, and third-party notices matched the notarized export. This is a policy/distribution check, not a new physical capture or GUI-launch acceptance run.
+- DMG integrity and package SHA-256 checks passed. DMG SHA-256: `4ea066c2167fb781b02efebaf106c05c3113f57e5d4de6fbd4ded3b997a1b23c`. ZIP SHA-256: `4acaebc43c5f5582fdf94f741e5717a1f8dc4f7804f44645a9f861d043cff572`.
+- The new packaging mode rejected the existing ad-hoc app with exit 3 before creating a package directory. An initial inline-requirement command syntax error was corrected before the successful packaging run.
+- The first full Debug run had 103 passes and two failures in `WindowLayoutIntegrationTests.emptyFullScreenRoundTripRestoresOrdinarySizeIncludingDeviceArrival` and `fullScreenRestoresOrdinaryGeometryAndSidebarState`. The isolated window integration suite then passed all 11 tests, and a subsequent full run passed all 105 tests without changing runtime or test sources. All temporary test build directories were removed. The inconsistent result is recorded on Linear QUE-24; its cause remains unisolated.
+- All nine Python catalog tests and offline catalog verification passed. Shell syntax, Xcode project plist, bilingual README section/version parity, documentation relative links, and Git whitespace checks passed. Older-system/Intel runtime and new physical-device checks: Not run.
+
+### Remaining Risks or Follow-up Work
+
+- Publish and verify the new 1.0.1 downloads, then close the signing/notarization task in Linear. Keep concise verification records and remove this task's temporary archive, exports, and logs.
+- The notarization ticket belongs to the embedded app; no independent notarization of the DMG container is claimed. Normal Internet-download confirmation and Camera permission prompts can remain.
+- The existing capture-startup, compatibility, interaction/performance, and CI backlog remains separate from distribution trust. Investigate the intermittent full-screen test failures recorded in QUE-24; the passing reruns do not establish their cause.

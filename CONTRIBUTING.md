@@ -40,7 +40,7 @@ No hosted CI result is currently implied by these commands. Native CI and releas
 3. Keep one behavior or closely related change per pull request. Preserve the capture/window ownership boundaries described in current state.
 4. Run checks appropriate to the change. For capture, resizing, full screen, or permissions, record physical checks separately from automated tests and identify unavailable hardware.
 5. Update user-facing documentation when behavior changes. Append a factual `doc/devlog.md` entry and update `doc/current.md` if the current state changes. Add user-facing changes under `Unreleased` in `CHANGELOG.md`.
-6. Write English Markdown and commit messages. Inspect the staged diff and whitespace before committing.
+6. Write English documentation and commit messages; keep the Chinese and English sections of the bilingual README aligned. Inspect the staged diff and whitespace before committing.
 7. Open a pull request describing the problem, final behavior, validation, and limitations. Link the relevant public GitHub issue; maintainers can cross-link their internal Linear task.
 
 Keep `main` releasable. Use `vMAJOR.MINOR.PATCH` tags for published source, and never replace assets under an already published version; publish a new patch version for corrected downloads. The maintainer sets the scope and timing of each next release.

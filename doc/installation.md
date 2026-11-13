@@ -19,11 +19,13 @@ The deployment target is macOS 14; physical runtime coverage across older macOS 
 
 ## Signing and first launch
 
-Version 1.0.0 has an **ad-hoc signature, no Developer ID Application signature, and no Apple notarization**. A strict local signature check verifies the package's internal integrity but does not make it a trusted/notarized download. macOS Gatekeeper rejected the locally assessed release bundle.
+The app in **version 1.0.1** is signed with **Developer ID Application: mingbo xue (9PSN33WBG7)** and notarized by Apple. A stapled ticket is included in the app for offline verification. The exported app and copies from both archives passed signature, ticket, and Gatekeeper checks; a quarantined extracted app also passed Apple's distribution checker.
 
-If you trust the source and macOS blocks this app, attempt to open it once, then check **System Settings > Privacy & Security** for **Open Anyway**. Availability depends on the warning and local device-management policy. Follow [Apple's instructions for safely opening apps](https://support.apple.com/en-us/102445). Do not disable Gatekeeper globally. If macOS reports malware or a damaged app, stop and verify the download or build the source instead of treating that as the ordinary unidentified-developer prompt.
+The app is notarized; the DMG is a transport container and is not claimed to have its own separate notarization ticket. Both DMG and ZIP contain the same signed, stapled app.
 
-The maintainer is tracking Developer ID signing and notarization for a later release. These first-release downloads are intended for users comfortable with the documented trust limitation.
+macOS can still show its normal confirmation that an app was downloaded from the Internet, and the app still needs Camera permission for the device video stream. These are distinct from an unidentified-developer or missing-notarization block. See [Apple's first-launch guidance](https://support.apple.com/en-us/102445).
+
+If you still see a developer-verification error, confirm that you downloaded **1.0.1 or later**, verify the checksum, and replace any older copy in Applications. The original **1.0.0** downloads remain preserved and are ad-hoc signed, without notarization. Do not disable Gatekeeper globally. If macOS reports damage or malware, stop and verify the download instead of bypassing the warning.
 
 ## Verify a download
 
