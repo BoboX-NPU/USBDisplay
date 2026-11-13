@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a reproducible USB Display problem
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Please check the installation guide and existing issues first. Redact device names, unique identifiers, personal screen content, and credentials."
+  - type: input
+    id: version
+    attributes:
+      label: App version and installation source
+      placeholder: "1.0.0, GitHub DMG"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: "macOS version, Mac chip, device model, iOS/iPadOS version, and cable/hub setup. Do not include serial numbers or UDIDs."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant diagnostics or screenshots
+      description: "Optional. For a black preview, say whether ordinary non-DRM content also fails. Share only redacted evidence."

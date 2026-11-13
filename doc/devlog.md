@@ -1726,3 +1726,38 @@
 
 - Each test invocation rebuilds from scratch, trading incremental build speed and retained detailed result bundles for disk space. Console output can be redirected explicitly when diagnostics need to be saved.
 - SIGKILL, a shell crash, or power loss can prevent exit traps. Any abandoned run directory needs manual cleanup after confirming that it is inactive. Direct Xcode UI tests and commands that bypass `script/test.sh` do not get this script's cleanup behavior.
+
+
+## 2026-11-13 — Prepare the First Open-source Release
+
+### Summary
+
+- Prepare version 1.0.0 (build 4) as the first GitHub release, retaining the existing app behavior, bundle identifier, macOS 14 deployment target, and source-layer structure.
+- Add the user-selected MIT license and include it in the built app alongside third-party notices. Add a public README with versioned DMG/ZIP/checksum links, installation/troubleshooting guidance, contribution instructions, changelog, release procedure, roadmap, issue forms, PR template, and CODEOWNERS.
+- Add `--github` to the packaging command for stable universal-archive filenames. Preserve the no-argument local naming and existing ad-hoc signing. Include accurate signing and runtime limitations in the package notes and public documentation.
+- Create the USB Display project in the user-selected Question King Linear workspace. Add 12 backlog issues (QUE-20–QUE-31), each with source context and acceptance criteria. Separate the observed startup/black-preview issue from validation gaps and proposed features. Keep the already fixed F1–F9 audit findings closed in the historical record. Do not schedule or implement future release scope.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`, `script/package_local_release.sh`, and `LICENSE`
+- `README.md`, `CONTRIBUTING.md`, and `CHANGELOG.md`
+- `.github/CODEOWNERS`, `.github/pull_request_template.md`, and `.github/ISSUE_TEMPLATE/`
+- `doc/installation.md`, `doc/roadmap.md`, `doc/releases.md`, and `doc/releases/v1.0.0.md`
+- `doc/current.md` and `doc/devlog.md`
+- Ignored release assets in `.build/Distribution/USBDisplay-1.0.0-macOS-universal.gUKiYU/`
+- External Linear project and backlog: https://linear.app/question-king/project/usb-display-954f744f1c76
+
+### Validation
+
+- `./script/test.sh` passed all 105 Debug tests in 14 suites, with no failures, and removed the temporary Xcode directory. All nine Python catalog tests and offline catalog verification passed.
+- `./script/package_local_release.sh --github` passed the universal Release build, strict deep source/mounted-DMG/extracted-ZIP signature checks, and DMG integrity. ZIP CRC, both package SHA-256 hashes, arm64/x86_64 slices, version 1.0.0, build 4, minimum macOS 14.0, bundled license/notices, and matching ZIP app resources were verified. The sole entitlement is `com.apple.security.device.camera`.
+- DMG SHA-256: `30201b92fb537d6d03d39e5e44c5c7c16a3816381169defb81725820d8c5badc`. ZIP SHA-256: `6aab4e2defba0ca365cb81fbd4825e489d8c08545701ce0a73ace5cae57aa1c7`.
+- Gatekeeper rejected the actual 1.0.0 bundle with exit 3. The installed identities include Apple Development/Distribution, but no Developer ID Application identity. No signing credential was created or uploaded, and no notarization was claimed.
+- Shell syntax, Xcode project plist, new documentation relative links, issue-template YAML, and Git whitespace checks passed. A focused pre-publication pattern check of 402 historical Git blobs found no matching private keys or common GitHub/OpenAI/AWS credential forms; this is not an exhaustive security audit.
+- Xcode emitted expected no-AppIntents metadata notices; the successful disk-image operations emitted host deprecation notices.
+- Packaged-Release launch, physical capture, older-system/Intel runtime, and new performance checks: Not run. GitHub publication and public download verification are recorded separately after completion.
+
+### Remaining Risks or Follow-up Work
+
+- The initial downloads are ad-hoc signed and not notarized; macOS may block first launch. Signing/notarization, runtime coverage, capture startup, interaction/performance evidence, and automation are tracked in the linked backlog.
+- There is no hosted CI, built-in updater, or automatic GitHub/Linear issue synchronization. Future release scope and dates remain undecided.
