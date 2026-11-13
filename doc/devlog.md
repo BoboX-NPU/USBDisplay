@@ -1665,3 +1665,32 @@
 
 - Existing DMG and ZIP archives still contain the earlier blue flat icon. Regenerate them when a new package is requested.
 - macOS 14/15 runtime presentation and distribution acceptance remain unverified. Generation-26 and generation-27 renders are previews, not physical runs on every supported OS; native materials can vary by system version.
+
+
+## 2026-11-13 — Repackage the Local Release with the Layered White Icon
+
+### Summary
+
+- Run the existing local-release packaging workflow against `35e53a7` to include the new centered, bottom-aligned Icon Composer artwork in both DMG and ZIP.
+- Preserve version 0.3.0 (build 3), the macOS 14 minimum, Apple Silicon/Intel executables, hardened runtime, and local ad-hoc signing. Keep the previous packages in their original directory.
+- Save the new archives, checksums, signature/entitlement records, a resource comparison report, and an extracted icon preview in `.build/Distribution/USBDisplay-0.3.0-build3-local.1OmvAr/`.
+
+### Affected Files
+
+- `doc/current.md`
+- `doc/devlog.md`
+- Ignored `.build/Distribution/USBDisplay-0.3.0-build3-local.1OmvAr/` artifacts; application sources and packaging scripts are unchanged.
+
+### Validation
+
+- `./script/package_local_release.sh` passed on Xcode 27.2, including the universal Release build, strict deep signatures on the source app, mounted DMG app and extracted ZIP app, and DMG integrity. Log: `/tmp/USBDisplay-layered-icon-package.log`.
+- Verified the executable contains `x86_64` and `arm64`, the app requires macOS 14.0, and the only entitlement is `com.apple.security.device.camera = true`.
+- Read-only mounted the final DMG and read the ZIP directly. Both archives' `AppIcon.icns`, `Assets.car`, executable, and Info.plist match the rebuilt source app byte for byte. ZIP CRC validation and both saved SHA-256 checks passed. The DMG retains its Applications shortcut.
+- Asset inspection confirmed all six icon vectors, four depth groups in each of three appearances, and three native image stacks. The extracted compatibility icon visibly shows the new white background and aligned dimensional devices. Details are saved in `icon-validation.json` beside the packages.
+- Final DMG size: 2,281,016 bytes. Final ZIP size: 2,144,470 bytes. SHA-256: DMG `71fbdd35eb989bfd70dfdff3320a72a126f193a1f2ab2bd47b9e1e92d359071f`; ZIP `086cca74cf4eb1cac02fc2bef5d538395dd6be581c6308f247434ad9d8a06054`.
+- Gatekeeper execution assessment returned `rejected` (exit 3), consistent with ad-hoc signing and no notarization. The build emitted the expected no-AppIntents notice; successful image mount/detach operations emitted host deprecation notices.
+- Git whitespace checks passed. Application tests, packaged-Release launch, physical capture, older macOS runtime checks, and installation into Applications: Not run for this repackaging task.
+
+### Remaining Risks or Follow-up Work
+
+- These remain local evaluation packages without Developer ID signing or Apple notarization. Public-distribution trust and broader runtime acceptance remain outstanding.
