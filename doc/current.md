@@ -8,6 +8,8 @@ Capture uses public AVFoundation and CoreMediaIO APIs. A separate read-only clie
 
 ## Open-source Maintenance
 
+The release source and annotated `v1.0.0` tag are uploaded at commit `30b39a195d525d73792024906e4376f04f7689db`. GitHub currently holds a private [1.0.0 release draft](https://github.com/BoboX-NPU/USBDisplay/releases/tag/untagged-b210819664ef70364c0c) with the DMG, ZIP, and checksums. Both uploaded binaries were downloaded and matched the local hashes. The repository remains private and the release remains a draft while explicit confirmation to expose the repository and its entire Git history is pending; the public download URLs are not live yet.
+
 The source uses the MIT license, included in the app resources alongside the existing third-party notices. The [README](../README.md), [installation guide](installation.md), [contribution guide](../CONTRIBUTING.md), [changelog](../CHANGELOG.md), and [release procedure](releases.md) form the public documentation. GitHub issue/PR templates and CODEOWNERS provide contribution entrypoints; the existing App/Models/Services/Views/Resources source boundaries are retained.
 
 GitHub owns public source, downloads, and community feedback. The [USB Display Linear project](https://linear.app/question-king/project/usb-display-954f744f1c76) contains 12 unscheduled follow-ups (QUE-20 through QUE-31), distinguished as observed issues, validation gaps, and proposed improvements. See the [roadmap](roadmap.md) for public-readable topics. The September audit fixes remain completed. No hosted CI, automatic GitHub/Linear synchronization, or built-in updater is configured; future release scope remains for the maintainer to decide.

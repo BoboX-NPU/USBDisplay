@@ -1761,3 +1761,28 @@
 
 - The initial downloads are ad-hoc signed and not notarized; macOS may block first launch. Signing/notarization, runtime coverage, capture startup, interaction/performance evidence, and automation are tracked in the linked backlog.
 - There is no hosted CI, built-in updater, or automatic GitHub/Linear issue synchronization. Future release scope and dates remain undecided.
+
+
+## 2026-11-13 — Upload and Verify the Private 1.0.0 Release Draft
+
+### Summary
+
+- Push the reviewed source and documentation at `30b39a195d525d73792024906e4376f04f7689db` and its annotated `v1.0.0` tag to the existing GitHub repository without rewriting history.
+- Create a private release draft titled USB Display 1.0.0 with versioned notes, the universal DMG/ZIP, and `SHA256SUMS.txt`.
+- Automatic approval review rejected the attempt to change the private repository to public because it would disclose the entire source and Git history without sufficiently explicit visibility authorization. Request confirmation for that precise scope. Keep the repository private and the release unpublished while that confirmation is pending.
+
+### Affected Files
+
+- `doc/current.md` and `doc/devlog.md`
+- Remote `main`, annotated `v1.0.0`, and the GitHub release draft at https://github.com/BoboX-NPU/USBDisplay/releases/tag/untagged-b210819664ef70364c0c
+
+### Validation
+
+- Verified all three draft assets are uploaded: DMG 2,280,843 bytes, ZIP 2,145,380 bytes, checksums 206 bytes. Downloaded the authenticated draft assets into an isolated temporary directory and matched both SHA-256 hashes and the checksum file against the local packages. Removed the temporary downloads.
+- Verified the remote annotated tag resolves to the exact release-source commit. Confirmed all 12 Linear tasks exist in the USB Display project with Backlog status and the intended labels/priorities.
+- Git whitespace check passed. New builds/tests: Not run for this documentation-only publication-status record; the immediately preceding release-validation results remain applicable.
+
+### Remaining Risks or Follow-up Work
+
+- Confirm public visibility for the complete repository/history, then publish the draft and verify unauthenticated source/download access. The versioned public download links are not live while the repository/release remain private/draft.
+- Signing/notarization and physical-runtime limitations remain unchanged.
