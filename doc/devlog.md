@@ -1942,3 +1942,33 @@
 
 - The known two full-screen integration failures remain tracked on QUE-24; this installer redesign does not fix or conceal them.
 - Finder may retain user-specific tab/path/status preferences. Older Finder/appearance coverage and a final-image native GUI recheck remain unverified; the corrected preview passed native visual inspection and the final package's matching layout data passed verification.
+
+
+## 2026-11-13 — Simplify the Installer to a White Arc Preview
+
+### Summary
+
+- Apply the maintainer's latest direction: plain white background, one flat circular-arc arrow from the app toward Applications, and only `Connect your iPhone or iPad via USB.` at the bottom. Remove the previous heading, extra copy, circles, divider, background color, and dimensional arrow treatments.
+- Use a compact 640-by-360-point canvas with native 112-point icons at `(180,158)` and `(460,158)`, inside a 640-by-452-point initial Finder window. Raise the footer to clear the observed path-bar divider.
+- Use English for the fixed background image, as requested when runtime system-language selection is unavailable in this static-image workflow. The repository README remains bilingual.
+- Build a local preview containing the exact already-notarized 1.0.2 app. Do not bump the app version, replace published files, or create a GitHub release during this visual iteration. Retain the final preview in `.build/Distribution/USBDisplay-minimal-installer-preview.41qf2yqo/USBDisplay-arc-installer-preview.dmg`.
+
+### Affected Files
+
+- `script/generate_dmg_background.swift` and `script/dmg_settings.py`
+- `Packaging/DMG/background.png` and `background@2x.png`
+- `CHANGELOG.md`, `doc/design/dmg-installer.md`, `doc/current.md`, and `doc/devlog.md`
+- Ignored local preview DMG and its checksum file
+
+### Validation
+
+- Native artwork generation and strict Swift-format lint passed. Standard/Retina images have the expected 640-by-360 and 1280-by-720 sizes; sampled background regions are fully opaque pure white.
+- The final preview passed DMG integrity, saved-layout, complete app-file comparison, strict code-signature, stapled-ticket, and Gatekeeper checks. Gatekeeper reports `Notarized Developer ID`; the app is unchanged from the 1.0.2 signed payload.
+- The first compact footer position touched the Finder path-bar divider; raising it resolved the observed clearance problem. Earlier navigation attempts did not show the revised arrow. Final native inspection opened the exact `USB Display Arc Preview` volume and confirmed a flat gray circular arc, two correctly placed icons, fully visible English footer, and no extra background text, frames, overlap, or clipping. Leave this final preview frontmost for review.
+- Remove obsolete task preview volumes/files and temporary Python tools, Swift module cache, source copies, and logs. Preserve the final preview and the user's existing published-release mounts.
+- Git whitespace checks passed. Application build/unit tests: Not run for this artwork/layout-only iteration; application and test sources and published releases are unchanged.
+
+### Remaining Risks or Follow-up Work
+
+- The revised artwork is a local preview awaiting the maintainer's visual feedback. Public 1.0.2 downloads still contain their original released artwork.
+- Native Finder filenames/bars remain system-owned, and older-OS/appearance coverage remains unverified. Existing app-runtime and test-instability follow-ups are unchanged.

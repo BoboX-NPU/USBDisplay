@@ -1,26 +1,24 @@
 # DMG installer design
 
-The installation window uses the app's established white and blue-gray palette. It presents one task: drag the real USB Display app onto the real Applications shortcut. The custom background contains guidance, not simulated controls or a second copy of either icon.
+The current working artwork follows the maintainer's revised request: a plain white background, one flat gray circular-arc arrow from the app to Applications, and the English footer `Connect your iPhone or iPad via USB.`. Native app/folder icons and filenames remain Finder-owned. The published 1.0.2 installer retains its previous artwork; this revision is a local preview until reviewed.
 
 ## Composition
 
-- A 720-by-460-point canvas with a quiet white-to-pale-blue background.
-- A centered app name, followed by Chinese and English drag-to-install instructions.
-- Native 112-point app and folder icons centered at `(200, 226)` and `(520, 226)`, with a thin directional arrow between them and restrained circular backings.
-- Small bilingual next-step guidance below a divider, plus minimum macOS/architecture information.
-- Only the app and Applications shortcut are visible in the disk root. Detailed text installation notes remain beside local package outputs; public instructions are also in the README and installation guide.
+- A 640-by-360-point pure-white canvas, with no background gradient, circles, panels, divider, title, device copy, or extra installation instructions.
+- Native 112-point app and folder icons at `(180, 158)` and `(460, 158)`.
+- A single 2.5-point neutral-gray circular arc runs from the app toward Applications, with a tangent arrowhead and rounded ends. It has no filled face, bevel, extrusion, or shadow.
+- The requested footer is centered near the bottom, with its text box starting at `y = 282`. The initial position at `y = 314` touched Finder's path-bar divider during native inspection and was raised for clearance.
+- A 640-by-452-point initial Finder window in icon view. Toolbar/sidebar metadata are hidden; Finder can retain the user's tab/path/status preferences. No global Finder setting is changed.
 
-`script/dmg_settings.py` requests an icon-view Finder window at 720 by 552 points, with toolbar/sidebar/path/status/tab settings disabled in the folder metadata. Finder can override some options with the user's preferences. The extra height accommodates the observed tab/path/status bars without changing global settings. Users can still resize the Finder window themselves.
+The background itself contains only the arrow and the English connection guidance. It is a fixed raster image referenced by Finder metadata and does not select text based on the viewing Mac's system language; English is the maintainer's chosen fallback. Native filenames, volume titles, and Finder chrome are not baked into the artwork and are not renamed or hidden by modifying the signed app.
 
-## Assets and tooling
+## Assets and regeneration
 
-- `Packaging/DMG/background.png`: 720 by 460 pixels at 72 DPI.
-- `Packaging/DMG/background@2x.png`: 1440 by 920 pixels at 144 DPI.
-- `script/generate_dmg_background.swift`: editable native AppKit drawing source.
-- `script/dmg_settings.py`: icon positions, view options, shortcut, volume icon, and artwork selection.
-- `script/requirements-dmg.txt`: exact wheel versions/hashes for `dmgbuild`, `ds-store`, and `mac-alias`.
-
-Regenerate artwork from the repository root with a temporary module cache, then remove that cache:
+- `Packaging/DMG/background.png`: 640 by 360 pixels at 72 DPI.
+- `Packaging/DMG/background@2x.png`: 1280 by 720 pixels at 144 DPI.
+- `script/generate_dmg_background.swift`: editable AppKit drawing source.
+- `script/dmg_settings.py`: icon positions, window/view settings, shortcut, and artwork selection.
+- `script/requirements-dmg.txt`: exact versions and wheel hashes for the release-only DMG tools.
 
 ```bash
 DMG_ART_CACHE=$(mktemp -d "${TMPDIR:-/tmp}/usb-display-art.XXXXXX")
@@ -28,25 +26,15 @@ xcrun swift -module-cache-path "$DMG_ART_CACHE" script/generate_dmg_background.s
 rm -rf "$DMG_ART_CACHE"
 ```
 
-The image representation declares its logical size before creating the graphics context. Do not apply a second Retina transform: AppKit already supplies the backing scale. The two images are combined into a multi-resolution TIFF by the DMG builder.
+`NSBitmapImageRep.size` supplies the logical size; do not add a second Retina scale. The DMG builder combines the standard and Retina images into a multi-resolution TIFF. The package script creates disposable tooling by default or accepts a prepared interpreter through `DMGBUILD_PYTHON`.
 
-The packaging script normally installs the small pinned wheels from PyPI into its own temporary environment and removes it with staging. For an already prepared environment, set `DMGBUILD_PYTHON` to its Python executable. These are release tools, not application/runtime dependencies. Failed packaging removes only that run's newly created incomplete output directory.
+## Signing and validation boundary
 
-## Signing boundary
+Installer artwork and Finder metadata stay outside the signed app. Do not apply `SetFile` or extension-hiding FinderInfo to the app after signing; the earlier attempt failed strict signature checks. The local preview reuses the already notarized 1.0.2 app without changing any app file contents or publishing replacement release assets.
 
-Keep all installer artwork and Finder metadata outside the signed `.app`. Do not use `SetFile` or `hide_extensions` on the app after signing: adding FinderInfo caused strict signature verification to fail during the first preview, even though Gatekeeper still accepted the notarized app. That option is disabled. Finder controls whether the `.app` suffix is visible according to the user's preference.
-
-The final packaging workflow verifies the unmodified app's Developer ID signature and stapled ticket on the source, mounted DMG, and extracted ZIP. The disk image itself is a transport container; separate container notarization is not claimed.
-
-## Design and contrast validation
-
-The existing accepted app icon provided the palette and product context. Apple's installed Xcode 27.2 HIG Layout guidance informed hierarchy and familiar control/content relationships. No Finder-installer-specific Apple skill was available; the exported Apple Sufficient Contrast guidance was used for authored colors, together with the macOS packaging workflow and direct Finder inspection.
-
-Verdict: PASS for the authored background's known colors. Against the darkest background endpoint (`#F1F6FC`), the title (`#213650`) measures 11.32:1; Chinese instruction text (`#435D79`) 6.27:1; English/footer text (`#526A83`) 5.16:1; and the meaningful arrow (`#708CA9`) 3.21:1. The decorative rings/divider are not controls. Native Finder icon labels are owned by the system; broad accessibility/appearance coverage is not certified by this artwork check.
-
-The first preview exposed double Retina scaling and clipped content. After removing the duplicate transform and increasing the stored window height, Finder inspection at 1440-by-1104 screenshot pixels showed complete bilingual instructions/footer, native icons centered in the circles, a visible arrow, readable filename labels, and no overlap, clipping, scrollbars, or unintended empty panel. Toolbar/sidebar were hidden while the host's tab/path/status bars remained visible. No global Finder preferences were changed and no app was installed during inspection.
+Final native Finder inspection confirmed the flat circular arc, two icons, pure-white background, fully visible English footer, and no extra background headings or frames. The exact final preview was opened and left frontmost for the maintainer. Image dimensions/DPI and white-background samples are checked separately. Strict signature, stapled-ticket, and Gatekeeper checks apply to the app inside the preview. This artwork change does not modify app behavior or resolve the existing full-screen test instability.
 
 ## References
 
-- [Apple HIG: Layout](https://developer.apple.com/design/human-interface-guidelines/layout), installed documentation release 2236 / Xcode 27.2.
-- [dmgbuild](https://github.com/dmgbuild/dmgbuild) and its [settings reference](https://dmgbuild.readthedocs.io/en/latest/settings.html), with the installed 1.6.7 implementation checked for file copying and Finder metadata behavior.
+- [Apple HIG: Layout](https://developer.apple.com/design/human-interface-guidelines/layout), installed Xcode 27.2 documentation.
+- [dmgbuild](https://github.com/dmgbuild/dmgbuild) and its [settings reference](https://dmgbuild.readthedocs.io/en/latest/settings.html).

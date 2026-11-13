@@ -4,7 +4,11 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 ## Unreleased
 
-No changes scheduled yet. See the [roadmap](doc/roadmap.md) for unscheduled follow-up work.
+### Improvements
+
+- Simplify the installer artwork to a pure-white canvas, one flat circular-arc arrow, and concise English USB connection guidance. Remove the previous heading, explanatory copy, circles, and divider.
+
+This installer revision is currently a local visual preview; published 1.0.2 downloads remain unchanged. See the [roadmap](doc/roadmap.md) for other unscheduled follow-up work.
 
 ## 1.0.2 — 2026-11-13
 

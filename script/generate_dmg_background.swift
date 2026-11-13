@@ -1,11 +1,11 @@
 import AppKit
 
 // Finder supplies the real draggable app/folder icons. This artwork only draws
-// the installation guidance and background at a 720-by-460-point logical size.
+// a flat curved arrow and the requested footer on a plain white canvas.
 let output = URL(fileURLWithPath: CommandLine.arguments.dropFirst().first ?? "Packaging/DMG")
 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-let width: CGFloat = 720
-let height: CGFloat = 460
+let width: CGFloat = 640
+let height: CGFloat = 360
 
 func color(_ hex: UInt32, alpha: CGFloat = 1) -> NSColor {
   NSColor(
@@ -41,44 +41,34 @@ for scale in [1, 2] {
   // bitmap.size establishes logical points; NSGraphicsContext supplies the
   // backing scale. Applying another scale here would crop the Retina artwork.
 
-  NSGradient(colors: [color(0xFFFFFF), color(0xF1F6FC)])!
-    .draw(in: NSRect(x: 0, y: 0, width: width, height: height), angle: -90)
+  NSColor.white.setFill()
+  NSRect(x: 0, y: 0, width: width, height: height).fill()
 
-  // Quiet pools of white keep both native icons distinct from the blue-gray base.
-  for center in [CGFloat(200), CGFloat(520)] {
-    let ring = NSBezierPath(ovalIn: rect(center - 84, 146, 168, 168))
-    color(0xFFFFFF, alpha: 0.84).setFill()
-    ring.fill()
-    color(0xDDE7F2).setStroke()
-    ring.lineWidth = 1
-    ring.stroke()
-  }
-
-  text("USB Display", top: 38, size: 32, weight: .semibold, ink: 0x213650)
-  text("拖到「应用程序」完成安装", top: 89, size: 16, weight: .medium, ink: 0x435D79)
-  text("Drag to Applications to install", top: 116, size: 13, weight: .regular, ink: 0x526A83)
-
+  let halfSpan: CGFloat = 70
+  let rise: CGFloat = 28
+  let radius = (halfSpan * halfSpan + rise * rise) / (2 * rise)
+  let center = NSPoint(x: 320, y: height - (158 + radius - rise))
+  let endAngle = atan2(radius - rise, halfSpan)
   let arrow = NSBezierPath()
-  arrow.move(to: NSPoint(x: 326, y: height - 224))
-  arrow.line(to: NSPoint(x: 394, y: height - 224))
-  arrow.move(to: NSPoint(x: 382, y: height - 213))
-  arrow.line(to: NSPoint(x: 394, y: height - 224))
-  arrow.line(to: NSPoint(x: 382, y: height - 235))
+  arrow.appendArc(
+    withCenter: center, radius: radius,
+    startAngle: 180 - endAngle * 180 / .pi,
+    endAngle: endAngle * 180 / .pi, clockwise: true)
+
+  let tip = NSPoint(x: 390, y: height - 158)
+  let direction = NSPoint(x: sin(endAngle), y: -cos(endAngle))
+  let normal = NSPoint(x: -direction.y, y: direction.x)
+  let back = NSPoint(x: tip.x - 10 * direction.x, y: tip.y - 10 * direction.y)
+  arrow.move(to: NSPoint(x: back.x + 5 * normal.x, y: back.y + 5 * normal.y))
+  arrow.line(to: tip)
+  arrow.line(to: NSPoint(x: back.x - 5 * normal.x, y: back.y - 5 * normal.y))
   arrow.lineWidth = 2.5
   arrow.lineCapStyle = .round
   arrow.lineJoinStyle = .round
-  color(0x708CA9).setStroke()
+  color(0x737373).setStroke()
   arrow.stroke()
 
-  color(0xDDE6F0).setFill()
-  rect(76, 349, width - 152, 1).fill()
-  text("安装后，连接你的 iPhone 或 iPad", top: 371, size: 13, weight: .medium, ink: 0x435D79)
-  text(
-    "Then connect your iPhone or iPad with a USB cable", top: 395, size: 12,
-    weight: .regular, ink: 0x526A83)
-  text(
-    "macOS 14+  ·  Apple Silicon & Intel", top: 426, size: 10.5,
-    weight: .regular, ink: 0x526A83)
+  text("Connect your iPhone or iPad via USB.", top: 282, size: 13, weight: .regular, ink: 0x696969)
 
   NSGraphicsContext.restoreGraphicsState()
   let suffix = scale == 1 ? "" : "@2x"
