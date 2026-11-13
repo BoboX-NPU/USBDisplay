@@ -1,6 +1,6 @@
 # Roadmap and issue tracking
 
-Version 1.0.0 establishes the first public baseline. The maintainer will choose the scope and timing of subsequent releases; the items below are a backlog, not promises or scheduled milestones.
+Version 1.0.0 established the first public baseline; 1.0.1 adds verified Developer ID signing, Apple notarization, and bilingual documentation. The maintainer will choose the scope and timing of subsequent releases; the items below are a backlog, not promises or scheduled milestones.
 
 ## Public contributions and maintainer planning
 
@@ -8,13 +8,16 @@ Use [GitHub Issues](https://github.com/BoboX-NPU/USBDisplay/issues) for public f
 
 Link a GitHub issue and its corresponding Linear task when they refer to the same work. Record the public resolution in the GitHub issue/PR and the shipped behavior in the changelog. No automatic GitHub/Linear synchronization is configured.
 
+## Completed
+
+- [QUE-22: Developer ID signing and notarization](https://linear.app/question-king/issue/QUE-22/ship-developer-id-signed-and-notarized-github-downloads) shipped in [1.0.1](https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.0.1). Apps from both public downloads pass signature, stapled-ticket, quarantined Gatekeeper, and distribution checks. Normal first-launch confirmation and Camera permission prompts remain expected.
+
 ## Current backlog
 
 | Maintainer task | Topic | Kind |
 | --- | --- | --- |
 | [QUE-20](https://linear.app/question-king/issue/QUE-20/investigate-slow-capture-startup-and-intermittent-black-previews) | Investigate slow capture startup and intermittent black previews | Observed issue |
 | [QUE-21](https://linear.app/question-king/issue/QUE-21/add-a-clear-permission-recovery-action-after-camera-access-changes) | Add a clear permission-recovery action after camera access changes | Proposed feature |
-| [QUE-22](https://linear.app/question-king/issue/QUE-22/ship-developer-id-signed-and-notarized-github-downloads) | Ship Developer ID signed and notarized GitHub downloads | Distribution |
 | [QUE-23](https://linear.app/question-king/issue/QUE-23/validate-the-release-on-macos-1415-and-intel-hardware) | Validate the release on macOS 14/15 and Intel hardware | Validation |
 | [QUE-24](https://linear.app/question-king/issue/QUE-24/verify-continuous-resizing-sidebar-dragging-and-hover-transitions) | Verify continuous resizing, sidebar dragging, and hover transitions | Validation |
 | [QUE-25](https://linear.app/question-king/issue/QUE-25/exercise-rotation-reconnects-multiple-devices-and-display-removal) | Exercise rotation, reconnects, multiple devices, and display removal | Validation |

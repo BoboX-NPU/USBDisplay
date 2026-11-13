@@ -1848,3 +1848,32 @@
 - Publish and verify the new 1.0.1 downloads, then close the signing/notarization task in Linear. Keep concise verification records and remove this task's temporary archive, exports, and logs.
 - The notarization ticket belongs to the embedded app; no independent notarization of the DMG container is claimed. Normal Internet-download confirmation and Camera permission prompts can remain.
 - The existing capture-startup, compatibility, interaction/performance, and CI backlog remains separate from distribution trust. Investigate the intermittent full-screen test failures recorded in QUE-24; the passing reruns do not establish their cause.
+
+
+## 2026-11-13 — Publish and Verify the Notarized 1.0.1 Downloads
+
+### Summary
+
+- Publish the reviewed `1441504a781c78f7364f3dc769871d905d3bc50d` source and annotated `v1.0.1` tag, then publish the verified DMG, ZIP, and checksums as the latest non-prerelease release. GitHub publication time is 22:30:33 UTC on 2026-11-13.
+- Verify both public downloads and the bilingual README without authentication. Preserve the 1.0.0 source tag and asset hashes.
+- Mark Linear QUE-22 Done with the signing/notarization evidence and release link. Move the completed topic out of the public roadmap's backlog; leave 11 follow-ups unscheduled. Record the intermittent integration-test observation separately on QUE-24.
+- Remove the task's temporary archive, exported app, diagnostic wrapper, Xcode distribution log bundle, and validation logs after saving concise verification records beside the release packages. No temporary test build directories remain.
+
+### Affected Files
+
+- `doc/current.md`, `doc/roadmap.md`, and `doc/devlog.md`
+- GitHub `main`, annotated `v1.0.1`, and https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.0.1
+- Linear QUE-22 and QUE-24
+- Ignored `public-download-verification.json` beside the 1.0.1 release assets
+
+### Validation
+
+- GitHub's uploaded asset digests matched local files before publication. Anonymous downloads of all three published assets then matched local bytes and checksums. DMG size: 1,847,295 bytes. ZIP size: 1,790,903 bytes. Checksum file: 206 bytes.
+- Apps extracted from the downloaded ZIP and copied from the read-only-mounted downloaded DMG were independently marked with download quarantine. Both passed strict signature checks, `stapler validate`, Gatekeeper (`accepted / Notarized Developer ID`), and `syspolicy_check distribution`, with all commands exiting 0. Both retained version 1.0.1/build 5, arm64/x86_64, hardened runtime, the expected Developer ID authority, and the stapled ticket.
+- The downloaded DMG includes its Applications shortcut and bilingual Read Me. The public repository README contains both complete language sections, language links, and 1.0.1 download links. The public annotated tag resolves to the exact reviewed release source; 1.0.0 DMG/ZIP digests remain unchanged.
+- The final 105-test application run, 11-test focused window run, nine catalog tests, and the initial two intermittent failures are recorded in the preceding entry. Additional builds/tests for this documentation-only publication record: Not run. Git whitespace checks passed.
+
+### Remaining Risks or Follow-up Work
+
+- The app is notarized; the DMG is a transport container without a separately claimed notarization ticket. First-launch Internet confirmation and Camera permission prompts remain normal.
+- Existing runtime/compatibility/performance work and the intermittent full-screen test investigation remain in the backlog. No built-in updater or hosted CI was added.
