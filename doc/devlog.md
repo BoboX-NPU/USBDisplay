@@ -2001,3 +2001,30 @@
 
 - Publish and verify the actual 1.0.3 downloads and README links, then clean this task's temporary archive/tooling/logs.
 - The two full-screen integration failures and existing runtime/compatibility/performance follow-ups remain open. The app is notarized; no separate DMG-container notarization is claimed.
+
+
+## 2026-11-13 — Publish the Approved 1.0.3 Installer and README Links
+
+### Summary
+
+- Publish the approved minimal installer as the latest non-prerelease 1.0.3 release, with source tag `c6926fa4e28e7971142028388a8c348b2e42bd5b`. GitHub reports publication at 23:30:02 UTC on 2026-11-13.
+- Publish the accepted artwork revision and update all six download links across the README's Chinese and English sections. Preserve the earlier release files.
+- Remove this task's temporary archive, exports, diagnostic wrapper, raw test/notarization logs, and Xcode distribution log bundle. Keep final release packages and concise verification results; preserve the user's existing preview and mounted volumes.
+
+### Affected Files
+
+- `doc/current.md` and `doc/devlog.md`
+- Remote `main`, `v1.0.3`, and https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.0.3
+- Ignored `public-download-verification.json` beside the 1.0.3 release packages
+
+### Validation
+
+- Draft asset digests matched local files before publication. Anonymous downloads of the final DMG, ZIP, and checksum file matched local bytes/hashes afterward. DMG size: 1,911,490 bytes; ZIP size: 1,790,906 bytes; checksum file: 206 bytes.
+- The public README exactly matched the local file, and its six download links resolve to the three published asset URLs. The public annotated source tag resolves to the reviewed commit. Previous 1.0.2 DMG/ZIP digests remain unchanged.
+- Both downloaded apps, marked with download quarantine, passed strict code-signature checks, stapled-ticket validation, Gatekeeper (`accepted / Notarized Developer ID`), and `syspolicy_check distribution`. Both contain arm64/x86_64, version/build 1.0.3/7, and minimum macOS 14.0.
+- Both representations of the downloaded DMG background match the approved PNG pixels exactly. Its only visible installation targets are the app and the correct Applications shortcut.
+- Temporary verification downloads and test build directories were cleaned. Git whitespace checks passed. Additional builds/tests for this publication-status-only update: Not run; the 103/105 full-suite, 11/11 focused-suite, and nine passing catalog checks are recorded above.
+
+### Remaining Risks or Follow-up Work
+
+- The two known full-screen integration failures remain tracked on QUE-24 with captured assertion evidence. Runtime/compatibility/performance follow-ups remain separate from this approved installer release.
