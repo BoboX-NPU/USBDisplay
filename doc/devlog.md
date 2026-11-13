@@ -1597,3 +1597,32 @@
 
 - Developer ID signing, notarization, and Gatekeeper acceptance are required before treating the package as a public release. No credentials were requested, no app was uploaded, and no public release was published.
 - Test the packaged Release on physical devices and older supported macOS versions, including an Intel Mac, before distribution. Existing preview-startup, continuous-drag, and frame-pacing limitations remain.
+
+
+## 2026-11-13 — Use a White Application Icon Background
+
+### Summary
+
+- Change the editable SVG background from blue to pure white (`#FFFFFF`) at the user's request. Preserve every device shape, position, navy frame, pale-blue screen, Dynamic Island, and home indicator.
+- Regenerate all ten macOS AppIcon PNGs and the vector preview. Preserve the earlier raster concepts and existing distribution archives.
+
+### Affected Files
+
+- `doc/design/usb-display-icon-ipad-iphone-v8.svg`
+- `doc/design/usb-display-icon-ipad-iphone-v8-vector-preview.png`
+- All ten PNG files in `USBDisplay/Resources/Assets.xcassets/AppIcon.appiconset/`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- Regenerated assets with the existing Swift/AppKit export script. Verified all ten declared dimensions, fully opaque alpha, and pure-white background samples. Compared the SVG device group with HEAD and confirmed it is unchanged.
+- Visually inspected the rendered white-background artwork. A dedicated native-app inspection confirmed the exact Debug bundle's small header icon and large Preview in Finder both show the white background, dark device outlines, and pale-blue screens, without the old blue background.
+- The Debug build passed on Xcode 27.2. The canonical `./script/build_and_run.sh --verify` stopped at sandboxed LaunchServices with `kLSNoExecutableErr` after the successful build. Reopening the same bundle outside the sandbox succeeded; a subsequent process check confirmed the canonical Debug app running. Build log: `/tmp/USBDisplay-white-icon-build.log`.
+- Strict deep Debug signature verification passed. Native AppKit rendering of the compiled `AppIcon.icns` at 16 and 32 pixels showed white backgrounds. `iconutil` extracted four legacy representations: 32-, 128-, and 256-pixel images matched the source pixels exactly, while its 16-pixel PNG had 34 incorrect blue-channel values near the bottom. The native 16-pixel rendering and Finder inspection did not show that export discrepancy. Git whitespace checks passed.
+- Application unit tests, a new Release build, distribution packaging, and physical capture validation: Not run for this asset-only change.
+
+### Remaining Risks or Follow-up Work
+
+- Existing DMG and ZIP packages retain the blue icon and need regeneration when a new package is requested.
+- Older macOS icon presentation and distribution acceptance remain unverified.

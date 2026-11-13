@@ -3,9 +3,9 @@
      width="1254" height="1254" viewBox="0 0 1254 1254"
      role="img" aria-labelledby="title description">
   <title id="title">Overlapping iPad and iPhone icon</title>
-  <desc id="description">A flat iPhone in front of a complete iPad on a blue background. Both devices have home indicators, and the iPhone has a Dynamic Island.</desc>
+  <desc id="description">A flat iPhone in front of a complete iPad on a white background. Both devices have home indicators, and the iPhone has a Dynamic Island.</desc>
 
-  <rect id="background" width="1254" height="1254" fill="#0199FE"/>
+  <rect id="background" width="1254" height="1254" fill="#FFFFFF"/>
 
   <!-- Move both complete devices together by changing this translation. -->
   <g id="devices" transform="translate(0 0)">
