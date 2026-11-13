@@ -1,0 +1,72 @@
+{
+  "fill": {
+    "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+  },
+  "groups": [
+    {
+      "name": "04 iPhone display",
+      "layers": [
+        {
+          "name": "iPhone Dynamic Island and home indicator",
+          "image-name": "06-iphone-details.svg",
+          "glass": false
+        },
+        {
+          "name": "iPhone display",
+          "image-name": "05-iphone-screen.svg"
+        }
+      ],
+      "translucency": {
+        "enabled": true,
+        "value": 0.15
+      }
+    },
+    {
+      "name": "03 iPhone enclosure",
+      "layers": [
+        {
+          "name": "iPhone enclosure",
+          "image-name": "04-iphone-body.svg"
+        }
+      ],
+      "translucency": {
+        "enabled": true,
+        "value": 0.15
+      }
+    },
+    {
+      "name": "02 iPad display",
+      "layers": [
+        {
+          "name": "iPad home indicator",
+          "image-name": "03-ipad-indicator.svg",
+          "glass": false
+        },
+        {
+          "name": "iPad display",
+          "image-name": "02-ipad-screen.svg"
+        }
+      ],
+      "translucency": {
+        "enabled": true,
+        "value": 0.15
+      }
+    },
+    {
+      "name": "01 iPad enclosure",
+      "layers": [
+        {
+          "name": "iPad enclosure",
+          "image-name": "01-ipad-body.svg"
+        }
+      ],
+      "translucency": {
+        "enabled": true,
+        "value": 0.15
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

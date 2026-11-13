@@ -2,7 +2,9 @@
 import AppKit
 import Foundation
 
-// Run from the repository root:
+// Historical v8 bitmap exporter. AppIcon.icon is the current shipping source.
+// Use script/export_app_icon.sh for native Icon Composer previews.
+// To regenerate the archived flat asset catalog, run from the repository root:
 // swift -module-cache-path .build/IconModuleCache script/generate_app_icon.swift
 let root = URL(fileURLWithPath: #filePath)
   .deletingLastPathComponent().deletingLastPathComponent()

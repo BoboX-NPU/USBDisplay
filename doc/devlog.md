@@ -1626,3 +1626,42 @@
 
 - Existing DMG and ZIP packages retain the blue icon and need regeneration when a new package is requested.
 - Older macOS icon presentation and distribution acceptance remain unverified.
+
+
+## 2026-11-13 — Center and Align the Devices in a Native Layered App Icon
+
+### Summary
+
+- Replace the shipping flat artwork with a native `AppIcon.icon` document. Use six 1024-pixel SVG layers in four depth groups, with a white default background, blue-gray enclosures, and pale-blue screens.
+- Optically center the device pair and align both enclosure bottoms at `y = 816`. Preserve the foreground iPhone overlap, Dynamic Island, and both home indicators.
+- Let Icon Composer apply the system mask, glass highlights, lighting, shadows, and appearance adaptation. Set group translucency to 15% and disable glass on the small screen details for legibility. No material effects or masks are baked into the SVG artwork.
+- Add the `.icon` source to the Xcode resource phase with the native file type. Keep `AppIcon` selected in both configurations; Xcode compiles native layers and produces compatibility images for older deployment targets. Preserve the earlier flat source/catalog as historical artwork and label its generator accordingly.
+- Add a preview-export script and design notes grounded in the installed Xcode 27.2 documentation, current Apple Icon Composer/HIG documentation, and Apple's Icon Composer session.
+
+### Affected Files
+
+- `USBDisplay/Resources/AppIcon.icon/icon.json`
+- Six SVG files in `USBDisplay/Resources/AppIcon.icon/Assets/`
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `script/export_app_icon.sh`
+- `script/generate_app_icon.swift`
+- `doc/design/icon-composer.md`
+- `doc/design/usb-display-icon-composer-preview.png`
+- `doc/current.md`
+- `doc/devlog.md`
+
+### Validation
+
+- `./script/build_and_run.sh --verify` passed, including Debug build, relaunch, and process verification. Log: `/tmp/USBDisplay-icon-composer-debug.log`.
+- Release build passed for arm64 and retained minimum macOS 14.0. Log: `/tmp/USBDisplay-icon-composer-release.log`. The expected no-AppIntents metadata-extraction notice was the only Release warning.
+- Debug and Release bundles passed strict deep signature verification and contain the expected `AppIcon` metadata. Asset catalog inspection confirmed six compiled vectors, four native groups for each of default/dark/tintable appearances, three image stacks, and compatibility icon images.
+- All six generation-27 appearance previews and a generation-26 default preview exported at 1024 by 1024 pixels with Apple's Icon Composer 27.2 renderer. Inspected default, dark, clear-light, tinted-dark, and generation-26 images. SVG checks confirmed the shared baseline, common canvas, four groups/six layers, and absence of baked effects or an outer mask.
+- Dedicated native inspection of the exact `.icon` document confirmed a centered white-default icon, aligned enclosure bottoms, glass highlights/shadows, crisp screen details, and readable dark/mono variants. The UI reported six layers in four groups and design generation 27; no manual document edits were needed.
+- The generated compatibility `AppIcon.icns` visibly contains the new aligned dimensional artwork. Finder initially retained the previous flat icon and stale bundle metadata. After touching and re-registering only the Debug bundle with LaunchServices, Finder's header and large Preview both showed the new icon and updated metadata. No global cache clearing or Finder/Dock restart was performed.
+- Initial sandboxed `ictool` attempts returned a misleading file-open error; native rendering succeeded outside the sandbox. Computer Use could not initially launch Icon Composer and timed out; launching the document with LaunchServices outside the sandbox enabled successful native inspection.
+- Project plist validation, shell syntax, and Git whitespace checks passed. Application unit tests, physical capture tests, older-system runtime acceptance, Intel Release build, and distribution packaging: Not run for this icon-only change.
+
+### Remaining Risks or Follow-up Work
+
+- Existing DMG and ZIP archives still contain the earlier blue flat icon. Regenerate them when a new package is requested.
+- macOS 14/15 runtime presentation and distribution acceptance remain unverified. Generation-26 and generation-27 renders are previews, not physical runs on every supported OS; native materials can vary by system version.
