@@ -1914,3 +1914,31 @@
 - Publish and verify the styled 1.0.2 downloads. Preserve the exact notarized app; Finder metadata and artwork belong outside its bundle.
 - Finder can preserve user view preferences. Older Finder/macOS appearance and broader accessibility coverage remain unverified.
 - The existing runtime/compatibility/performance backlog and intermittent full-screen integration failures remain separate from installer styling.
+
+
+## 2026-11-13 — Publish and Verify the Styled 1.0.2 Installer
+
+### Summary
+
+- Publish the reviewed `956c7670d943c6d468b4b020c3a9d64d64056e3e` source, annotated `v1.0.2` tag, styled DMG, ZIP, and checksums. GitHub reports publication at 22:53:17 UTC on 2026-11-13; 1.0.2 is the latest non-prerelease release.
+- Verify the actual public downloads and saved Finder artwork/layout without relying on the local preview files. Preserve the 1.0.1 assets unchanged.
+- Eject only the two task-created preview images and remove temporary Python tools, Swift module cache, source/export/archive copies, diagnostic logs, and the Xcode distribution log bundle. Preserve the user's pre-existing `/Volumes/USB Display` mount and all release packages. No temporary test directories remain.
+
+### Affected Files
+
+- `doc/current.md` and `doc/devlog.md`
+- Remote `main`, `v1.0.2`, and https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.0.2
+- Ignored `public-download-verification.json` beside the 1.0.2 release packages
+
+### Validation
+
+- GitHub asset digests matched local files before publication. Anonymous downloads of the DMG, ZIP, and checksum file matched local bytes and hashes after publication. DMG size: 2,518,681 bytes. ZIP size: 1,790,889 bytes. Checksum file: 206 bytes.
+- The downloaded DMG contains exactly two visible items, a correct Applications shortcut, icon-view metadata with the intended bounds/positions, and both standard/Retina background representations. The metadata/data checks passed; final-image native GUI inspection remains limited as recorded in the preceding entry.
+- Apps copied from the downloaded DMG and extracted from the downloaded ZIP were marked with download quarantine. Both passed strict code signatures, stapled-ticket validation, Gatekeeper (`accepted / Notarized Developer ID`), and `syspolicy_check distribution`. Version/build remained 1.0.2/6, and the camera entitlement is the only entitlement.
+- The public annotated tag resolves to the reviewed release source, and 1.0.1 DMG/ZIP digests remain unchanged.
+- Git whitespace checks passed. Additional builds/tests for this documentation-only publication record: Not run. The 103/105 full-suite result, 11/11 isolated window result, and nine passing catalog checks remain explicitly recorded above.
+
+### Remaining Risks or Follow-up Work
+
+- The known two full-screen integration failures remain tracked on QUE-24; this installer redesign does not fix or conceal them.
+- Finder may retain user-specific tab/path/status preferences. Older Finder/appearance coverage and a final-image native GUI recheck remain unverified; the corrected preview passed native visual inspection and the final package's matching layout data passed verification.
