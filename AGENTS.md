@@ -54,3 +54,10 @@ Bug Fixes
 - Keep each change focused on the user's request and preserve unrelated worktree changes.
 - Do not make destructive repository or filesystem changes unless the user explicitly requests them.
 - Do not conceal failures, skipped validation, or unresolved risks.
+
+## Temporary Build Artifacts
+
+- Run application tests through `./script/test.sh`. It owns an isolated temporary build directory and removes its caches and test results after success, failure, or HUP/INT/TERM interruption. Use `-only-testing:` or `-skip-testing:` to narrow the test scope.
+- Keep `.build/Xcode` for the canonical build/run and packaging workflows, and preserve `.build/Distribution` release packages.
+- Do not create permanent per-task build directories such as `.build/Audit` or `.build/FinalTests`. Other one-off validation commands must use a unique temporary directory and clean it up in the same task, including on failure. Preserve an artifact only when the user requests it or it is a requested deliverable.
+- Test output remains in the terminal. Save a text log explicitly when needed; detailed `.xcresult` bundles are temporary. Forced termination (SIGKILL), a shell crash, or power loss can prevent cleanup; remove only the abandoned run's directory after confirming it is no longer active.

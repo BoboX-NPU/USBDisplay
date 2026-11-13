@@ -1694,3 +1694,35 @@
 ### Remaining Risks or Follow-up Work
 
 - These remain local evaluation packages without Developer ID signing or Apple notarization. Public-distribution trust and broader runtime acceptance remain outstanding.
+
+
+## 2026-11-13 — Remove Historical Builds and Make Test Artifacts Temporary
+
+### Summary
+
+- Remove 18 historical Xcode build/validation directories and the obsolete SwiftPM architecture tree, module cache, database, manifests, empty dependency directories, lock file, and Debug/Release symlinks at the user's request. Preserve `.build/Xcode`, `.build/Distribution`, and the existing icon artwork/previews.
+- Reduce allocated `.build` usage from 4,390,792 KiB to 802,596 KiB (about 4.19 GiB to 784 MiB), reclaiming about 3.42 GiB. The retained Xcode tree occupies 725,328 KiB and Distribution occupies 5,976 KiB.
+- Add `script/test.sh` as the canonical macOS test entrypoint. Each run owns a unique temporary directory, disables indexing, builds a Debug test host without hardened runtime, and deletes its caches and test results on success, failure, or HUP/INT/TERM interruption. Interrupted runs terminate and wait for their Xcode process before cleanup; the script preserves the test or signal exit status.
+- Support explicit test inclusion/exclusion filters without accepting build-path overrides. Keep console output available and document that detailed result bundles are temporary.
+- Record the temporary-artifact policy in the project collaboration instructions so later test and validation tasks do not recreate persistent per-task caches.
+
+### Affected Files
+
+- `script/test.sh`
+- `AGENTS.md`
+- `doc/current.md`
+- `doc/devlog.md`
+- Removed ignored historical build directories and SwiftPM artifacts under `.build/`; application code and release packages are unchanged.
+
+### Validation
+
+- Checked active build/app executable paths before cleanup; no matching build or app process was running.
+- Compared a SHA-256/file-type/symlink manifest of all 6,735 entries in `.build/Xcode` and `.build/Distribution` before cleanup and after the real test run. Both retained trees are unchanged.
+- Ran `./script/test.sh` successfully with Xcode 27.2: all 105 Debug tests in 14 suites passed, with no failed test cases. Xcode emitted its expected no-AppIntents metadata-extraction notices. The script exited with status 0, removed its real temporary build/result directory, and left no `TestRun.*` directories.
+- Used an isolated fake-Xcode fixture with paths containing spaces to verify success cleanup, failure status 65 propagation, HUP/INT/TERM exit statuses and child shutdown before deletion, simultaneous-run isolation, test-filter forwarding, help behavior, and rejection of path overrides and empty filters. Persistent-directory and unrelated-run sentinels remained intact; no fixture artifacts were retained.
+- Bash syntax and Git whitespace checks passed. No app sources changed. Release rebuild, packaging, physical-device capture, and older-macOS runtime checks: Not run for this tooling-only change.
+
+### Remaining Risks or Follow-up Work
+
+- Each test invocation rebuilds from scratch, trading incremental build speed and retained detailed result bundles for disk space. Console output can be redirected explicitly when diagnostics need to be saved.
+- SIGKILL, a shell crash, or power loss can prevent exit traps. Any abandoned run directory needs manual cleanup after confirming that it is inactive. Direct Xcode UI tests and commands that bypass `script/test.sh` do not get this script's cleanup behavior.
