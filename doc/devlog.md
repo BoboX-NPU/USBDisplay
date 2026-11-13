@@ -1786,3 +1786,29 @@
 
 - Confirm public visibility for the complete repository/history, then publish the draft and verify unauthenticated source/download access. The versioned public download links are not live while the repository/release remain private/draft.
 - Signing/notarization and physical-runtime limitations remain unchanged.
+
+
+## 2026-11-13 — Publish USB Display 1.0.0 Publicly
+
+### Summary
+
+- After the maintainer explicitly authorized public visibility for the complete repository and all existing Git history, make `BoboX-NPU/USBDisplay` public. Set the project description, release homepage, and relevant repository topics.
+- Publish the already verified 1.0.0 draft and mark it as the latest non-prerelease release at https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.0.0. GitHub reports publication at 22:12:38 UTC on 2026-11-13.
+- Preserve the existing release assets and annotated tag at `30b39a195d525d73792024906e4376f04f7689db`. Update current state to replace the pending-approval/draft status with verified public availability.
+
+### Affected Files
+
+- `doc/current.md` and `doc/devlog.md`
+- GitHub repository visibility, description, homepage, topics, and 1.0.0 release publication/latest status
+
+### Validation
+
+- Unauthenticated GitHub API requests confirmed public visibility, the MIT license, latest tag `v1.0.0`, `draft=false`, and `prerelease=false`.
+- Downloaded all three release assets without authentication into an isolated temporary directory. The checksum file matched the local file byte for byte. DMG SHA-256 remained `30201b92fb537d6d03d39e5e44c5c7c16a3816381169defb81725820d8c5badc`; ZIP SHA-256 remained `6aab4e2defba0ca365cb81fbd4825e489d8c08545701ce0a73ace5cae57aa1c7`. Removed the temporary downloads after verification.
+- Verified unauthenticated access to the repository, release, and README pages. Verified the public annotated tag still resolves to the validated release-source commit.
+- Git whitespace checks passed. New builds and tests: Not run for this publication/documentation-only step; the previously recorded 105 application tests, nine catalog tests, and universal-package validation remain applicable.
+
+### Remaining Risks or Follow-up Work
+
+- Downloads remain ad-hoc signed and not notarized; publishing does not change Gatekeeper trust. Signing and the existing runtime/interaction/performance limits remain tracked in Linear.
+- No new feature work, hosted CI, automatic updater, or issue synchronization was introduced. The maintainer will define the next release separately.
