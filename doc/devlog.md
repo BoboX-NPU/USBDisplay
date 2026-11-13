@@ -1877,3 +1877,40 @@
 
 - The app is notarized; the DMG is a transport container without a separately claimed notarization ticket. First-launch Internet confirmation and Camera permission prompts remain normal.
 - Existing runtime/compatibility/performance work and the intermittent full-screen test investigation remain in the backlog. No built-in updater or hosted CI was added.
+
+
+## 2026-11-13 — Design the 1.0.2 Drag-to-Install Window
+
+### Summary
+
+- Replace the ordinary folder-like DMG presentation with a white/blue-gray branded installer: native app/Applications icons, a directional arrow, bilingual installation/next-step guidance, and a saved initial Finder icon view.
+- Add native AppKit artwork generation and standard/Retina PNG assets. Use a 720-by-460-point graphic, 112-point icons, and a 720-by-552-point initial window that accommodates host Finder bars without changing global preferences.
+- Add exact wheel versions/hashes for release-only `dmgbuild`, `ds-store`, and `mac-alias` tooling. Packaging installs them in a temporary environment by default or accepts a prepared `DMGBUILD_PYTHON`; cleanup removes tools/staging and newly created incomplete output on failure. Python dependencies are not shipped in the app.
+- Keep only the app and Applications shortcut visible. The DMG background carries concise bilingual instructions; detailed text notes remain beside local archives and in public documentation.
+- Prepare version 1.0.2 (build 6), retaining application/test sources and older published downloads. Archive and export through the existing Developer ID/notarization workflow before styled packaging.
+
+### Affected Files
+
+- `Packaging/DMG/background.png` and `background@2x.png`
+- `script/generate_dmg_background.swift`, `script/dmg_settings.py`, `script/requirements-dmg.txt`, and `script/package_local_release.sh`
+- `USBDisplay.xcodeproj/project.pbxproj`
+- `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `doc/current.md`, and `doc/devlog.md`
+- `doc/design/dmg-installer.md`, `doc/releases.md`, and `doc/releases/v1.0.2.md`
+- Ignored release artifacts in `.build/Distribution/USBDisplay-1.0.2-macOS-universal.CtDy4I/`
+
+### Validation
+
+- Native Finder inspection confirmed the original ordinary presentation. The first custom preview exposed a duplicate Retina transform; after correction, both image scales render the same logical composition. The corrected preview showed complete bilingual text/footer, native icons centered on their backings and aligned with the arrow, readable labels, and no overlap, clipping, scrollbars, or unintended empty panel. Toolbar/sidebar were hidden; the host's tab/path/status preferences remained visible.
+- A separate final-DMG GUI check stopped when CUA detected user activity, before opening the final image. No final-image GUI acceptance is claimed. The final package uses the inspected artwork/positions; the native icon-extension override was removed afterward to preserve signing integrity.
+- The preview's extension-hiding option added FinderInfo to the signed app and caused strict signature verification to fail. Disable that mutation. The final DMG app then passed strict signatures, stapled-ticket validation, and Gatekeeper (`accepted / Notarized Developer ID`), as did the source and extracted ZIP app.
+- The universal archive, Developer ID upload, notarized export, fresh hash-pinned tool installation, DMG integrity, package checksums, and a complete app file-content comparison against the notarized export passed. Saved metadata specifies icon view, 112-point icons at `(200,226)` and `(520,226)`, background-image type, requested hidden toolbar/sidebar, and window bounds `{{180,140},{720,552}}`. The only visible items are `USB Display.app` and the `/Applications` shortcut.
+- DMG SHA-256: `147c8e70ae8974420d6f232331790a83f2a19016d4863c3bfa86ea76ddd50765`. ZIP SHA-256: `11dc0ed86b090a7be18e85ac5a28c91610443959c43c8866942f91689126ea69`.
+- An intentionally failing packaging-tool override removed the newly created incomplete output while preserving all previous package directories. Task test directories were also cleaned automatically.
+- The full Debug suite had 103 passes and the same two previously recorded full-screen integration failures. The isolated window integration suite passed all 11 tests. Application/test sources are unchanged from 1.0.1. Update QUE-24 with this repeated observation; no full-suite pass is claimed for this run. All nine catalog tests and offline resource verification passed.
+- Authored text/arrow contrast passed the documented thresholds; image dimensions/DPI, Swift-format lint for the renderer, shell/project syntax, and Git whitespace checks passed. New physical capture and older-OS runtime checks: Not run.
+
+### Remaining Risks or Follow-up Work
+
+- Publish and verify the styled 1.0.2 downloads. Preserve the exact notarized app; Finder metadata and artwork belong outside its bundle.
+- Finder can preserve user view preferences. Older Finder/macOS appearance and broader accessibility coverage remain unverified.
+- The existing runtime/compatibility/performance backlog and intermittent full-screen integration failures remain separate from installer styling.

@@ -12,7 +12,9 @@ GitHub Releases owns public downloads. Source control owns documentation and rep
 6. Confirm the app's version/build, architectures, minimum macOS, license/notices, icon, and entitlements. Check the final archives and `SHA256SUMS.txt`. Inspect Gatekeeper separately; an ad-hoc integrity check does not establish Developer ID signing or notarization.
 7. Update `doc/current.md` and append the completed validation to `doc/devlog.md`. Commit only the source/configuration/documentation changes. Package files stay ignored and are uploaded as release assets.
 
-The no-argument packaging command retains local-package naming. Both `--github` and `--notarized-app` use stable names such as `USBDisplay-1.0.1-macOS-universal.dmg` and `.zip`, with the exact build number stored in the app. `--github` builds an ad-hoc app; `--notarized-app` only packages a pre-verified signed/stapled app and refuses untrusted input. Do not confuse those modes.
+The no-argument packaging command retains local-package naming. Both `--github` and `--notarized-app` use stable names such as `USBDisplay-1.0.2-macOS-universal.dmg` and `.zip`, with the exact build number stored in the app. `--github` builds an ad-hoc app; `--notarized-app` only packages a pre-verified signed/stapled app and refuses untrusted input. Do not confuse those modes.
+
+The styled DMG uses the [installer artwork/layout](design/dmg-installer.md). Packaging creates an isolated temporary Python environment and downloads only the exact hash-pinned release-tool wheels from PyPI. It removes the environment afterward, including on failure. A prepared interpreter can be supplied through `DMGBUILD_PYTHON`; install `script/requirements-dmg.txt` with `--require-hashes` into that environment first. No Python tooling is included in the app or required by end users.
 
 ## Publish
 
@@ -23,7 +25,7 @@ The no-argument packaging command retains local-package naming. Both `--github` 
 5. Verify public repository/release links and download the uploaded assets to a temporary directory. Match their hashes to the local packages, then delete that verification directory.
 6. Record the published URLs and final verification in `doc/current.md` and `doc/devlog.md`. Documentation-only follow-up commits may follow the tagged release source; binary provenance must continue to point to the release tag.
 
-Publishing remains an explicit maintainer operation. There is no automatic updater, background publishing job, or hosted release workflow in version 1.0.1. Native CI and signed release automation are tracked in Linear.
+Publishing remains an explicit maintainer operation. There is no automatic updater, background publishing job, or hosted release workflow in version 1.0.2. Native CI and signed release automation are tracked in Linear.
 
 ## Signing and notarization
 

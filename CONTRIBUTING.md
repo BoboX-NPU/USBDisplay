@@ -33,6 +33,8 @@ git diff --check
 
 No hosted CI result is currently implied by these commands. Native CI and release automation are tracked on the [roadmap](doc/roadmap.md).
 
+Installer packaging additionally uses the hash-pinned tools in `script/requirements-dmg.txt`. The packaging script installs them into a disposable environment by default; see the [release procedure](doc/releases.md) and [installer design notes](doc/design/dmg-installer.md) for offline/prepared-environment use and artwork regeneration.
+
 ## Change workflow
 
 1. Read `doc/current.md` and relevant entries in `doc/devlog.md`.

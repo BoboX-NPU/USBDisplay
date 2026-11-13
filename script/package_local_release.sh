@@ -65,17 +65,31 @@ PACKAGE_DIR=$(mktemp -d "$ROOT_DIR/.build/Distribution/$PACKAGE_NAME.XXXXXX")
 STAGING_DIR=$(mktemp -d "${TMPDIR:-/tmp}/usb-display-package.XXXXXX")
 MOUNT_DIR="$STAGING_DIR/mounted"
 IMAGE_MOUNTED=false
+PACKAGE_COMPLETE=false
 cleanup() {
   if [[ "$IMAGE_MOUNTED" == true ]]; then
     hdiutil detach "$MOUNT_DIR" >/dev/null || true
   fi
   rm -rf "$STAGING_DIR"
+  if [[ "$PACKAGE_COMPLETE" == false ]]; then
+    rm -rf "$PACKAGE_DIR"
+  fi
 }
 trap cleanup EXIT
 
+# Isolate release-only Python dependencies and remove them with staging. An
+# explicitly supplied interpreter can reuse an already prepared tool environment.
+DMG_PYTHON="${DMGBUILD_PYTHON:-}"
+if [[ -z "$DMG_PYTHON" ]]; then
+  python3 -m venv "$STAGING_DIR/dmg-tools"
+  DMG_PYTHON="$STAGING_DIR/dmg-tools/bin/python"
+  "$DMG_PYTHON" -m pip --isolated install --disable-pip-version-check --no-cache-dir \
+    --index-url https://pypi.org/simple --only-binary=:all: --require-hashes \
+    -r "$ROOT_DIR/script/requirements-dmg.txt"
+fi
+
 mkdir "$STAGING_DIR/image" "$MOUNT_DIR" "$STAGING_DIR/unzipped"
 ditto "$APP_BUNDLE" "$STAGING_DIR/image/$APP_NAME.app"
-ln -s /Applications "$STAGING_DIR/image/Applications"
 if [[ "$REQUIRE_NOTARIZATION" == true ]]; then
   cat > "$STAGING_DIR/image/Read Me.txt" <<'EOF'
 USB Display
@@ -130,12 +144,17 @@ EOF
 fi
 
 ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$PACKAGE_DIR/$PACKAGE_NAME.zip"
-hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING_DIR/image" \
-  -fs HFS+ -format UDZO "$PACKAGE_DIR/$PACKAGE_NAME.dmg"
+"$DMG_PYTHON" -m dmgbuild \
+  -s "$ROOT_DIR/script/dmg_settings.py" \
+  -D "app=$STAGING_DIR/image/$APP_NAME.app" \
+  -D "artwork=$ROOT_DIR/Packaging/DMG" \
+  "$APP_NAME" "$PACKAGE_DIR/$PACKAGE_NAME.dmg"
 hdiutil verify "$PACKAGE_DIR/$PACKAGE_NAME.dmg"
 hdiutil attach -readonly -nobrowse -mountpoint "$MOUNT_DIR" "$PACKAGE_DIR/$PACKAGE_NAME.dmg"
 IMAGE_MOUNTED=true
 verify_app "$MOUNT_DIR/$APP_NAME.app"
+[[ -L "$MOUNT_DIR/Applications" && "$(readlink "$MOUNT_DIR/Applications")" == /Applications ]]
+[[ -s "$MOUNT_DIR/.DS_Store" && -s "$MOUNT_DIR/.background.tiff" ]]
 hdiutil detach "$MOUNT_DIR"
 IMAGE_MOUNTED=false
 
@@ -148,4 +167,5 @@ ditto "$STAGING_DIR/image/Read Me.txt" "$PACKAGE_DIR/Read Me.txt"
   cd "$PACKAGE_DIR"
   shasum -a 256 "$PACKAGE_NAME.dmg" "$PACKAGE_NAME.zip" > SHA256SUMS.txt
 )
+PACKAGE_COMPLETE=true
 printf '\nRelease packages: %s\n' "$PACKAGE_DIR"

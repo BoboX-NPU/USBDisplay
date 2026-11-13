@@ -6,6 +6,17 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 No changes scheduled yet. See the [roadmap](doc/roadmap.md) for unscheduled follow-up work.
 
+## 1.0.2 — 2026-11-13
+
+### Improvements
+
+- Add a branded Retina installer background with matching Chinese/English drag-to-install instructions, aligned app/Applications icons, and a clear directional arrow.
+- Save the Finder icon view and initial window layout. Keep only the two installation targets visible and preserve the user's global Finder preferences.
+- Make the installer artwork and layout reproducible through a native asset generator and pinned release-only tools, cleaned up after packaging.
+- Preserve Developer ID signing, Apple notarization, and the app's stapled ticket throughout packaging.
+
+Application capture/window behavior is unchanged. Finder can retain its own tab, path, or status bars; the layout accommodates them. Previously published downloads remain unchanged.
+
 ## 1.0.1 — 2026-11-13
 
 ### Bug fixes
