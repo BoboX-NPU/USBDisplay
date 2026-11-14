@@ -2124,3 +2124,31 @@
 
 - Users of 1.0.3 and earlier must manually install 1.1.0 once before in-app updating is available. Every future stable release must include a newly signed appcast and preserve compatible prior feed items.
 - Existing full-screen integration-test, physical-device, older-macOS/Intel, and performance follow-ups remain open. No separate notarization of the DMG container is claimed.
+
+
+## 2026-11-14 — Fix Full-Screen Restoration Test Display Assumptions
+
+### Summary
+
+- Diagnose and fix the two remaining full-screen test failures as a fixture-coordinate error. Both tests created ordinary windows on `NSScreen.main` but moved the simulated full-screen frame to `(0,0,1000,800)`, inadvertently switching secondary-display windows to the primary display. Production screen fitting then correctly changed the restored origin.
+- Let integration fixtures select an explicit display, run both round-trip tests on every attached display, use that display's full frame for simulated full screen, and assert the fixture remains on its intended display. Keep all original strict frame, aspect-ratio, and sidebar assertions, and include display bounds in failure diagnostics.
+- Add coverage for a screen change during full-screen exit: defer layout until transition completion, fit the restored window to a smaller negative-origin display, and recover the original preferred preview geometry when the original screen returns.
+- Update the current validation state and unreleased changelog. Application runtime, version/build, published release notes, tags, and binaries are unchanged; no new release is required for this test-only fix.
+
+### Affected Files
+
+- `USBDisplayTests/WindowLayoutPolicyTests.swift`
+- `USBDisplayTests/WindowLifecycleTests.swift`
+- `CHANGELOG.md`, `doc/current.md`, and `doc/devlog.md`
+
+### Validation
+
+- Baseline integration run on the current main display: 11/11 passed. Running the original hardcoded full-screen setup across every attached display reproduced the same two failures (9/11). Assertion summaries showed the ordinary display at `(1512,-446,1210,804)` and the exit display at `(0,46,1512,903)`: the empty window moved from `(1917,-346,720,500)` to `(792,46,720,500)`, and the compact window moved from `(2138,-346,224,448)` to `(1288,46,224,448)`. These are the expected screen-fitting translations, with no size change.
+- After correction, `./script/test.sh -only-testing:iPhoneUSBDisplayTests/WindowLayoutIntegrationTests -only-testing:iPhoneUSBDisplayTests/WindowLifecycleTests` passed 21/21. All attached displays were covered by the corrected fixtures; the smaller-screen exit scenario used an injected screen rectangle.
+- Final full `./script/test.sh` passed 112/112, including the updater, capture, rendering, interaction, layout, and lifecycle suites. Strict Swift-format lint and Git whitespace checks passed.
+- A temporary `xcodebuild` wrapper extracted compact assertion summaries before the required test runner removed each result bundle. A method-level filter initially selected zero Swift Testing cases and was not counted as validation; complete suite filters were used afterward. Temporary test build directories were removed by the runner, and task diagnostic tooling/logs were cleaned up.
+
+### Remaining Risks or Follow-up Work
+
+- These tests use real AppKit windows with synthetic full-screen lifecycle notifications; no new native Spaces transition, physical display unplug/replug, or live-video acceptance is claimed. Those existing hardware/interaction checks remain part of QUE-24 and the broader validation backlog.
+- None for the two reported test failures. No application runtime defect was demonstrated by these assertions, and no production geometry change was made to suppress them.

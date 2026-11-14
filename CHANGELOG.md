@@ -4,7 +4,10 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 ## Unreleased
 
-No additional changes scheduled. See the [roadmap](doc/roadmap.md) for follow-up work.
+### Improvements
+
+- Fix full-screen restoration test fixtures to stay on their originating display and exercise every connected display.
+- Cover display changes during full-screen exit, including screen fitting and restoration of preferred geometry.
 
 ## 1.1.0 — 2026-11-14
 

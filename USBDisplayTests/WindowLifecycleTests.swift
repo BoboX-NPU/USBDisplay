@@ -126,6 +126,45 @@ struct WindowLifecycleTests {
     #expect(host.surfaceLayout?.preview.size == preferred)
   }
 
+  @Test func screenChangeDuringFullScreenFitsNewDisplayAndRestoresPreferredGeometry() throws {
+    let window = makeWindow()
+    let originalScreen = CGRect(x: 0, y: 0, width: 2000, height: 1200)
+    var screen = originalScreen
+    let host = WindowLayoutHostView(
+      configuration: configuration, animatesChrome: false, screenFrame: { _ in screen })
+    defer {
+      host.prepareForRemoval()
+      window.close()
+    }
+    window.contentView = host
+    let ordinary = window.frame
+    let preferredPreview = try #require(host.surfaceLayout).previewOnScreen
+
+    NotificationCenter.default.post(name: NSWindow.willEnterFullScreenNotification, object: window)
+    window.setFrame(originalScreen, display: false)
+    NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
+    NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
+    // A removed or rearranged display must still constrain the restored window.
+    screen = CGRect(x: -1280, y: -100, width: 1280, height: 360)
+    let transitioning = window.frame
+    NotificationCenter.default.post(
+      name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    #expect(window.frame == transitioning)
+    NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
+
+    let fitted = try #require(host.surfaceLayout)
+    #expect(screen.contains(window.frame))
+    #expect(fitted.preview.height < preferredPreview.height)
+    #expect(abs(fitted.preview.width / fitted.preview.height - 0.5) < 0.00001)
+    #expect(fitted.externalSidebar > 0)
+
+    // Fitting must not overwrite the user's preferred ordinary geometry.
+    screen = originalScreen
+    NotificationCenter.default.post(name: NSWindow.didChangeScreenNotification, object: window)
+    #expect(window.frame == ordinary)
+    #expect(host.surfaceLayout?.previewOnScreen == preferredPreview)
+  }
+
   @Test func failedEntryForwardsAndRestoresResizeAndHover() throws {
     let window = makeWindow()
     let original = FullScreenDelegateRecorder()

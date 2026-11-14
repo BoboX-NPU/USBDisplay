@@ -237,8 +237,10 @@ struct WindowLayoutIntegrationTests {
       sidebarIsVisible: sidebar, cornerRadiusFraction: fraction)
   }
 
-  private func makeWindow(aspectRatio: Double? = 0.5) -> (NSWindow, WindowLayoutHostView) {
-    let screen = NSScreen.main!.visibleFrame
+  private func makeWindow(
+    aspectRatio: Double? = 0.5, on display: NSScreen = NSScreen.main!
+  ) -> (NSWindow, WindowLayoutHostView) {
+    let screen = display.visibleFrame
     let window = NSWindow(
       contentRect: CGRect(x: screen.midX - 200, y: screen.minY + 100, width: 471, height: 500),
       styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
@@ -251,6 +253,14 @@ struct WindowLayoutIntegrationTests {
 
   private func screenRect(_ host: WindowLayoutHostView) -> CGRect {
     host.window!.convertToScreen(host.preview.convert(host.preview.bounds, to: nil))
+  }
+
+  private func setFullScreenFrame(_ window: NSWindow, on display: NSScreen) {
+    // Posting lifecycle notifications does not enter an actual full-screen Space.
+    // Keep the simulated frame on the fixture's display: (0, 0) can move a
+    // secondary-display window to the primary display and correctly trigger fitting.
+    window.setFrame(display.frame, display: false)
+    #expect(window.screen?.frame == display.frame)
   }
 
   @Test func emptyWindowRepairsNarrowRestorationAndResizesWithBalancedContent() async throws {
@@ -342,29 +352,42 @@ struct WindowLayoutIntegrationTests {
   }
 
   @Test func emptyFullScreenRoundTripRestoresOrdinarySizeIncludingDeviceArrival() async throws {
-    let (window, host) = makeWindow(aspectRatio: nil)
-    defer {
-      host.prepareForRemoval()
-      window.close()
-    }
-    try await Task.sleep(for: .milliseconds(100))
-    let empty = window.frame
-    for connectDuringTransition in [false, true] {
-      NotificationCenter.default.post(
-        name: NSWindow.willEnterFullScreenNotification, object: window)
-      window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
-      if connectDuringTransition { host.updateConfiguration(configuration(sidebar: true)) }
-      NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
-      NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
-      NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
-      if connectDuringTransition {
-        let preview = screenRect(host)
-        #expect(abs(preview.width / preview.height - 0.5) < 0.001)
-        #expect(window.frame.height == empty.height)
-        host.updateConfiguration(configuration(sidebar: true, aspectRatio: nil))
+    let displays = NSScreen.screens
+    try #require(!displays.isEmpty)
+    for display in displays {
+      let (window, host) = makeWindow(aspectRatio: nil, on: display)
+      defer {
+        host.prepareForRemoval()
+        window.close()
       }
-      #expect(window.frame == empty)
-      #expect(abs(screenRect(host).width / window.frame.width - 0.7) < 0.001)
+      try await Task.sleep(for: .milliseconds(100))
+      #expect(window.screen?.frame == display.frame)
+      let empty = window.frame
+      for connectDuringTransition in [false, true] {
+        NotificationCenter.default.post(
+          name: NSWindow.willEnterFullScreenNotification, object: window)
+        setFullScreenFrame(window, on: display)
+        if connectDuringTransition { host.updateConfiguration(configuration(sidebar: true)) }
+        NotificationCenter.default.post(
+          name: NSWindow.didEnterFullScreenNotification, object: window)
+        NotificationCenter.default.post(
+          name: NSWindow.willExitFullScreenNotification, object: window)
+        NotificationCenter.default.post(
+          name: NSWindow.didExitFullScreenNotification, object: window)
+        if connectDuringTransition {
+          let preview = screenRect(host)
+          #expect(abs(preview.width / preview.height - 0.5) < 0.001)
+          #expect(window.frame.height == empty.height)
+          host.updateConfiguration(configuration(sidebar: true, aspectRatio: nil))
+        }
+        #expect(
+          window.frame == empty,
+          Comment(
+            rawValue:
+              "Ordinary display: \(display.visibleFrame); exit display: \(String(describing: window.screen?.visibleFrame))"
+          ))
+        #expect(abs(screenRect(host).width / window.frame.width - 0.7) < 0.001)
+      }
     }
   }
 
@@ -462,43 +485,59 @@ struct WindowLayoutIntegrationTests {
   }
 
   @Test func fullScreenRestoresOrdinaryGeometryAndSidebarState() async throws {
-    for visible in [false, true] {
-      let (window, host) = makeWindow()
-      defer {
-        host.prepareForRemoval()
-        window.close()
-      }
-      try await Task.sleep(for: .milliseconds(100))
-      host.updateConfiguration(configuration(sidebar: visible))
-      let normal = window.frame
-      NotificationCenter.default.post(
-        name: NSWindow.willEnterFullScreenNotification, object: window)
-      window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
-      NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
-      #expect(host.surfaceLayout?.preview.height == window.frame.height)
-      // The native toolbar may overlay the sidebar; it never reserves video space.
-      #expect(host.surfaceLayout?.externalTitlebar == 0)
-      #expect(
-        host.surfaceLayout?.titlebar.height
-          == max(0, window.frame.height - window.contentLayoutRect.maxY))
-      host.updateConfiguration(configuration(sidebar: !visible))
-      NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
-      NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
-      #expect(window.frame == normal)
+    let displays = NSScreen.screens
+    try #require(!displays.isEmpty)
+    for display in displays {
+      for visible in [false, true] {
+        let (window, host) = makeWindow(on: display)
+        defer {
+          host.prepareForRemoval()
+          window.close()
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        host.updateConfiguration(configuration(sidebar: visible))
+        #expect(window.screen?.frame == display.frame)
+        let normal = window.frame
+        NotificationCenter.default.post(
+          name: NSWindow.willEnterFullScreenNotification, object: window)
+        setFullScreenFrame(window, on: display)
+        NotificationCenter.default.post(
+          name: NSWindow.didEnterFullScreenNotification, object: window)
+        #expect(host.surfaceLayout?.preview.height == window.frame.height)
+        // The native toolbar may overlay the sidebar; it never reserves video space.
+        #expect(host.surfaceLayout?.externalTitlebar == 0)
+        #expect(
+          host.surfaceLayout?.titlebar.height
+            == max(0, window.frame.height - window.contentLayoutRect.maxY))
+        host.updateConfiguration(configuration(sidebar: !visible))
+        NotificationCenter.default.post(
+          name: NSWindow.willExitFullScreenNotification, object: window)
+        NotificationCenter.default.post(
+          name: NSWindow.didExitFullScreenNotification, object: window)
+        #expect(
+          window.frame == normal,
+          Comment(
+            rawValue:
+              "Ordinary display: \(display.visibleFrame); exit display: \(String(describing: window.screen?.visibleFrame))"
+          ))
 
-      // A source can rotate while full screen has suspended ordinary geometry.
-      NotificationCenter.default.post(
-        name: NSWindow.willEnterFullScreenNotification, object: window)
-      window.setFrame(CGRect(x: 0, y: 0, width: 1000, height: 800), display: false)
-      NotificationCenter.default.post(name: NSWindow.didEnterFullScreenNotification, object: window)
-      host.updateConfiguration(
-        WindowLayoutConfiguration(
-          title: "Rotated source", aspectRatio: 2,
-          sidebarWidth: 220, sidebarIsVisible: !visible, cornerRadiusFraction: 0))
-      NotificationCenter.default.post(name: NSWindow.willExitFullScreenNotification, object: window)
-      NotificationCenter.default.post(name: NSWindow.didExitFullScreenNotification, object: window)
-      let rotated = try #require(host.surfaceLayout?.preview)
-      #expect(abs(rotated.width / rotated.height - 2) < 0.00001)
+        // A source can rotate while full screen has suspended ordinary geometry.
+        NotificationCenter.default.post(
+          name: NSWindow.willEnterFullScreenNotification, object: window)
+        setFullScreenFrame(window, on: display)
+        NotificationCenter.default.post(
+          name: NSWindow.didEnterFullScreenNotification, object: window)
+        host.updateConfiguration(
+          WindowLayoutConfiguration(
+            title: "Rotated source", aspectRatio: 2,
+            sidebarWidth: 220, sidebarIsVisible: !visible, cornerRadiusFraction: 0))
+        NotificationCenter.default.post(
+          name: NSWindow.willExitFullScreenNotification, object: window)
+        NotificationCenter.default.post(
+          name: NSWindow.didExitFullScreenNotification, object: window)
+        let rotated = try #require(host.surfaceLayout?.preview)
+        #expect(abs(rotated.width / rotated.height - 2) < 0.00001)
+      }
     }
   }
 
