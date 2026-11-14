@@ -39,9 +39,13 @@ USB Display 是一款原生 macOS 应用，可以通过 USB 将 iPhone 或 iPad 
 
 遇到首次启动被拦截、设备不显示、黑屏或权限问题时，请查看[安装与故障排查](doc/installation.md)。
 
+### 应用内更新（下一版本）
+
+当前源码已接入 Sparkle：默认自动检查并在应用内下载更新，下载完成后由用户点击“安装并重启”。可在应用菜单关闭自动检查。GitHub 上的 v1.0.3 尚不含更新器，需要手动安装一次首个支持更新的正式版本。发布与签名流程见[更新说明](doc/updates.md)。
+
 ### 构建与测试
 
-当前源码和分层图标已使用 **Xcode 27.2** 验证。构建前请选择完整的 Xcode 安装；当前版本尚未验证更旧的工具链。
+当前源码和分层图标已使用 **Xcode 27.2** 验证。构建前请选择完整的 Xcode 安装；当前版本尚未验证更旧的工具链。首次构建需要联网下载固定版本的 Sparkle 依赖。
 
 ```bash
 git clone https://github.com/BoboX-NPU/USBDisplay.git
@@ -124,9 +128,13 @@ The app displays video locally. It does not record, capture audio, transmit the 
 
 See [installation and troubleshooting](doc/installation.md) for blocked launches, missing devices, black screens, and permissions.
 
+### In-app updates (next release)
+
+The current source integrates Sparkle: updates are checked and downloaded in the app automatically, then wait for the user to choose Install and Relaunch. Scheduled checks can be disabled in the application menu. Public v1.0.3 does not contain the updater; users must manually install the first updater-enabled release once. See the [update guide](doc/updates.md) for publishing and signing.
+
 ### Build and test
 
-The current source and layered icon are validated with **Xcode 27.2**. Select a full Xcode installation before building; older toolchains have not been validated for this source revision.
+The current source and layered icon are validated with **Xcode 27.2**. Select a full Xcode installation before building; older toolchains have not been validated for this source revision. The first build requires internet access to resolve the pinned Sparkle dependency.
 
 ```bash
 git clone https://github.com/BoboX-NPU/USBDisplay.git

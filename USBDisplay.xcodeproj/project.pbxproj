@@ -47,6 +47,12 @@
 		AA0000000000000000000525 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000125 /* Assets.xcassets */; };
 		AA0000000000000000000526 /* SidebarSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000126 /* SidebarSplitView.swift */; };
 		AA0000000000000000000527 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000127 /* AppIcon.icon */; };
+		AA0000000000000000000590 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000290 /* UpdateController.swift */; };
+		AA0000000000000000000591 /* UpdateUserDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000291 /* UpdateUserDriver.swift */; };
+		AA0000000000000000000592 /* UpdateInstallationGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000292 /* UpdateInstallationGate.swift */; };
+		AA0000000000000000000593 /* UpdateCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000293 /* UpdateCommands.swift */; };
+		AA0000000000000000000594 /* UpdateInstallationGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000294 /* UpdateInstallationGateTests.swift */; };
+		AA0000000000000000000595 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000991 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,10 +110,15 @@
 		AA0000000000000000000125 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = USBDisplay/Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		AA0000000000000000000127 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = USBDisplay/Resources/AppIcon.icon; sourceTree = SOURCE_ROOT; };
 		AA0000000000000000000126 /* SidebarSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarSplitView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000290 /* UpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateController.swift; sourceTree = "<group>"; };
+		AA0000000000000000000291 /* UpdateUserDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateUserDriver.swift; sourceTree = "<group>"; };
+		AA0000000000000000000292 /* UpdateInstallationGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstallationGate.swift; sourceTree = "<group>"; };
+		AA0000000000000000000293 /* UpdateCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCommands.swift; sourceTree = "<group>"; };
+		AA0000000000000000000294 /* UpdateInstallationGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstallationGateTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		AA0000000000000000000802 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000802 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000595 /* Sparkle in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
 		AA0000000000000000000812 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
@@ -128,10 +139,10 @@
 		AA0000000000000000000004 /* Sources */ = {isa = PBXGroup; children = (AA0000000000000000000005 /* App */, AA0000000000000000000006 /* Models */, AA0000000000000000000007 /* Services */, AA0000000000000000000008 /* Support */, AA0000000000000000000009 /* Views */); name = USBDisplay; path = USBDisplay; sourceTree = SOURCE_ROOT; };
 		AA0000000000000000000005 /* App */ = {isa = PBXGroup; children = (AA0000000000000000000101 /* iPhoneUSBDisplayApp.swift */); path = App; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* Models */ = {isa = PBXGroup; children = (AA0000000000000000000123 /* ResizeSession.swift */, AA0000000000000000000102 /* CaptureFailure.swift */, AA0000000000000000000103 /* ConnectionStatus.swift */, AA0000000000000000000117 /* DisplayCornerProfile.swift */, AA0000000000000000000104 /* WindowLayoutPolicy.swift */, AA0000000000000000000105 /* DisplayDevice.swift */, AA0000000000000000000106 /* DeviceWindowRoutingPolicy.swift */); path = Models; sourceTree = "<group>"; };
-		AA0000000000000000000007 /* Services */ = {isa = PBXGroup; children = (FCDF1B6C3BDE4CFBB4618BB4 /* AVFoundationCaptureDriver.swift */, AA0000000000000000000120 /* USBDeviceInfoService.swift */, AA0000000000000000000107 /* AppModel.swift */, AA0000000000000000000108 /* CaptureCoordinator.swift */, AA0000000000000000000115 /* DeviceCatalog.swift */); path = Services; sourceTree = "<group>"; };
+		AA0000000000000000000007 /* Services */ = {isa = PBXGroup; children = (AA0000000000000000000292 /* UpdateInstallationGate.swift */, AA0000000000000000000291 /* UpdateUserDriver.swift */, AA0000000000000000000290 /* UpdateController.swift */, FCDF1B6C3BDE4CFBB4618BB4 /* AVFoundationCaptureDriver.swift */, AA0000000000000000000120 /* USBDeviceInfoService.swift */, AA0000000000000000000107 /* AppModel.swift */, AA0000000000000000000108 /* CaptureCoordinator.swift */, AA0000000000000000000115 /* DeviceCatalog.swift */); path = Services; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* Support */ = {isa = PBXGroup; children = (AA0000000000000000000109 /* AppLogger.swift */); path = Support; sourceTree = "<group>"; };
-		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000126 /* SidebarSplitView.swift */, A07861E385784CE88859A90E /* WindowHoverScheduler.swift */, 50A5D9FE0B424E568B1BDB72 /* WindowEventBridge.swift */, 9227BCBCF7564F09A2F0B9EF /* SidebarToolbarDelegate.swift */, AA0000000000000000000124 /* WindowChromeAnimator.swift */, AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000114 /* DisplayWindowScene.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */, AA0000000000000000000116 /* WindowLayoutCoordinator.swift */); path = Views; sourceTree = "<group>"; };
-		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (961E7FE4CEE74657858BB5C8 /* WindowLifecycleTests.swift */, 4FA0D82328AD4B3BBA661362 /* CaptureStateTests.swift */, 80AC9A8322D34706B82CE42B /* WindowInteractionTests.swift */, AA0000000000000000000207 /* WindowRenderingTests.swift */, AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000206 /* USBDeviceInfoTests.swift */, AA0000000000000000000205 /* DisplayCornerProfileTests.swift */, AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
+		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000293 /* UpdateCommands.swift */, AA0000000000000000000126 /* SidebarSplitView.swift */, A07861E385784CE88859A90E /* WindowHoverScheduler.swift */, 50A5D9FE0B424E568B1BDB72 /* WindowEventBridge.swift */, 9227BCBCF7564F09A2F0B9EF /* SidebarToolbarDelegate.swift */, AA0000000000000000000124 /* WindowChromeAnimator.swift */, AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000114 /* DisplayWindowScene.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */, AA0000000000000000000116 /* WindowLayoutCoordinator.swift */); path = Views; sourceTree = "<group>"; };
+		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (AA0000000000000000000294 /* UpdateInstallationGateTests.swift */, 961E7FE4CEE74657858BB5C8 /* WindowLifecycleTests.swift */, 4FA0D82328AD4B3BBA661362 /* CaptureStateTests.swift */, 80AC9A8322D34706B82CE42B /* WindowInteractionTests.swift */, AA0000000000000000000207 /* WindowRenderingTests.swift */, AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000206 /* USBDeviceInfoTests.swift */, AA0000000000000000000205 /* DisplayCornerProfileTests.swift */, AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
 		AA000000000000000000000B /* Config */ = {isa = PBXGroup; children = (AA0000000000000000000301 /* Info.plist */, AA0000000000000000000302 /* USBDisplay.entitlements */); path = Config; sourceTree = "<group>"; };
 		AA000000000000000000000C /* Resources */ = {isa = PBXGroup; children = (AA0000000000000000000121, AA0000000000000000000122, AA0000000000000000000125 /* Assets.xcassets */, AA0000000000000000000127 /* AppIcon.icon */); name = Resources; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -144,6 +155,7 @@
 			buildRules = ();
 			dependencies = ();
 			name = "USB Display";
+			packageProductDependencies = (AA0000000000000000000991 /* Sparkle */);
 			productName = "USB Display";
 			productReference = AA0000000000000000000401 /* USB Display.app */;
 			productType = "com.apple.product-type.application";
@@ -172,6 +184,7 @@
 			knownRegions = (en, Base);
 			mainGroup = AA0000000000000000000002;
 			productRefGroup = AA0000000000000000000003 /* Products */;
+			packageReferences = (AA0000000000000000000990 /* Sparkle */);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (AA0000000000000000000701 /* USB Display */, AA0000000000000000000702 /* iPhoneUSBDisplayTests */);
@@ -184,8 +197,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		AA0000000000000000000801 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000526, 70A5D79D25F54A1581F09B5C, F05AA39F8F4542338E0C0BAC, 7C60607CAE9B4E9080769427, 1E3547CEDED14E408C101FB4, AA0000000000000000000524, AA0000000000000000000523, AA0000000000000000000520, AA0000000000000000000501, AA0000000000000000000502, AA0000000000000000000503, AA0000000000000000000504, AA0000000000000000000505, AA0000000000000000000506, AA0000000000000000000507, AA0000000000000000000508, AA0000000000000000000509, AA0000000000000000000510, AA0000000000000000000511, AA0000000000000000000512, AA0000000000000000000513, AA0000000000000000000514, AA0000000000000000000515, AA0000000000000000000516, AA0000000000000000000517); runOnlyForDeploymentPostprocessing = 0; };
-		AA0000000000000000000811 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (2E496CE7859F43B088FFBD0A, 9D61E45D03CD4491A7718CF4, A01AE6BA06BE4621AE64948C, AA0000000000000000000607, AA0000000000000000000601, AA0000000000000000000602, AA0000000000000000000603, AA0000000000000000000604, AA0000000000000000000605, AA0000000000000000000606); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000801 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000593, AA0000000000000000000592, AA0000000000000000000591, AA0000000000000000000590, AA0000000000000000000526, 70A5D79D25F54A1581F09B5C, F05AA39F8F4542338E0C0BAC, 7C60607CAE9B4E9080769427, 1E3547CEDED14E408C101FB4, AA0000000000000000000524, AA0000000000000000000523, AA0000000000000000000520, AA0000000000000000000501, AA0000000000000000000502, AA0000000000000000000503, AA0000000000000000000504, AA0000000000000000000505, AA0000000000000000000506, AA0000000000000000000507, AA0000000000000000000508, AA0000000000000000000509, AA0000000000000000000510, AA0000000000000000000511, AA0000000000000000000512, AA0000000000000000000513, AA0000000000000000000514, AA0000000000000000000515, AA0000000000000000000516, AA0000000000000000000517); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000811 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000594, 2E496CE7859F43B088FFBD0A, 9D61E45D03CD4491A7718CF4, A01AE6BA06BE4621AE64948C, AA0000000000000000000607, AA0000000000000000000601, AA0000000000000000000602, AA0000000000000000000603, AA0000000000000000000604, AA0000000000000000000605, AA0000000000000000000606); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -195,8 +208,8 @@
 /* Begin XCBuildConfiguration section */
 		AA0000000000000000000D01 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_OPTIMIZATION_LEVEL = 0; MACOSX_DEPLOYMENT_TARGET = 14.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = macosx; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 6.0; }; name = Debug; };
 		AA0000000000000000000D02 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = YES; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_NS_ASSERTIONS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; MACOSX_DEPLOYMENT_TARGET = 14.0; SDKROOT = macosx; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_VERSION = 6.0; }; name = Release; };
-		AA0000000000000000000D03 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Config/USBDisplay.entitlements; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 7; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 1.0.3; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplay; PRODUCT_MODULE_NAME = iPhoneUSBDisplay; PRODUCT_NAME = "USB Display"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Debug; };
-		AA0000000000000000000D04 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Config/USBDisplay.entitlements; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 7; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 1.0.3; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplay; PRODUCT_MODULE_NAME = iPhoneUSBDisplay; PRODUCT_NAME = "USB Display"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Release; };
+		AA0000000000000000000D03 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Config/USBDisplay.entitlements; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 8; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 1.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplay; PRODUCT_MODULE_NAME = iPhoneUSBDisplay; PRODUCT_NAME = "USB Display"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Debug; };
+		AA0000000000000000000D04 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = Config/USBDisplay.entitlements; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; CURRENT_PROJECT_VERSION = 8; ENABLE_APP_SANDBOX = NO; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Config/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 1.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplay; PRODUCT_MODULE_NAME = iPhoneUSBDisplay; PRODUCT_NAME = "USB Display"; SWIFT_EMIT_LOC_STRINGS = YES; }; name = Release; };
 		AA0000000000000000000D05 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks"; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplayTests; PRODUCT_MODULE_NAME = iPhoneUSBDisplayTests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/USB Display.app/Contents/MacOS/USB Display"; }; name = Debug; };
 		AA0000000000000000000D06 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = YES; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks"; PRODUCT_BUNDLE_IDENTIFIER = com.xuemingbo.iPhoneUSBDisplayTests; PRODUCT_MODULE_NAME = iPhoneUSBDisplayTests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/USB Display.app/Contents/MacOS/USB Display"; }; name = Release; };
 /* End XCBuildConfiguration section */
@@ -206,6 +219,13 @@
 		AA0000000000000000000C02 /* Build configuration list for PBXNativeTarget "USB Display" */ = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000D03 /* Debug */, AA0000000000000000000D04 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		AA0000000000000000000C03 /* Build configuration list for PBXNativeTarget "iPhoneUSBDisplayTests" */ = {isa = XCConfigurationList; buildConfigurations = (AA0000000000000000000D05 /* Debug */, AA0000000000000000000D06 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		AA0000000000000000000990 /* Sparkle */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/sparkle-project/Sparkle"; requirement = {kind = exactVersion; version = 2.10.1; }; };
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA0000000000000000000991 /* Sparkle */ = {isa = XCSwiftPackageProductDependency; package = AA0000000000000000000990 /* Sparkle */; productName = Sparkle; };
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA0000000000000000000001 /* Project object */;
 }

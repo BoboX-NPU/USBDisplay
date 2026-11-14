@@ -2028,3 +2028,40 @@
 ### Remaining Risks or Follow-up Work
 
 - The two known full-screen integration failures remain tracked on QUE-24 with captured assertion evidence. Runtime/compatibility/performance follow-ups remain separate from this approved installer release.
+
+
+## 2026-11-14 — Integrate Sparkle Downloads with Explicit Installation
+
+### Summary
+
+- Prepare source version 1.1.0 (build 8), following the project's minor-version policy for new capabilities. Pin Sparkle 2.10.1 through Swift Package Manager and retain its complete license notices. Public downloads remain 1.0.3.
+- Add one app-owned updater with daily automatic checks, manual Check for Updates, a persisted automatic-check menu toggle, native download progress, and an explicit Install and Relaunch action. Disable Sparkle's stock silent-update mode and system profiling.
+- Automatically start ordinary downloads through a standard-user-driver adapter. Keep major/informational prompts and guard recovered installers. Normal AppKit quit cancels unconfirmed downloads/prepared installations before allowing termination; an accepted install permits Sparkle to terminate and relaunch. Add lifecycle logging and six focused termination-gate tests.
+- Generate an app-specific Ed25519 key in the login Keychain, account `com.xuemingbo.iPhoneUSBDisplay.sparkle`, without exporting private key material. Commit only the public key; require signed feeds and pre-extraction archive verification.
+- Configure a stable GitHub latest-release appcast asset URL. Add a local preparation script that checks bundle identity, version, architecture, update configuration, signing key, Developer ID team, hardened runtime, signature, stapled ticket, and Gatekeeper, then signs/verifies the ZIP and appcast. Require either an explicit first-release bootstrap or the previous signed feed; refuse output overwrite. No public update feed or release was published.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`, `USBDisplay.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`, and `Config/Info.plist`
+- `USBDisplay/App/iPhoneUSBDisplayApp.swift`
+- `USBDisplay/Services/UpdateController.swift`, `UpdateUserDriver.swift`, and `UpdateInstallationGate.swift`
+- `USBDisplay/Views/UpdateCommands.swift` and `USBDisplayTests/UpdateInstallationGateTests.swift`
+- `USBDisplay/Resources/ThirdPartyNotices.txt` and `script/prepare_update.py`
+- `README.md`, `CHANGELOG.md`, `doc/current.md`, `doc/releases.md`, `doc/updates.md`, `doc/releases/v1.1.0.md`, and this log
+
+### Validation
+
+- Xcode 27.2 resolved the exact Sparkle 2.10.1 revision. Debug build, canonical `./script/build_and_run.sh --verify`, universal Release build, strict bundle signature verification, Swift-format lint, plist/project parsing, shell/Python syntax, and Git whitespace checks passed. Final metadata is 1.1.0/8. Local builds remain ad-hoc signed.
+- The first full `./script/test.sh` run passed 111/111. The final full run passed 109/111; a focused updater/window run passed 15/17. Both later runs failed the same pre-existing full-screen test names: `emptyFullScreenRoundTripRestoresOrdinarySizeIncludingDeviceArrival` and `fullScreenRestoresOrdinaryGeometryAndSidebarState`. All six updater tests passed in every run. No window/capture source was changed, and no fix to QUE-24's intermittent tests is claimed. All test build directories and result bundles were removed by the runner.
+- A dedicated native-app UI agent used signed localhost update fixtures and isolated identifiers. Automatic check/download reached Ready to Install. A normal quit at that stage logged deferred termination and cancellation, preserving build 8. A subsequent manual check showed increasing download progress; the explicit Install and Relaunch click logged choice 1 and allowed termination, and both disk metadata and About showed build 9. The subsequent check showed the up-to-date alert. Fixture versions 1.0.4/8 and 1.0.5/9 were artificial test versions, never published.
+- The first tool-launched fixture changed to build 9 before a recorded install click. Its cause was not conclusively isolated. Native bindings also relaunched/duplicated processes during later state inspection. A fresh fixture launched explicitly with independent lifecycle logs and disk checks stayed on build 8 until the verified consent/cancellation paths above; do not treat the first launch as successful confirmation coverage. Force termination remains outside the normal-quit contract.
+- The automatic-check menu entry was observed, but its checkmark was not exposed in the accessibility tree and screenshots were unavailable. Enabled-by-default configuration and a real automatic feed/download request were verified separately.
+- Sparkle accepted the signed local feed and rejected modified feed content. The production preparation script rejected the real new ad-hoc universal archive at its Developer ID requirement and wrote no feed, as intended. Successful production-feed generation remains pending a notarized export.
+- Developer ID upload/notarization was not run: automatic approval review rejected the Xcode upload because this request authorized Sparkle integration but did not explicitly authorize submitting the application archive to Apple and using signing credentials. No workaround, public release, or new trust claim was made.
+- Stopped the localhost fixture server and isolated test processes; removed both test preference/cache domains and the task scratch directory, temporary archives, extracted source, update fixtures, and logs. Preserved canonical `.build/Xcode`, existing `.build/Distribution` packages, and the real signing key.
+
+### Remaining Risks or Follow-up Work
+
+- Obtain authorization for the Apple submission, then Developer ID-sign/notarize the final app and all Sparkle helpers, package it, generate the first signed appcast, and publish/verify a reviewed release. The configured production appcast does not exist until that release is published. Existing users need one manual installation to adopt the updater.
+- Validate a real Developer ID-signed upgrade and quarantined public downloads; local ad-hoc fixtures do not prove distribution trust. Keep a secure backup of the update-signing key before migrating the signing Mac.
+- The two existing full-screen test failures and prior physical-device/older-OS/Intel validation limits remain open. The initial native-tool launch anomaly was not conclusively isolated; avoid app-binding relaunches during future updater acceptance and retain independent process/version evidence.

@@ -18,14 +18,22 @@ struct IPhoneUSBDisplayApp: App {
     .defaultSize(width: 980, height: 720)
     .windowResizability(.automatic)
     .windowToolbarStyle(.unified)
+    .commands { UpdateCommands(controller: appDelegate.updateController) }
   }
 }
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+  let updateController = UpdateController()
+
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.regular)
     NSApp.activate(ignoringOtherApps: true)
+    updateController.start()
+  }
+
+  func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    updateController.applicationShouldTerminate()
   }
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

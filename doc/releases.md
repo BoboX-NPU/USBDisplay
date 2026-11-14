@@ -9,7 +9,7 @@ GitHub Releases owns public downloads. Source control owns documentation and rep
 3. Move completed user-facing changes from `Unreleased` into a dated changelog entry. Write `doc/releases/vVERSION.md`, including installation, signing status, known limits, and validation.
 4. Run `./script/test.sh`, the catalog tests/check, shell/plist/project validation, and checks specific to the changes. Record physical acceptance separately. Temporary test directories must be removed when the run ends.
 5. Follow the [Developer ID and notarization workflow](notarization.md) to archive, sign, submit, and export the stapled app. Package that exact export with `./script/package_local_release.sh --notarized-app "/absolute/path/to/USB Display.app"`. The script verifies trust and both architectures, then writes a unique directory under `.build/Distribution`. For explicitly local ad-hoc packages only, use the no-argument or `--github` build modes.
-6. Confirm the app's version/build, architectures, minimum macOS, license/notices, icon, and entitlements. Check the final archives and `SHA256SUMS.txt`. Inspect Gatekeeper separately; an ad-hoc integrity check does not establish Developer ID signing or notarization.
+6. Confirm the app's version/build, architectures, minimum macOS, license/notices, icon, and entitlements. Check the final archives and `SHA256SUMS.txt`. Inspect Gatekeeper separately; an ad-hoc integrity check does not establish Developer ID signing or notarization. Starting with the updater release, follow [in-app update preparation](updates.md) to generate and verify `appcast.xml` for the exact notarized ZIP; preserve previous feed items.
 7. Update `doc/current.md` and append the completed validation to `doc/devlog.md`. Commit only the source/configuration/documentation changes. Package files stay ignored and are uploaded as release assets.
 
 The no-argument packaging command retains local-package naming. Both `--github` and `--notarized-app` use stable names such as `USBDisplay-1.0.3-macOS-universal.dmg` and `.zip`, with the exact build number stored in the app. `--github` builds an ad-hoc app; `--notarized-app` only packages a pre-verified signed/stapled app and refuses untrusted input. Do not confuse those modes.
@@ -20,12 +20,12 @@ The styled DMG uses the [installer artwork/layout](design/dmg-installer.md). Pac
 
 1. Push the reviewed commit without rewriting remote history.
 2. Create an annotated `vMAJOR.MINOR.PATCH` tag at that exact commit and push it. Never move an existing published tag.
-3. Create a draft GitHub release from the pushed tag. Upload the DMG, ZIP, and `SHA256SUMS.txt`; use the versioned notes as the release body.
+3. Create a draft GitHub release from the pushed tag. Upload the DMG, ZIP, `SHA256SUMS.txt`, and signed `appcast.xml`; use the versioned notes as the release body. Every stable release after updater adoption must include the feed before it becomes latest.
 4. Check the draft's version, notes, and assets, then publish it. For the first open-source release, the repository must be public so unauthenticated visitors can read the source and download assets.
-5. Verify public repository/release links and download the uploaded assets to a temporary directory. Match their hashes to the local packages, then delete that verification directory.
+5. Verify public repository/release links and download the uploaded assets to a temporary directory. Match their hashes to the local packages, verify the signed production feed and update ZIP, and test an upgrade from an earlier updater-enabled app. Then delete the verification directory.
 6. Record the published URLs and final verification in `doc/current.md` and `doc/devlog.md`. Documentation-only follow-up commits may follow the tagged release source; binary provenance must continue to point to the release tag.
 
-Publishing remains an explicit maintainer operation. There is no automatic updater, background publishing job, or hosted release workflow in version 1.0.3. Native CI and signed release automation are tracked in Linear.
+Publishing remains an explicit maintainer operation. Version 1.0.3 has no updater; source version 1.1.0 adds [Sparkle](updates.md). There is no background publishing job or hosted release workflow. Native CI and signed release automation are tracked in Linear.
 
 ## Signing and notarization
 

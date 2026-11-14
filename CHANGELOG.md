@@ -4,7 +4,13 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 ## Unreleased
 
-No additional changes scheduled. See the [roadmap](doc/roadmap.md) for follow-up work.
+### New Features
+
+- Integrate Sparkle 2.10.1 with automatic update checks, in-app download progress, and an explicit Install and Relaunch action. Normal quit cancels an unconfirmed update.
+- Add Check for Updates and an automatic-check toggle to the application menu.
+- Add signed update-feed preparation for notarized universal GitHub release ZIPs.
+
+The source version is 1.1.0 (build 8). The first updater-enabled public release is still pending; 1.0.3 users must install it manually once.
 
 ## 1.0.3 — 2026-11-13
 
