@@ -53,6 +53,7 @@
 		AA0000000000000000000593 /* UpdateCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000293 /* UpdateCommands.swift */; };
 		AA0000000000000000000594 /* UpdateInstallationGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000294 /* UpdateInstallationGateTests.swift */; };
 		AA0000000000000000000595 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000991 /* Sparkle */; };
+		AA0000000000000000000596 /* Sparkle-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000296 /* Sparkle-LICENSE.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +116,7 @@
 		AA0000000000000000000292 /* UpdateInstallationGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstallationGate.swift; sourceTree = "<group>"; };
 		AA0000000000000000000293 /* UpdateCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCommands.swift; sourceTree = "<group>"; };
 		AA0000000000000000000294 /* UpdateInstallationGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateInstallationGateTests.swift; sourceTree = "<group>"; };
+		AA0000000000000000000296 /* Sparkle-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = USBDisplay/Resources/Sparkle-LICENSE.txt; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,7 +146,7 @@
 		AA0000000000000000000009 /* Views */ = {isa = PBXGroup; children = (AA0000000000000000000293 /* UpdateCommands.swift */, AA0000000000000000000126 /* SidebarSplitView.swift */, A07861E385784CE88859A90E /* WindowHoverScheduler.swift */, 50A5D9FE0B424E568B1BDB72 /* WindowEventBridge.swift */, 9227BCBCF7564F09A2F0B9EF /* SidebarToolbarDelegate.swift */, AA0000000000000000000124 /* WindowChromeAnimator.swift */, AA0000000000000000000110 /* ContentView.swift */, AA0000000000000000000114 /* DisplayWindowScene.swift */, AA0000000000000000000111 /* DisplayCanvasView.swift */, AA0000000000000000000112 /* PreviewView.swift */, AA0000000000000000000113 /* SidebarView.swift */, AA0000000000000000000116 /* WindowLayoutCoordinator.swift */); path = Views; sourceTree = "<group>"; };
 		AA000000000000000000000A /* Tests */ = {isa = PBXGroup; children = (AA0000000000000000000294 /* UpdateInstallationGateTests.swift */, 961E7FE4CEE74657858BB5C8 /* WindowLifecycleTests.swift */, 4FA0D82328AD4B3BBA661362 /* CaptureStateTests.swift */, 80AC9A8322D34706B82CE42B /* WindowInteractionTests.swift */, AA0000000000000000000207 /* WindowRenderingTests.swift */, AA0000000000000000000201 /* CaptureFailureTests.swift */, AA0000000000000000000206 /* USBDeviceInfoTests.swift */, AA0000000000000000000205 /* DisplayCornerProfileTests.swift */, AA0000000000000000000202 /* WindowLayoutPolicyTests.swift */, AA0000000000000000000203 /* DeviceSelectionTests.swift */, AA0000000000000000000204 /* DeviceWindowRoutingTests.swift */); name = USBDisplayTests; path = USBDisplayTests; sourceTree = SOURCE_ROOT; };
 		AA000000000000000000000B /* Config */ = {isa = PBXGroup; children = (AA0000000000000000000301 /* Info.plist */, AA0000000000000000000302 /* USBDisplay.entitlements */); path = Config; sourceTree = "<group>"; };
-		AA000000000000000000000C /* Resources */ = {isa = PBXGroup; children = (AA0000000000000000000121, AA0000000000000000000122, AA0000000000000000000125 /* Assets.xcassets */, AA0000000000000000000127 /* AppIcon.icon */); name = Resources; sourceTree = "<group>"; };
+		AA000000000000000000000C /* Resources */ = {isa = PBXGroup; children = (AA0000000000000000000296, AA0000000000000000000121, AA0000000000000000000122, AA0000000000000000000125 /* Assets.xcassets */, AA0000000000000000000127 /* AppIcon.icon */); name = Resources; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -192,7 +194,7 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		AA0000000000000000000803 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000528 /* LICENSE in Resources */, AA0000000000000000000521, AA0000000000000000000522, AA0000000000000000000525 /* Assets.xcassets in Resources */, AA0000000000000000000527 /* AppIcon.icon in Resources */); runOnlyForDeploymentPostprocessing = 0; };
+		AA0000000000000000000803 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (AA0000000000000000000596, AA0000000000000000000528 /* LICENSE in Resources */, AA0000000000000000000521, AA0000000000000000000522, AA0000000000000000000525 /* Assets.xcassets in Resources */, AA0000000000000000000527 /* AppIcon.icon in Resources */); runOnlyForDeploymentPostprocessing = 0; };
 		AA0000000000000000000813 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 

@@ -10,15 +10,15 @@ USB Display 是一款原生 macOS 应用，可以通过 USB 将 iPhone 或 iPad 
 
 ### 下载
 
-**[下载 v1.0.3 macOS 通用版 — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.dmg)**
+**[下载 v1.1.0 macOS 通用版 — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.1.0/USBDisplay-1.1.0-macOS-universal.dmg)**
 
-[ZIP 下载](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.zip) · [SHA-256 校验文件](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/SHA256SUMS.txt) · [发布说明与历史版本](https://github.com/BoboX-NPU/USBDisplay/releases)
+[ZIP 下载](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.1.0/USBDisplay-1.1.0-macOS-universal.zip) · [SHA-256 校验文件](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.1.0/SHA256SUMS.txt) · [发布说明与历史版本](https://github.com/BoboX-NPU/USBDisplay/releases)
 
 打开 DMG 后，将左侧的 USB Display 拖到右侧的 Applications 即可安装。
 
 需要 **macOS 14 或更新版本**和支持数据传输的 USB 线。同一安装包包含 Apple Silicon 和 Intel 两种架构。使用预编译应用不需要安装 Xcode。
 
-**签名状态：** v1.0.3 安装包内的应用已使用 **Developer ID 签名并通过 Apple 公证**，附带离线公证票据，且通过了 Gatekeeper 检查。首次打开仍可能显示正常的互联网下载确认与“相机”权限提示。详见[安装说明](doc/installation.md)。旧版 macOS 和 Intel 设备的实机验证尚不完整；最低系统要求不代表所有配置均已测试。
+**签名状态：** v1.1.0 安装包内的应用已使用 **Developer ID 签名并通过 Apple 公证**，附带离线公证票据，且通过了 Gatekeeper 检查。首次打开仍可能显示正常的互联网下载确认与“相机”权限提示。详见[安装说明](doc/installation.md)。旧版 macOS 和 Intel 设备的实机验证尚不完整；最低系统要求不代表所有配置均已测试。
 
 ### 功能
 
@@ -39,9 +39,9 @@ USB Display 是一款原生 macOS 应用，可以通过 USB 将 iPhone 或 iPad 
 
 遇到首次启动被拦截、设备不显示、黑屏或权限问题时，请查看[安装与故障排查](doc/installation.md)。
 
-### 应用内更新（下一版本）
+### 应用内更新
 
-当前源码已接入 Sparkle：默认自动检查并在应用内下载更新，下载完成后由用户点击“安装并重启”。可在应用菜单关闭自动检查。GitHub 上的 v1.0.3 尚不含更新器，需要手动安装一次首个支持更新的正式版本。发布与签名流程见[更新说明](doc/updates.md)。
+从 v1.1.0 起，应用默认自动检查并在应用内下载更新，下载完成后由用户点击“安装并重启”。可在应用菜单关闭自动检查。v1.0.3 及更早版本不含更新器，需要先手动安装 v1.1.0 一次。发布与签名流程见[更新说明](doc/updates.md)。
 
 ### 构建与测试
 
@@ -89,7 +89,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 script/update_device_profiles.py --check
 
 ### 许可证与致谢
 
-采用 [MIT 许可证](LICENSE)。设备资料包含固定版本的 DeviceKit 与 BezelKit 数据，并保留其[第三方声明](USBDisplay/Resources/ThirdPartyNotices.txt)。资料来源、冲突处理和验证范围见[设备资料说明](doc/device-corner-profiles.md)。本项目独立于 Apple。
+采用 [MIT 许可证](LICENSE)。设备资料包含固定版本的 DeviceKit 与 BezelKit 数据，并保留其[第三方声明](USBDisplay/Resources/ThirdPartyNotices.txt)。资料来源、冲突处理和验证范围见[设备资料说明](doc/device-corner-profiles.md)。应用内更新使用 Sparkle，并附带其[完整许可证](USBDisplay/Resources/Sparkle-LICENSE.txt)。本项目独立于 Apple。
 
 ---
 
@@ -99,15 +99,15 @@ A native macOS app for displaying a USB-connected iPhone or iPad in a resizable 
 
 ### Download
 
-**[Download v1.0.3 for macOS — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.dmg)**
+**[Download v1.1.0 for macOS — DMG](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.1.0/USBDisplay-1.1.0-macOS-universal.dmg)**
 
-[ZIP download](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/USBDisplay-1.0.3-macOS-universal.zip) · [Checksums](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.0.3/SHA256SUMS.txt) · [Release notes and all versions](https://github.com/BoboX-NPU/USBDisplay/releases)
+[ZIP download](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.1.0/USBDisplay-1.1.0-macOS-universal.zip) · [Checksums](https://github.com/BoboX-NPU/USBDisplay/releases/download/v1.1.0/SHA256SUMS.txt) · [Release notes and all versions](https://github.com/BoboX-NPU/USBDisplay/releases)
 
 Open the DMG and drag USB Display on the left onto Applications on the right.
 
 Requires **macOS 14 or later** and a USB data cable. The same download includes Apple Silicon and Intel executables. Xcode is only needed to build from source.
 
-**Signing status:** the app in v1.0.3 is **Developer ID signed and notarized by Apple**, includes a stapled ticket for offline verification, and passes Gatekeeper checks. Normal first-launch download confirmation and Camera permission prompts can still appear. See the [installation guide](doc/installation.md). Older macOS and Intel runtime coverage is still incomplete; the minimum deployment target is not a claim that every configuration has been physically tested.
+**Signing status:** the app in v1.1.0 is **Developer ID signed and notarized by Apple**, includes a stapled ticket for offline verification, and passes Gatekeeper checks. Normal first-launch download confirmation and Camera permission prompts can still appear. See the [installation guide](doc/installation.md). Older macOS and Intel runtime coverage is still incomplete; the minimum deployment target is not a claim that every configuration has been physically tested.
 
 ### What it does
 
@@ -128,9 +128,9 @@ The app displays video locally. It does not record, capture audio, transmit the 
 
 See [installation and troubleshooting](doc/installation.md) for blocked launches, missing devices, black screens, and permissions.
 
-### In-app updates (next release)
+### In-app updates
 
-The current source integrates Sparkle: updates are checked and downloaded in the app automatically, then wait for the user to choose Install and Relaunch. Scheduled checks can be disabled in the application menu. Public v1.0.3 does not contain the updater; users must manually install the first updater-enabled release once. See the [update guide](doc/updates.md) for publishing and signing.
+Starting with v1.1.0, updates are checked and downloaded in the app automatically, then wait for the user to choose Install and Relaunch. Scheduled checks can be disabled in the application menu. Version 1.0.3 and earlier do not contain the updater; users must manually install v1.1.0 once. See the [update guide](doc/updates.md) for publishing and signing.
 
 ### Build and test
 
@@ -178,4 +178,4 @@ Keep runtime features in these existing layers. Introduce a new module only when
 
 ### License and acknowledgements
 
-[MIT](LICENSE). Device metadata includes pinned DeviceKit and BezelKit data with their own preserved [notices](USBDisplay/Resources/ThirdPartyNotices.txt). See the [catalog provenance](doc/device-corner-profiles.md) for sources, reviewed conflicts, and validation limits. This project is independent of Apple.
+[MIT](LICENSE). Device metadata includes pinned DeviceKit and BezelKit data with their own preserved [notices](USBDisplay/Resources/ThirdPartyNotices.txt). See the [catalog provenance](doc/device-corner-profiles.md) for sources, reviewed conflicts, and validation limits. In-app updates use Sparkle and include its [complete license](USBDisplay/Resources/Sparkle-LICENSE.txt). This project is independent of Apple.

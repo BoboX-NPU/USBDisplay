@@ -2065,3 +2065,33 @@
 - Obtain authorization for the Apple submission, then Developer ID-sign/notarize the final app and all Sparkle helpers, package it, generate the first signed appcast, and publish/verify a reviewed release. The configured production appcast does not exist until that release is published. Existing users need one manual installation to adopt the updater.
 - Validate a real Developer ID-signed upgrade and quarantined public downloads; local ad-hoc fixtures do not prove distribution trust. Keep a secure backup of the update-signing key before migrating the signing Mac.
 - The two existing full-screen test failures and prior physical-device/older-OS/Intel validation limits remain open. The initial native-tool launch anomaly was not conclusively isolated; avoid app-binding relaunches during future updater acceptance and retain independent process/version evidence.
+
+
+## 2026-11-14 — Prepare Notarized 1.1.0 and Verify the Signed Upgrade
+
+### Summary
+
+- Use the maintainer's explicit authorization to sign/notarize 1.1.0 (build 8) with the existing Xcode Developer ID credentials and prepare publication with its signed appcast.
+- Fix the release preflight's catalog-reproducibility failure: move the complete Sparkle license from generated `ThirdPartyNotices.txt` into a separate bundled `Sparkle-LICENSE.txt`, restoring deterministic device-data notices without losing updater licensing.
+- Archive the universal app, submit it through the existing Xcode workflow, retrieve the notarized export, and package that exact app. Prepare the first signed production appcast with embedded release notes and add it to the checksum file.
+- Prepare the bilingual README, changelog, versioned release notes, and current/update documentation for 1.1.0. The public 1.0.3 assets remain untouched.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`, `USBDisplay/Resources/ThirdPartyNotices.txt`, and `USBDisplay/Resources/Sparkle-LICENSE.txt`
+- `README.md`, `CHANGELOG.md`, `doc/current.md`, `doc/releases.md`, `doc/releases/v1.1.0.md`, `doc/updates.md`, and this log
+- Ignored `.build/Distribution/USBDisplay-1.1.0-macOS-universal.Z1FBwb/` release assets
+
+### Validation
+
+- The initial catalog preflight failed because the previous integration appended a non-generated license to generated notices. After splitting the resource, all nine catalog tests and offline reproducibility verification passed. The notarized bundle contains the complete standalone Sparkle license matching source bytes.
+- Universal Release archive, Xcode Developer ID upload, and notarized export passed. Main app, framework, Autoupdate, Updater.app, Downloader.xpc, and Installer.xpc all have the expected Developer ID team `9PSN33WBG7` and pass strict signatures. The app is 1.1.0/8, includes arm64/x86_64, and passes stapled-ticket, Gatekeeper (`Notarized Developer ID`), and `syspolicy_check distribution` checks.
+- Both DMG and ZIP packaged-app checks passed without rebuilding or re-signing the notarized export. Production `prepare_update.py --first-release` passed all trust/configuration checks, generated the signed feed, and verified both archive and feed signatures. The checksum file includes both archives and the appcast.
+- An unpublished local 1.0.9/build 7 fixture was exported with the existing Developer ID credentials and isolated updater preferences. Its signed localhost feed served the exact notarized production ZIP. Native UI showed Ready to Install while disk metadata remained build 7; the explicit Install and Relaunch click reopened the app and About showed 1.1.0/build 8. Installed file hashes and symlinks exactly match the notarized release payload; its signature, stapled ticket, and Gatekeeper checks passed. This fixture is not a public release and was not separately notarized.
+- DMG SHA-256: `5b9e052cef53b5b70c9283d553be3a91e79ed045d79dbee6a6ce9b8189fc89b3`. ZIP SHA-256: `acffdf8df612547aa57ca2b2e73b9712667e8e650725841bfb38e576d36d1958`. Appcast SHA-256: `0a7e2696dcb54558b6bf7a237c1e2c2259bcbebd8b075adea80dc0cef81b991c`.
+- Git whitespace and project/plist/shell checks passed. Application tests: Not run again for the license-resource/release-only changes; the immediately preceding 109/111 full result and all six passing updater tests remain applicable to unchanged runtime/test source. The known two full-screen test failures are not fixed or hidden.
+
+### Remaining Risks or Follow-up Work
+
+- Publish the reviewed source tag and all four release assets, verify anonymous public downloads and the stable appcast, and remove the temporary archives, exports, test fixture/server, and logs.
+- Existing full-screen-test, physical-device, older-macOS/Intel, and performance follow-ups remain open. The app inside the archives is notarized; no separate DMG-container notarization is claimed.

@@ -4,13 +4,21 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 ## Unreleased
 
+No additional changes scheduled. See the [roadmap](doc/roadmap.md) for follow-up work.
+
+## 1.1.0 — 2026-11-14
+
 ### New Features
 
 - Integrate Sparkle 2.10.1 with automatic update checks, in-app download progress, and an explicit Install and Relaunch action. Normal quit cancels an unconfirmed update.
 - Add Check for Updates and an automatic-check toggle to the application menu.
 - Add signed update-feed preparation for notarized universal GitHub release ZIPs.
 
-The source version is 1.1.0 (build 8). The first updater-enabled public release is still pending; 1.0.3 users must install it manually once.
+### Bug Fixes
+
+- Keep Sparkle licensing in a separate bundled resource so device-catalog regeneration preserves the updater license and remains reproducible.
+
+Version 1.1.0 (build 8) is Developer ID signed and notarized. Users of 1.0.3 and earlier must install 1.1.0 manually once to adopt in-app updates.
 
 ## 1.0.3 — 2026-11-13
 

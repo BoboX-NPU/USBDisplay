@@ -1,6 +1,6 @@
 # In-app updates
 
-The next source version, 1.1.0 (build 8), integrates Sparkle 2.10.1. Public 1.0.3 downloads do not contain an updater. Those users must manually install the first updater-enabled release once.
+Version 1.1.0 (build 8) integrates Sparkle 2.10.1. Version 1.0.3 and earlier do not contain an updater; those users must manually install 1.1.0 once.
 
 ## User experience
 
@@ -22,9 +22,9 @@ The production feed is:
 https://github.com/BoboX-NPU/USBDisplay/releases/latest/download/appcast.xml
 ```
 
-Every stable release starting with the first updater release must attach `appcast.xml` alongside its ZIP. The feed uses immutable version-specific ZIP URLs under the same repository. No GitHub API token, custom backend, or Pages configuration is needed at runtime. Prereleases do not replace the stable feed. The latest-release URL is not usable until the first appcast-bearing release is published; a missing feed is an update error, not proof that the app is current.
+Every stable release starting with the first updater release must attach `appcast.xml` alongside its ZIP. The feed uses immutable version-specific ZIP URLs under the same repository. No GitHub API token, custom backend, or Pages configuration is needed at runtime. Prereleases do not replace the stable feed. The stable release must always carry the signed appcast; a missing feed is an update error, not proof that the app is current.
 
-Sparkle is pinned exactly in the Xcode project and `Package.resolved`. Its license and bundled notices are reproduced in `ThirdPartyNotices.txt`. Use Xcode Archive/Developer ID export so nested framework helpers are re-signed along with the application, then notarize and staple the exported app before packaging.
+Sparkle is pinned exactly in the Xcode project and `Package.resolved`. Its license and bundled notices are reproduced in the separate bundled `Sparkle-LICENSE.txt`; generated device-data notices remain in `ThirdPartyNotices.txt`. Use Xcode Archive/Developer ID export so nested framework helpers are re-signed along with the application, then notarize and staple the exported app before packaging.
 
 Update archives and the appcast are signed with an app-specific Ed25519 key in the login Keychain, account `com.xuemingbo.iPhoneUSBDisplay.sparkle`. Only the public key is in `Config/Info.plist`. The key is separate from the Developer ID certificate. Never commit/export the private key into source or release assets. Keep a secure backup before migrating or erasing the signing Mac; losing it requires a reviewed key-rotation plan.
 
