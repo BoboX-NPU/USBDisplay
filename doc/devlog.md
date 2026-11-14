@@ -2095,3 +2095,32 @@
 
 - Publish the reviewed source tag and all four release assets, verify anonymous public downloads and the stable appcast, and remove the temporary archives, exports, test fixture/server, and logs.
 - Existing full-screen-test, physical-device, older-macOS/Intel, and performance follow-ups remain open. The app inside the archives is notarized; no separate DMG-container notarization is claimed.
+
+
+## 2026-11-14 — Publish and Verify 1.1.0 with Its Signed Appcast
+
+### Summary
+
+- Publish the reviewed 1.1.0 release as the latest stable version at 14:07:55 UTC, using annotated tag `v1.1.0` at `da05483dd5c0a91683499312d488b79665a3bd6d`.
+- Publish the notarized universal DMG and ZIP, checksum file, and signed `appcast.xml` together. The stable latest-release appcast URL is now live; both README language sections point to 1.1.0 downloads.
+- Retain final packages and concise public verification metadata, and remove the task's temporary archives, exports, localhost server, local upgrade fixture, isolated update preferences/cache, verification downloads, and Xcode distribution logs.
+
+### Affected Files
+
+- `doc/current.md` and `doc/devlog.md`
+- Remote `main`, `v1.1.0`, and https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.1.0
+- Ignored `.build/Distribution/USBDisplay-1.1.0-macOS-universal.Z1FBwb/public-download-verification.json`
+
+### Validation
+
+- Before publication, all four draft asset digests and sizes matched the validated local files, and draft release notes matched `doc/releases/v1.1.0.md`. GitHub release ID is `445338271`.
+- After publication, anonymous downloads of DMG, ZIP, checksums, and appcast matched local bytes and hashes. Sizes: DMG 2,947,486 bytes; ZIP 2,803,304 bytes; checksum file 284 bytes; appcast 3,316 bytes. The public README matches source and all six download links target verified assets.
+- The stable latest-release appcast is byte-identical to the versioned signed asset. Feed signature, build/version 8/1.1.0, immutable ZIP URL, and ZIP Ed25519 signature all verified. GitHub reports 1.1.0 as latest, and the public annotated tag resolves to the reviewed release commit.
+- Both apps extracted from public downloads were marked with download quarantine and passed strict signatures, stapled-ticket validation, Gatekeeper (`Notarized Developer ID`), and `syspolicy_check distribution`. Both contain arm64/x86_64, version/build 1.1.0/8, and the production feed URL. The DMG retains the Applications shortcut, Finder metadata, and background resource.
+- Previous 1.0.3 DMG, ZIP, and checksum digests remain unchanged. The signed local baseline upgrade and exact payload equality are recorded in the preceding entry; no public fake update was used.
+- Git whitespace checks passed. Additional application builds/tests for this publication-record-only change: Not run. The known application-test limitations remain recorded above; no blanket full-suite pass is claimed.
+
+### Remaining Risks or Follow-up Work
+
+- Users of 1.0.3 and earlier must manually install 1.1.0 once before in-app updating is available. Every future stable release must include a newly signed appcast and preserve compatible prior feed items.
+- Existing full-screen integration-test, physical-device, older-macOS/Intel, and performance follow-ups remain open. No separate notarization of the DMG container is claimed.
