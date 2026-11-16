@@ -121,3 +121,7 @@ Rounded corner values are traceable Simulator display-reference measurements, no
 - macOS 14/15 toolbar behavior, forced physical interruption/occupied-device recovery, permission denial and TCC relaunch behavior, a 30-minute multi-window soak, external performance measurements remain outstanding. Developer ID signing/notarization is verified for the 1.1.0 artifact and its Sparkle helpers. There is no new permission-settings retry action or app-activation recheck in this change.
 - Local builds are ad-hoc signed; rebuilding can require camera permission again. Xcode disables hardened runtime for the Debug ad-hoc build.
 - DRM-protected content may appear black; the app does not bypass platform protections.
+
+## Shared Agent Instructions
+
+`CLAUDE.md` is a relative symbolic link to `AGENTS.md`. Claude Code and Codex read identical project instructions. Verified on 2026-11-16 by comparing file contents and resolving the link.

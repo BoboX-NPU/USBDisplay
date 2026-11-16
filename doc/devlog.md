@@ -2152,3 +2152,10 @@
 
 - These tests use real AppKit windows with synthetic full-screen lifecycle notifications; no new native Spaces transition, physical display unplug/replug, or live-video acceptance is claimed. Those existing hardware/interaction checks remain part of QUE-24 and the broader validation backlog.
 - None for the two reported test failures. No application runtime defect was demonstrated by these assertions, and no production geometry change was made to suppress them.
+
+## 2026-11-16 — Share agent instructions
+
+- Added `CLAUDE.md` as a relative symbolic link to `AGENTS.md` so both coding clients use the same instructions.
+- Updated `doc/current.md` to describe the shared instruction files.
+- Validation: link target and byte-for-byte equality checked. Application builds and tests: Not run; this change only adds an instruction alias and documentation.
+- Remaining limitations: None for instruction synchronization.
