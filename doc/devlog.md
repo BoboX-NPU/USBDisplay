@@ -2184,3 +2184,30 @@
 
 - Desktop pointer drag attempts in the live window did not visibly move the divider. Live pointer dragging remains unverified.
 - The fix is unreleased. The published 1.1.0 binary still uses the former delegate.
+
+## 2026-11-18 — Prepare Notarized 1.1.1 and Sign the Update
+
+### Summary
+
+- Set both app configurations to 1.1.1 (build 9), retaining the 1.1.0 bundle identifier, minimum macOS version, Sparkle version, and update key.
+- Prepare the sidebar crash fix for release. Align the English and Chinese download links, move the completed entries to the 1.1.1 changelog, and write versioned notes.
+- Package the notarized universal app and sign an appcast with build 9 and the prior signed build 8 item.
+
+### Affected Files
+
+- `USBDisplay.xcodeproj/project.pbxproj`, `README.md`, `CHANGELOG.md`, `doc/releases/v1.1.1.md`, `doc/updates.md`, `doc/current.md`, and `doc/devlog.md`
+- Ignored `.build/Distribution/USBDisplay-1.1.1-macOS-universal.qoTPj3/` release assets
+
+### Validation
+
+- The full Debug suite passed, including sidebar menu validation and divider geometry. All nine catalog tests, offline catalog verification, project/plist validation, shell syntax, Swift-format lint, instruction-pair equality, and Git whitespace checks passed.
+- The arm64/x86_64 Release archive and Xcode Developer ID upload passed. Apple returned the stapled export. The app and Sparkle helpers passed strict Developer ID and hardened runtime checks. The camera entitlement, bundle metadata, release licenses, and icon were verified.
+- The packaging script verified the app, mounted DMG, and extracted ZIP. The notarized export passed `syspolicy_check distribution`. The signed previous appcast, release ZIP signature, new appcast signature, and release checksums verified.
+- `USBDisplay-1.1.1-macOS-universal.dmg` SHA-256 is `56a5192fc4a25159310846ef7cef0642506683573471bee2993e507bf8ad6422`.
+- `USBDisplay-1.1.1-macOS-universal.zip` SHA-256 is `30aeedb85827ae5354fcebb85d5e990b95bd8ef1cad4bd0c44ae4c6d9499aac8`.
+- `appcast.xml` SHA-256 is `547a468a7db880f6a38ebd08084cf9e082993225e14acc70efd18587a40ed3b3`.
+
+### Remaining Risks or Follow-up Work
+
+- Publish the reviewed tag, verify the four public downloads and the stable appcast, and test the update in an exact copy of the public 1.1.0 app.
+- Physical pointer-drag, broader hardware/OS, and sustained capture validation remain open.

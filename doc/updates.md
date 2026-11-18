@@ -1,6 +1,6 @@
 # In-app updates
 
-Version 1.1.0 (build 8) integrates Sparkle 2.10.1. Version 1.0.3 and earlier do not contain an updater; those users must manually install 1.1.0 once.
+Version 1.1.0 (build 8) integrates Sparkle 2.10.1. Version 1.0.3 and earlier do not contain an updater; those users can install the current release manually to enable in-app updates.
 
 ## User experience
 

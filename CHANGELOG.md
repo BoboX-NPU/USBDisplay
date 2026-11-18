@@ -4,6 +4,8 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 
 ## Unreleased
 
+## 1.1.1 — 2026-11-18
+
 ### Improvements
 
 - Fix full-screen restoration test fixtures to stay on their originating display and exercise every connected display.
