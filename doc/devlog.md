@@ -2211,3 +2211,28 @@
 
 - Publish the reviewed tag, verify the four public downloads and the stable appcast, and test the update in an exact copy of the public 1.1.0 app.
 - Physical pointer-drag, broader hardware/OS, and sustained capture validation remain open.
+
+## 2026-11-18 — Publish 1.1.1 and Verify the Production Upgrade
+
+### Summary
+
+- Publish USB Display 1.1.1 (build 9) as the latest stable release at 2026-11-18 10:54:54 UTC. The annotated `v1.1.1` tag resolves to `087a30215f797b7575e438e2cd36ad4b4b761ec7`.
+- Publish the notarized universal DMG and ZIP, checksums, and signed appcast together. The release starts from the prior public line with the full-screen test maintenance and sidebar fix.
+
+### Affected Files
+
+- `doc/current.md` and `doc/devlog.md`
+- Remote `main`, `v1.1.1`, and https://github.com/BoboX-NPU/USBDisplay/releases/tag/v1.1.1
+- Ignored `.build/Distribution/USBDisplay-1.1.1-macOS-universal.qoTPj3/public-download-verification.json`
+
+### Validation
+
+- The draft metadata, notes, sizes, and SHA-256 digests matched the reviewed files before publication. GitHub release ID is `449852624`.
+- Anonymous downloads of every asset matched local bytes. The stable appcast matched the versioned asset, preserved build 8, and passed its signing check. The build 9 enclosure referenced the exact versioned ZIP and passed the Ed25519 archive check.
+- App copies from the public DMG and ZIP passed strict signing, stapled-ticket validation, Gatekeeper, and distribution checks with download quarantine applied. Their file hashes and symlinks matched the notarized export.
+- An exact disposable copy of public 1.1.0 (build 8) used Check for Updates with the production feed, displayed Ready to Install, and relaunched as 1.1.1 (build 9) after Install and Relaunch. The upgraded app matched the released payload and passed strict signatures. The existing Applications installation was outside the upgrade test.
+- Git whitespace checks passed. Additional application builds/tests for this publication-record-only change were not run.
+
+### Remaining Risks or Follow-up Work
+
+- The production upgrade was verified on macOS 27.2.1 with Apple Silicon. Older macOS, Intel runtime, and continuous live-pointer drag coverage remain open.
