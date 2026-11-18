@@ -9,6 +9,10 @@ Public releases follow `MAJOR.MINOR.PATCH` versioning. Development builds before
 - Fix full-screen restoration test fixtures to stay on their originating display and exercise every connected display.
 - Cover display changes during full-screen exit, including screen fitting and restoration of preferred geometry.
 
+### Bug Fixes
+
+- Prevent a stack overflow when macOS checks the sidebar toggle menu action.
+
 ## 1.1.0 — 2026-11-14
 
 ### New Features

@@ -2159,3 +2159,28 @@
 - Updated `doc/current.md` to describe the shared instruction files.
 - Validation: link target and byte-for-byte equality checked. Application builds and tests: Not run; this change only adds an instruction alias and documentation.
 - Remaining limitations: None for instruction synchronization.
+
+## 2026-11-18 — Fix Sidebar Menu Validation Recursion
+
+### Summary
+
+- Fix the 1.1.0 (build 8) stack overflow on macOS 27.2.1. AppKit forwarded the `toggleSidebar:` responder query to the split view's delegate, which was the same view.
+- Give each split view a separately retained delegate for pane layout, divider constraints, and width notifications. Reuse the existing pane geometry in both resize paths.
+- Add a regression test that checks delegate identity before querying the selector and running `NSMenu.update()`. The menu disables the unsupported sidebar action.
+
+### Affected Files
+
+- `USBDisplay/Views/SidebarSplitView.swift`
+- `USBDisplayTests/WindowLifecycleTests.swift`
+- `CHANGELOG.md`, `doc/current.md`, and `doc/devlog.md`
+
+### Validation
+
+- The focused lifecycle suite identified the new regression test as failing against the original self-delegate. With the fix, the full `./script/test.sh` suite passed, including the new menu test and the existing divider, width persistence, and preview geometry checks. The runner removed its temporary build directories.
+- A disposable AppKit window used the real split view's mouse handler with synthetic down, drag, and up events. The width moved from 220 to 310 to 190 points, and the delegate received intermediate widths plus two complete resize lifecycles. The fixture and its build products were removed.
+- The canonical Debug build and launch passed. In the running app, a connected iPad preview stayed visible after opening and dismissing View and Window and after hiding and restoring the sidebar. Strict Swift-format lint and Git whitespace checks passed.
+
+### Remaining Risks or Follow-up Work
+
+- Desktop pointer drag attempts in the live window did not visibly move the divider. Live pointer dragging remains unverified.
+- The fix is unreleased. The published 1.1.0 binary still uses the former delegate.

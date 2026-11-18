@@ -220,6 +220,23 @@ struct WindowLifecycleTests {
     #expect(host.surfaceLayout?.preview.size == ordinary)
   }
 
+  @Test func sidebarMenuValidationDoesNotReenterSplitView() throws {
+    let split = SidebarSplitView(frame: .zero)
+    let delegate = try #require(split.delegate)
+    // Fail before the selector query can overflow the stack if the view is its own delegate.
+    try #require(delegate !== split)
+
+    let action = #selector(NSSplitViewController.toggleSidebar(_:))
+    #expect(!split.responds(to: action))
+
+    let menu = NSMenu()
+    let item = NSMenuItem(title: "Toggle Sidebar", action: action, keyEquivalent: "")
+    item.target = split
+    menu.addItem(item)
+    menu.update()
+    #expect(!item.isEnabled)
+  }
+
   @Test func appearanceCallbackRefreshesTitlebarAndDividerInBothDirections() throws {
     let window = makeWindow()
     let host = WindowLayoutHostView(configuration: configuration, animatesChrome: false)
